@@ -8,10 +8,12 @@
 //    - Timer completion alarm with vibration
 //    - Action buttons: Next Step, Pause/Resume, Stop
 //    - Auto-dismiss on session end
+//    - No-op on unsupported platforms (Windows, macOS, Linux, Web)
 // ═══════════════════════════════════════════════════════════════════
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Notification IDs
@@ -28,89 +30,96 @@ const kActionPauseTimer = 'ACTION_PAUSE_TIMER';
 const kActionResumeTimer = 'ACTION_RESUME_TIMER';
 const kActionStopCooking = 'ACTION_STOP_COOKING';
 
+/// Whether the current platform supports notifications
+bool get _isMobilePlatform =>
+    !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
 class CookingNotificationService {
   CookingNotificationService._();
   static final instance = CookingNotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin? _plugin;
 
   bool _initialized = false;
 
   /// Callback for notification actions
   void Function(String actionId)? onAction;
 
-  /// Initialize the notification service
+  /// Initialize the notification service (no-op on desktop/web)
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized || !_isMobilePlatform) return;
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    try {
+      _plugin = FlutterLocalNotificationsPlugin();
 
-    await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
-      onDidReceiveNotificationResponse: _onNotificationResponse,
-    );
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    // Create Android notification channels
-    if (Platform.isAndroid) {
-      final androidPlugin =
-          _plugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      if (androidPlugin != null) {
-        // Ongoing cooking progress channel (low priority, silent)
-        await androidPlugin.createNotificationChannel(
-          const AndroidNotificationChannel(
-            _kCookingProgressChannel,
-            'Cooking Progress',
-            description: 'Shows current cooking step and timer',
-            importance: Importance.low,
-            playSound: false,
-            enableVibration: false,
-          ),
-        );
+      await _plugin!.initialize(
+        settings: const InitializationSettings(
+          android: androidSettings,
+          iOS: iosSettings,
+        ),
+        onDidReceiveNotificationResponse: _onNotificationResponse,
+      );
 
-        // Timer alert channel (high priority, with sound)
-        await androidPlugin.createNotificationChannel(
-          const AndroidNotificationChannel(
-            _kTimerAlertChannel,
-            'Cooking Timer Alerts',
-            description: 'Alerts when a cooking timer completes',
-            importance: Importance.high,
-            playSound: true,
-            enableVibration: true,
-          ),
-        );
+      // Create Android notification channels
+      if (Platform.isAndroid) {
+        final androidPlugin =
+            _plugin!.resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        if (androidPlugin != null) {
+          await androidPlugin.createNotificationChannel(
+            const AndroidNotificationChannel(
+              _kCookingProgressChannel,
+              'Cooking Progress',
+              description: 'Shows current cooking step and timer',
+              importance: Importance.low,
+              playSound: false,
+              enableVibration: false,
+            ),
+          );
+
+          await androidPlugin.createNotificationChannel(
+            const AndroidNotificationChannel(
+              _kTimerAlertChannel,
+              'Cooking Timer Alerts',
+              description: 'Alerts when a cooking timer completes',
+              importance: Importance.high,
+              playSound: true,
+              enableVibration: true,
+            ),
+          );
+        }
       }
-    }
 
-    _initialized = true;
+      _initialized = true;
+    } catch (e) {
+      debugPrint('[CookingNotification] Init failed: $e');
+    }
   }
 
   /// Request notification permission (Android 13+)
   Future<bool> requestPermission() async {
+    if (!_initialized || _plugin == null) return false;
     if (Platform.isAndroid) {
       final androidPlugin =
-          _plugin.resolvePlatformSpecificImplementation<
+          _plugin!.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       final granted =
           await androidPlugin?.requestNotificationsPermission() ?? false;
       return granted;
     }
-    return true; // iOS handles in init
+    return true;
   }
 
   // ── Cooking Progress Notification ──────────────────────────────
 
-  /// Show/update the ongoing cooking notification
   Future<void> showCookingProgress({
     required String recipeTitle,
     required int currentStep,
@@ -119,7 +128,7 @@ class CookingNotificationService {
     bool isTimerRunning = false,
     bool isTimerPaused = false,
   }) async {
-    if (!_initialized) return;
+    if (!_initialized || _plugin == null) return;
 
     final stepInfo = 'Step $currentStep of $totalSteps';
     final bodyParts = <String>[stepInfo];
@@ -128,47 +137,36 @@ class CookingNotificationService {
       bodyParts.add('$prefix$timerText');
     }
 
-    // Build action buttons
     final actions = <AndroidNotificationAction>[];
     if (currentStep < totalSteps) {
       actions.add(const AndroidNotificationAction(
-        kActionNextStep,
-        'Next Step',
-        showsUserInterface: false,
+        kActionNextStep, 'Next Step', showsUserInterface: false,
       ));
     }
     if (isTimerRunning) {
       actions.add(const AndroidNotificationAction(
-        kActionPauseTimer,
-        'Pause',
-        showsUserInterface: false,
+        kActionPauseTimer, 'Pause', showsUserInterface: false,
       ));
     } else if (isTimerPaused) {
       actions.add(const AndroidNotificationAction(
-        kActionResumeTimer,
-        'Resume',
-        showsUserInterface: false,
+        kActionResumeTimer, 'Resume', showsUserInterface: false,
       ));
     }
     actions.add(const AndroidNotificationAction(
-      kActionStopCooking,
-      'Stop',
-      showsUserInterface: true,
+      kActionStopCooking, 'Stop', showsUserInterface: true,
     ));
 
     final androidDetails = AndroidNotificationDetails(
-      _kCookingProgressChannel,
-      'Cooking Progress',
+      _kCookingProgressChannel, 'Cooking Progress',
       channelDescription: 'Shows current cooking step and timer',
       importance: Importance.low,
       priority: Priority.low,
-      ongoing: true, // Can't be swiped away
+      ongoing: true,
       autoCancel: false,
       showWhen: false,
       playSound: false,
       enableVibration: false,
       actions: actions,
-      // Progress bar for step completion
       showProgress: true,
       maxProgress: totalSteps,
       progress: currentStep,
@@ -176,13 +174,11 @@ class CookingNotificationService {
     );
 
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: false,
-      presentBadge: false,
-      presentSound: false,
+      presentAlert: false, presentBadge: false, presentSound: false,
     );
 
     if (Platform.isAndroid) {
-      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.startForegroundService(
         id: _kCookingProgressId,
@@ -191,13 +187,12 @@ class CookingNotificationService {
         notificationDetails: androidDetails,
       );
     } else {
-      await _plugin.show(
+      await _plugin!.show(
         id: _kCookingProgressId,
         title: '🍳 $recipeTitle',
         body: bodyParts.join(' • '),
         notificationDetails: NotificationDetails(
-          android: androidDetails,
-          iOS: iosDetails,
+          android: androidDetails, iOS: iosDetails,
         ),
       );
     }
@@ -208,35 +203,30 @@ class CookingNotificationService {
     required String recipeTitle,
     required int stepNumber,
   }) async {
-    if (!_initialized) return;
+    if (!_initialized || _plugin == null) return;
 
     final androidDetails = AndroidNotificationDetails(
-      _kTimerAlertChannel,
-      'Cooking Timer Alerts',
+      _kTimerAlertChannel, 'Cooking Timer Alerts',
       channelDescription: 'Alerts when a cooking timer completes',
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      vibrationPattern: Int64List.fromList(
-          [0, 500, 200, 500, 200, 500]), // Three pulses
+      vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
       category: AndroidNotificationCategory.alarm,
       fullScreenIntent: true,
     );
 
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
+      presentAlert: true, presentBadge: true, presentSound: true,
     );
 
-    await _plugin.show(
+    await _plugin!.show(
       id: _kTimerCompleteId,
       title: '⏰ Timer Done!',
       body: 'Step $stepNumber of "$recipeTitle" is ready',
       notificationDetails: NotificationDetails(
-        android: androidDetails,
-        iOS: iosDetails,
+        android: androidDetails, iOS: iosDetails,
       ),
     );
   }
@@ -245,19 +235,17 @@ class CookingNotificationService {
   Future<void> showCookingComplete({
     required String recipeTitle,
   }) async {
-    if (!_initialized) return;
+    if (!_initialized || _plugin == null) return;
 
-    // Cancel the ongoing progress notification
     if (Platform.isAndroid) {
-      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.stopForegroundService();
     }
-    await _plugin.cancel(id: _kCookingProgressId);
+    await _plugin!.cancel(id: _kCookingProgressId);
 
     final androidDetails = AndroidNotificationDetails(
-      _kTimerAlertChannel,
-      'Cooking Timer Alerts',
+      _kTimerAlertChannel, 'Cooking Timer Alerts',
       channelDescription: 'Cooking completion',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
@@ -266,38 +254,34 @@ class CookingNotificationService {
     );
 
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentSound: true,
+      presentAlert: true, presentSound: true,
     );
 
-    await _plugin.show(
+    await _plugin!.show(
       id: _kCookingProgressId,
       title: '🎉 Cooking Complete!',
       body: '$recipeTitle is ready. Bon appétit!',
       notificationDetails: NotificationDetails(
-        android: androidDetails,
-        iOS: iosDetails,
+        android: androidDetails, iOS: iosDetails,
       ),
     );
 
-    // Auto-dismiss after 5 seconds
     Future.delayed(const Duration(seconds: 5), () {
-      _plugin.cancel(id: _kCookingProgressId);
+      _plugin?.cancel(id: _kCookingProgressId);
     });
   }
 
   /// Dismiss all cooking notifications
   Future<void> cancelAll() async {
+    if (_plugin == null) return;
     if (Platform.isAndroid) {
-      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.stopForegroundService();
     }
-    await _plugin.cancel(id: _kCookingProgressId);
-    await _plugin.cancel(id: _kTimerCompleteId);
+    await _plugin!.cancel(id: _kCookingProgressId);
+    await _plugin!.cancel(id: _kTimerCompleteId);
   }
-
-  // ── Private ────────────────────────────────────────────────────
 
   void _onNotificationResponse(NotificationResponse response) {
     final actionId = response.actionId;
