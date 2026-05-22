@@ -57,6 +57,7 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
   String _aiQuestion = '';
   String? _aiResponse;
   bool _aiLoading = false;
+  bool _isBeginnerMode = false;
 
   @override
   void initState() {
@@ -313,6 +314,7 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
           recipeId: widget.recipeId,
           title: widget.title,
           steps: widget.steps,
+          isBeginnerMode: _isBeginnerMode,
           ingredients: widget.ingredients,
           prepNotes: widget.prepNotes,
           matchedIngredientsCount: widget.ownedIngredientIds.length,
@@ -378,6 +380,60 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
                           iconSize: 28,
                         ),
                       ],
+                    ),
+                  ),
+
+                  // ── Beginner Mode Toggle ───────────────────────
+                  Container(
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _isBeginnerMode
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+                    ),
+                    child: SwitchListTile(
+                      value: _isBeginnerMode,
+                      onChanged: (v) => setState(() => _isBeginnerMode = v),
+                      title: Text(
+                        '👨‍🍳 Beginner Mode',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _isBeginnerMode
+                            ? 'Detailed step-by-step guidance with tips'
+                            : 'Standard cooking instructions',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          fontSize: 12,
+                        ),
+                      ),
+                      secondary: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _isBeginnerMode
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          _isBeginnerMode ? Icons.school : Icons.restaurant_menu,
+                          color: _isBeginnerMode
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          size: 18,
+                        ),
+                      ),
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                      dense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
 

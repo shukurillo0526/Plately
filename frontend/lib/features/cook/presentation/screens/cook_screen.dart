@@ -1023,7 +1023,7 @@ class _RecipeCard extends StatelessWidget {
           children: [
             // Hero image header
             Container(
-              height: 120,
+              height: 160,
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -1042,8 +1042,10 @@ class _RecipeCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
                     ],
+                    stops: [0.0, 0.6, 1.0],
                   ),
                 ),
                 alignment: Alignment.bottomRight,

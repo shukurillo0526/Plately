@@ -27,6 +27,7 @@ class CookingRunScreen extends StatefulWidget {
   final int? proteinG;
   final int? carbsG;
   final int? fatG;
+  final bool isBeginnerMode;
 
   const CookingRunScreen({
     super.key,
@@ -45,6 +46,7 @@ class CookingRunScreen extends StatefulWidget {
     this.proteinG,
     this.carbsG,
     this.fatG,
+    this.isBeginnerMode = false,
   });
 
   @override
@@ -422,6 +424,7 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
                         _modifiedSteps[index]['human_text'] = newText;
                       });
                     },
+                    isBeginnerMode: widget.isBeginnerMode,
                   );
                 },
               ),
@@ -584,6 +587,7 @@ class _CookingStepCard extends StatefulWidget {
   final int? timerRemaining;
   final void Function(int seconds) onStartTimer;
   final void Function(String newText) onStepModified;
+  final bool isBeginnerMode;
 
   const _CookingStepCard({
     required this.step,
@@ -595,6 +599,7 @@ class _CookingStepCard extends StatefulWidget {
     this.timerRemaining,
     required this.onStartTimer,
     required this.onStepModified,
+    required this.isBeginnerMode,
   });
 
   @override
@@ -747,6 +752,8 @@ Current Step (${widget.stepIndex + 1}/${widget.totalSteps}): $stepText
 **User's Question:**
 $q
 
+**Cooking Mode:** ${widget.isBeginnerMode ? 'BEGINNER MODE — The user is a beginner cook. Explain steps in simple micro-actions, guide them through techniques, and include safety tips.' : 'Default mode — Keep answers concise and direct.'}
+
 IMPORTANT: Respond entirely in $langName.
 Be helpful, clear, and natural. 
 If they ask for substitutions, suggest realistic alternatives based on what they have in their inventory.
@@ -778,7 +785,9 @@ Keep your answer short and easy to read while cooking.
 
   @override
   Widget build(BuildContext context) {
-    final humanText = widget.step['translated_text'] ?? widget.step['human_text'] ?? widget.step['text'] ?? '';
+    final humanText = widget.isBeginnerMode
+        ? (widget.step['translated_beginner_text'] ?? widget.step['beginner_text'] ?? widget.step['translated_text'] ?? widget.step['human_text'] ?? widget.step['text'] ?? '')
+        : (widget.step['translated_text'] ?? widget.step['human_text'] ?? widget.step['text'] ?? '');
     final requiresAttention = widget.step['requires_attention'] == true;
     final icon = _pickIcon(humanText);
     final tempC = widget.step['temperature_c'];

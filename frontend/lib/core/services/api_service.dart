@@ -817,6 +817,48 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  /// Submit recipe feedback (thumbs up/down, feature rating, report)
+  Future<Map<String, dynamic>> submitFeedback({
+    required String recipeId,
+    required String userId,
+    required String feedbackType,
+    required String locale,
+    int? rating,
+    String? comment,
+    Map<String, dynamic>? metaData,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/v1/feedback/submit'),
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'recipe_id': recipeId,
+        'user_id': userId,
+        'feedback_type': feedbackType,
+        'locale': locale,
+        if (rating != null) 'rating': rating,
+        if (comment != null) 'comment': comment,
+        if (metaData != null) 'meta_data': metaData,
+      }),
+    );
+    return _handleResponse(response);
+  }
+
+  /// Get aggregated sentiment (likes/dislikes) for a recipe
+  Future<Map<String, dynamic>> getRecipeSentiment({
+    required String recipeId,
+    String? userId,
+  }) async {
+    final params = <String, String>{};
+    if (userId != null) params['user_id'] = userId;
+    
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/v1/feedback/recipe/$recipeId/sentiment',
+    ).replace(queryParameters: params.isNotEmpty ? params : null);
+    
+    final response = await _client.get(uri, headers: _headers);
+    return _handleResponse(response);
+  }
+
   void dispose() => _client.close();
 }
 

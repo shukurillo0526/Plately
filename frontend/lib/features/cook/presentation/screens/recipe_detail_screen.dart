@@ -64,6 +64,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   double? _dynamicCarbs;
   double? _dynamicFat;
 
+  // Feedback voting
+  int _likes = 0;
+  int _dislikes = 0;
+  int _userVote = 0; // 1 = liked, -1 = disliked, 0 = no vote
+
   @override
   void initState() {
     super.initState();
@@ -188,12 +193,318 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         debugPrint('Failed to load dynamic nutrition: $e');
       }
 
+      // 6. Load recipe sentiment votes
+      await _loadSentiment();
+
       setState(() {
         _loading = false;
       });
     } catch (e) {
       setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadSentiment() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+
+      // Get all sentiment feedback for this recipe
+      final response = await supabase
+          .from('recipe_feedback')
+          .select('rating, user_id')
+          .eq('recipe_id', widget.recipeId)
+          .eq('feedback_type', 'recipe_sentiment');
+
+      final items = response as List;
+      int likes = 0;
+      int dislikes = 0;
+      int userVote = 0;
+
+      for (final item in items) {
+        final rating = (item['rating'] as num?)?.toInt() ?? 0;
+        if (rating > 0) likes++;
+        if (rating < 0) dislikes++;
+        if (userId != null && item['user_id'] == userId) {
+          userVote = rating;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _likes = likes;
+          _dislikes = dislikes;
+          _userVote = userVote;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load sentiment: $e');
+    }
+  }
+
+  Future<void> _voteSentiment(int vote) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final locale = Localizations.localeOf(context).languageCode;
+
+      // Toggle: if same vote, remove it
+      final newVote = (_userVote == vote) ? 0 : vote;
+
+      if (newVote == 0) {
+        // Delete existing vote
+        await supabase
+            .from('recipe_feedback')
+            .delete()
+            .eq('recipe_id', widget.recipeId)
+            .eq('user_id', userId)
+            .eq('feedback_type', 'recipe_sentiment');
+      } else {
+        // Upsert: delete old then insert new
+        await supabase
+            .from('recipe_feedback')
+            .delete()
+            .eq('recipe_id', widget.recipeId)
+            .eq('user_id', userId)
+            .eq('feedback_type', 'recipe_sentiment');
+
+        await supabase
+            .from('recipe_feedback')
+            .insert({
+              'recipe_id': widget.recipeId,
+              'user_id': userId,
+              'feedback_type': 'recipe_sentiment',
+              'rating': newVote,
+              'locale': locale,
+            });
+      }
+
+      // Update local state immediately
+      setState(() {
+        if (_userVote == 1) _likes--;
+        if (_userVote == -1) _dislikes--;
+        _userVote = newVote;
+        if (newVote == 1) _likes++;
+        if (newVote == -1) _dislikes++;
+      });
+    } catch (e) {
+      debugPrint('Failed to vote: $e');
+    }
+  }
+
+  void _showFeedbackReportSheet() {
+    String? selectedCategory;
+    final commentController = TextEditingController();
+    int featureRating = 0;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40, height: 4,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    // Header
+                    Row(
+                      children: [
+                        Icon(Icons.feedback_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
+                        SizedBox(width: 8),
+                        Text(
+                          'Report an Issue',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Help us improve this recipe by reporting any issues.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    // Category selection
+                    Text(
+                      'What\'s the issue?',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _FeedbackCategoryChip(
+                          label: '🌐 Translation',
+                          value: 'translation',
+                          selected: selectedCategory == 'translation',
+                          onTap: () => setSheetState(() => selectedCategory = 'translation'),
+                        ),
+                        _FeedbackCategoryChip(
+                          label: '📝 Content',
+                          value: 'content',
+                          selected: selectedCategory == 'content',
+                          onTap: () => setSheetState(() => selectedCategory = 'content'),
+                        ),
+                        _FeedbackCategoryChip(
+                          label: '📸 Photo',
+                          value: 'photo',
+                          selected: selectedCategory == 'photo',
+                          onTap: () => setSheetState(() => selectedCategory = 'photo'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    // Rating
+                    Text(
+                      'How would you rate this recipe overall?',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (i) {
+                        final starIndex = i + 1;
+                        return GestureDetector(
+                          onTap: () => setSheetState(() => featureRating = starIndex),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              starIndex <= featureRating ? Icons.star : Icons.star_border,
+                              color: starIndex <= featureRating
+                                  ? Colors.amber
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                              size: 32,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    SizedBox(height: 20),
+                    // Comment
+                    TextField(
+                      controller: commentController,
+                      maxLines: 3,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Tell us more about the issue...',
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+                        filled: true,
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.all(14),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    // Submit button
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: (selectedCategory != null || featureRating > 0)
+                            ? () async {
+                                Navigator.pop(context);
+                                try {
+                                  final supabase = Supabase.instance.client;
+                                  final userId = supabase.auth.currentUser?.id;
+                                  final locale = Localizations.localeOf(context).languageCode;
+                                  
+                                  await supabase.from('recipe_feedback').insert({
+                                    'recipe_id': widget.recipeId,
+                                    'user_id': userId,
+                                    'feedback_type': selectedCategory ?? 'feature_rating',
+                                    'rating': featureRating > 0 ? featureRating : null,
+                                    'comment': commentController.text.trim().isNotEmpty
+                                        ? commentController.text.trim()
+                                        : null,
+                                    'locale': locale,
+                                    'meta_data': {
+                                      'recipe_title': widget.title,
+                                      'cuisine': widget.cuisine,
+                                    },
+                                  });
+                                  
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Thank you for your feedback! 🙏'),
+                                        backgroundColor: Theme.of(context).colorScheme.primary,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint('Failed to submit feedback: $e');
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to submit feedback'),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            : null,
+                        icon: Icon(Icons.send, size: 18),
+                        label: Text('Submit Feedback'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   /// Trigger AI translation via backend (runs in background, updates UI when done)
@@ -641,7 +952,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         slivers: [
           // ── Hero Header ──────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 300,
             pinned: true,
             backgroundColor: Theme.of(context).colorScheme.surface,
             leading: IconButton(
@@ -659,6 +970,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.flag_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () => _showFeedbackReportSheet(),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -702,10 +1030,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.4),
                           Theme.of(context).scaffoldBackgroundColor,
                         ],
-                        stops: [0.0, 0.6, 1.0],
+                        stops: [0.0, 0.75, 1.0],
                       ),
                     ),
                   ),
@@ -811,6 +1139,115 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   if (_dynamicFat != null && _dynamicFat! > 0)
                     _QuickChip(icon: Icons.water_drop, label: '${_dynamicFat!.toStringAsFixed(1)}${L10nHelper.translateNutritionLabel('g', Localizations.localeOf(context).languageCode)} ${L10nHelper.translateNutritionLabel('F', Localizations.localeOf(context).languageCode)}', color: Colors.orangeAccent),
                 ],
+              ),
+            ),
+          ),
+
+          // ── Recipe Sentiment Voting ──────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.rate_review_outlined, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Rate this recipe',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Spacer(),
+                    // Thumbs up
+                    GestureDetector(
+                      onTap: () => _voteSentiment(1),
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _userVote == 1
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _userVote == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
+                              size: 18,
+                              color: _userVote == 1
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                            if (_likes > 0) ...[
+                              SizedBox(width: 4),
+                              Text(
+                                '$_likes',
+                                style: TextStyle(
+                                  color: _userVote == 1
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // Thumbs down
+                    GestureDetector(
+                      onTap: () => _voteSentiment(-1),
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _userVote == -1
+                              ? Colors.redAccent.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _userVote == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
+                              size: 18,
+                              color: _userVote == -1
+                                  ? Colors.redAccent
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                            if (_dislikes > 0) ...[
+                              SizedBox(width: 4),
+                              Text(
+                                '$_dislikes',
+                                style: TextStyle(
+                                  color: _userVote == -1
+                                      ? Colors.redAccent
+                                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1463,6 +1900,54 @@ class _StepCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Feedback Category Chip ──────────────────────────────────────────
+
+class _FeedbackCategoryChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool selected;
+  final VoidCallback onTap;
+  
+  const _FeedbackCategoryChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
       ),
     );
   }

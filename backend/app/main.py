@@ -18,6 +18,7 @@ from app.routers import (
     ocr_parser, barcode_lookup, vision_detect, recipe_ai,
     embeddings, inventory, user_data, calorie_analysis,
     recommendations, health, chat, notifications, orders,
+    feedback,
 )
 from app.services.ollama_service import get_ollama_service
 from app.middleware.request_middleware import RequestIdMiddleware, InputValidationMiddleware
@@ -124,6 +125,7 @@ app.include_router(recommendations.router)
 app.include_router(chat.router)
 app.include_router(notifications.router)
 app.include_router(orders.router)
+app.include_router(feedback.router)
 
 
 # ── Root ─────────────────────────────────────────────────────────
