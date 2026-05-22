@@ -171,12 +171,13 @@ class RecommendationsNotifier extends AsyncNotifier<Map<String, dynamic>> {
 
 /// Local shopping list state (synced with API when possible)
 final shoppingListProvider =
-    StateNotifierProvider<ShoppingListNotifier, List<Map<String, String>>>(
-  (ref) => ShoppingListNotifier(),
+    NotifierProvider<ShoppingListNotifier, List<Map<String, String>>>(
+  ShoppingListNotifier.new,
 );
 
-class ShoppingListNotifier extends StateNotifier<List<Map<String, String>>> {
-  ShoppingListNotifier() : super([]);
+class ShoppingListNotifier extends Notifier<List<Map<String, String>>> {
+  @override
+  List<Map<String, String>> build() => [];
 
   void addItem(String name, {String category = 'Other'}) {
     // Avoid duplicates
@@ -209,6 +210,17 @@ class ShoppingListNotifier extends StateNotifier<List<Map<String, String>>> {
 // ── Connectivity ────────────────────────────────────────────────
 
 /// Whether the device is currently online
-final isOnlineProvider = StateProvider<bool>((ref) {
-  return ref.read(cacheServiceProvider).isOnline;
-});
+final isOnlineProvider = NotifierProvider<IsOnlineNotifier, bool>(
+  IsOnlineNotifier.new,
+);
+
+class IsOnlineNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return ref.read(cacheServiceProvider).isOnline;
+  }
+
+  void setOnline(bool value) {
+    state = value;
+  }
+}

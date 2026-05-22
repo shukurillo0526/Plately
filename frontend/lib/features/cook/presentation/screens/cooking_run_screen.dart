@@ -6,10 +6,12 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/features/cook/presentation/screens/cooking_reward_screen.dart';
+import 'package:plately_app/features/cook/providers/cooking_session_provider.dart';
+import 'package:plately_app/features/cook/presentation/widgets/step_timer_widget.dart';
 
 class CookingRunScreen extends StatefulWidget {
   final String recipeId;
@@ -28,6 +30,7 @@ class CookingRunScreen extends StatefulWidget {
   final int? carbsG;
   final int? fatG;
   final bool isBeginnerMode;
+  final bool restoreFromSession;
 
   const CookingRunScreen({
     super.key,
@@ -47,6 +50,7 @@ class CookingRunScreen extends StatefulWidget {
     this.carbsG,
     this.fatG,
     this.isBeginnerMode = false,
+    this.restoreFromSession = false,
   });
 
   @override
@@ -57,10 +61,6 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
   late PageController _pageController;
   int _currentIndex = 0;
   bool _showPrepNotes = true;
-
-  // Global timer tracking: step_index → remaining seconds
-  final Map<int, int> _activeTimers = {};
-  final Map<int, Timer> _timerObjects = {};
 
   // For modifiedRecipe state
   late List<Map<String, dynamic>> _modifiedSteps;
@@ -81,49 +81,62 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
       final unit = ing['unit'] ?? '';
       return "$qty $unit $name";
     }).join(', ') ?? '';
+
+    // Initialize cooking session via provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initSession();
+    });
+  }
+
+  /// Create or restore a cooking session in the provider
+  void _initSession() {
+    if (!mounted) return;
+    final container = ProviderScope.containerOf(context);
+    final notifier = container.read(cookingSessionProvider.notifier);
+    final existing = container.read(cookingSessionProvider);
+
+    if (widget.restoreFromSession && existing != null) {
+      // Restore step index from saved session
+      final savedIndex = existing.currentStepIndex;
+      if (savedIndex > 0 && savedIndex < widget.steps.length) {
+        setState(() => _currentIndex = savedIndex);
+        _pageController.jumpToPage(savedIndex);
+      }
+    } else {
+      // Start a fresh session
+      notifier.startSession(
+        recipeId: widget.recipeId,
+        title: widget.title,
+        steps: widget.steps,
+        ingredients: widget.ingredients,
+        isBeginnerMode: widget.isBeginnerMode,
+        servingsCooked: widget.servingsCooked,
+        originalServings: widget.originalServings,
+        matchPct: widget.matchPct,
+        matchedIngredientsCount: widget.matchedIngredientsCount,
+        userInventoryText: widget.userInventoryText,
+        ownedIngredientIds: widget.ownedIngredientIds,
+        calories: widget.calories,
+        proteinG: widget.proteinG,
+        carbsG: widget.carbsG,
+        fatG: widget.fatG,
+      );
+    }
+  }
+
+  /// Sync step index to session provider
+  void _syncStepToSession() {
+    try {
+      final container = ProviderScope.containerOf(context);
+      container.read(cookingSessionProvider.notifier).goToStep(_currentIndex);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    for (final t in _timerObjects.values) {
-      t.cancel();
-    }
     WakelockPlus.disable();
     super.dispose();
-  }
-
-  void _startTimerForStep(int stepIndex, int seconds) {
-    if (_activeTimers.containsKey(stepIndex)) return; // already running
-    _activeTimers[stepIndex] = seconds;
-    _timerObjects[stepIndex] = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
-      setState(() {
-        final remaining = (_activeTimers[stepIndex] ?? 1) - 1;
-        if (remaining <= 0) {
-          _activeTimers.remove(stepIndex);
-          timer.cancel();
-          _timerObjects.remove(stepIndex);
-          // Vibrate on completion
-          HapticFeedback.heavyImpact();
-          _showTimerDoneAlert(stepIndex);
-        } else {
-          _activeTimers[stepIndex] = remaining;
-        }
-      });
-    });
-  }
-
-  void _showTimerDoneAlert(int stepIndex) {
-    final stepNum = stepIndex + 1;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('⏱ Timer done! Step $stepNum complete'),
-        backgroundColor: Theme.of(context).colorScheme.tertiary,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-      ),
-    );
   }
 
   void _nextStep() {
@@ -132,6 +145,10 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
+      // Sync with session provider after page animates
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (mounted) _syncStepToSession();
+      });
     }
   }
 
@@ -141,6 +158,9 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (mounted) _syncStepToSession();
+      });
     }
   }
 
@@ -267,6 +287,12 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
   }
 
   void _navigateToReward(List<String> skippedIds) {
+    // End the persistent cooking session
+    try {
+      final container = ProviderScope.containerOf(context);
+      container.read(cookingSessionProvider.notifier).endSession();
+    } catch (_) {}
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -288,11 +314,6 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
     );
   }
 
-  String _formatTimer(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -327,55 +348,6 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Persistent Timer Bar ──────────────────────────
-            if (_activeTimers.isNotEmpty)
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.timer, color: Theme.of(context).colorScheme.primary, size: 18),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _activeTimers.entries.map((e) {
-                            return Padding(
-                              padding: EdgeInsets.only(right: 14),
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Jump to that step
-                                  _pageController.animateToPage(e.key,
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeOut);
-                                },
-                                child: Text(
-                                  'Step ${e.key + 1}: ${_formatTimer(e.value)}',
-                                  style: TextStyle(
-                                    color: e.value < 30
-                                        ? Colors.orange
-                                        : Theme.of(context).colorScheme.primary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
             // ── Progress Bar ──────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -417,8 +389,6 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
                     recipeTitle: widget.title,
                     ingredientsListText: _ingredientsListText,
                     userInventoryText: widget.userInventoryText,
-                    timerRemaining: _activeTimers[index],
-                    onStartTimer: (seconds) => _startTimerForStep(index, seconds),
                     onStepModified: (newText) {
                       setState(() {
                         _modifiedSteps[index]['human_text'] = newText;
@@ -577,15 +547,13 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
 
 // ── Step Detail Card (Human-First Tutorial) ─────────────────────────
 
-class _CookingStepCard extends StatefulWidget {
+class _CookingStepCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> step;
   final int stepIndex;
   final int totalSteps;
   final String recipeTitle;
   final String ingredientsListText;
   final String userInventoryText;
-  final int? timerRemaining;
-  final void Function(int seconds) onStartTimer;
   final void Function(String newText) onStepModified;
   final bool isBeginnerMode;
 
@@ -596,17 +564,15 @@ class _CookingStepCard extends StatefulWidget {
     required this.recipeTitle,
     required this.ingredientsListText,
     required this.userInventoryText,
-    this.timerRemaining,
-    required this.onStartTimer,
     required this.onStepModified,
     required this.isBeginnerMode,
   });
 
   @override
-  State<_CookingStepCard> createState() => _CookingStepCardState();
+  ConsumerState<_CookingStepCard> createState() => _CookingStepCardState();
 }
 
-class _CookingStepCardState extends State<_CookingStepCard> {
+class _CookingStepCardState extends ConsumerState<_CookingStepCard> {
   final ApiService _api = ApiService();
   final List<Map<String, String>> _chatMessages = [];
   bool _aiLoading = false;
@@ -638,17 +604,11 @@ class _CookingStepCardState extends State<_CookingStepCard> {
     if (_isAutoStart && _timerSeconds != null && !_autoStartTriggered) {
       _autoStartTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onStartTimer(_timerSeconds!);
+        ref.read(cookingSessionProvider.notifier).startTimer(_timerSeconds!);
       });
     }
   }
 
-  String _formatTime(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    if (m > 0) return '${m}m ${s.toString().padLeft(2, '0')}s';
-    return '${s}s';
-  }
 
   IconData _pickIcon(String text) {
     final lower = text.toLowerCase();
@@ -792,7 +752,6 @@ Keep your answer short and easy to read while cooking.
     final icon = _pickIcon(humanText);
     final tempC = widget.step['temperature_c'];
     final timerSec = _timerSeconds;
-    final isTimerRunning = widget.timerRemaining != null;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 16, 24, 12),
@@ -865,44 +824,9 @@ Keep your answer short and easy to read while cooking.
 
           // Interactive Timer Button
           if (timerSec != null && timerSec > 0)
-            GestureDetector(
-              onTap: isTimerRunning ? null : () => widget.onStartTimer(timerSec),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(
-                  color: isTimerRunning
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isTimerRunning
-                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)
-                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isTimerRunning ? Icons.timer : Icons.play_circle_fill,
-                      color: isTimerRunning ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                      size: 24),
-                    SizedBox(width: 12),
-                    Text(
-                      isTimerRunning
-                          ? _formatTime(widget.timerRemaining!)
-                          : '${_isAutoStart ? '⚡ Auto' : 'Start'} Timer • ${_formatTime(timerSec)}',
-                      style: TextStyle(
-                        color: isTimerRunning ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontSize: 18, fontWeight: FontWeight.w700,
-                        fontFeatures: const [FontFeature.tabularFigures()]),
-                    ),
-                    if (widget.timerRemaining != null && widget.timerRemaining! <= 0) ...[
-                      SizedBox(width: 12),
-                      Icon(Icons.check_circle, color: Theme.of(context).colorScheme.tertiary, size: 22),
-                    ],
-                  ],
-                ),
+            Center(
+              child: StepTimerWidget(
+                timerSeconds: timerSec,
               ),
             ),
 

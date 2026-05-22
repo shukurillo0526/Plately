@@ -10,6 +10,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:plately_app/core/widgets/dual_mode_nav_bar.dart';
+import 'package:plately_app/features/cook/presentation/widgets/cooking_mini_player.dart';
+import 'package:plately_app/core/services/cooking_notification_service.dart';
+import 'package:plately_app/features/cook/providers/cooking_session_provider.dart';
 
 // ── Screens ──────────────────────────────────────────────
 // Cook mode screens (existing)
@@ -68,6 +71,15 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] Cache init skipped: $e');
   }
+
+  // Initialize cooking notification service
+  try {
+    await CookingNotificationService.instance.initialize();
+    await CookingNotificationService.instance.requestPermission();
+  } catch (e) {
+    debugPrint('[Main] Notification init skipped: $e');
+  }
+
   runApp(const ProviderScope(child: PlatelyApp()));
 }
 
@@ -199,14 +211,14 @@ class _AuthGateState extends State<_AuthGate> {
 //  APP SHELL — Dual-Mode Navigation
 // ═══════════════════════════════════════════════════════════════════
 
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
+class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMixin {
   final AppSettings _settings = AppSettings();
   int _currentIndex = 0;
 
@@ -267,6 +279,25 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _settings.addListener(_onSettingsChanged);
+
+    // Wire notification action buttons to session provider
+    CookingNotificationService.instance.onAction = (actionId) {
+      final notifier = ref.read(cookingSessionProvider.notifier);
+      switch (actionId) {
+        case kActionNextStep:
+          notifier.advanceStep();
+          break;
+        case kActionPauseTimer:
+          notifier.pauseTimer();
+          break;
+        case kActionResumeTimer:
+          notifier.resumeTimer();
+          break;
+        case kActionStopCooking:
+          notifier.endSession();
+          break;
+      }
+    };
 
     // Trigger tutorial on first app load (after onboarding)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -370,6 +401,9 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
               ),
             ),
           ),
+
+          // ── Cooking Mini-Player ─────────────────────
+          const CookingMiniPlayer(),
         ],
       ),
       bottomNavigationBar: DualModeNavBar(
