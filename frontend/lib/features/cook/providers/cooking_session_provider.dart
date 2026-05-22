@@ -10,6 +10,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:plately_app/features/cook/models/cooking_session.dart';
@@ -31,12 +32,52 @@ class CookingSessionNotifier extends Notifier<CookingSession?> {
 
   @override
   CookingSession? build() {
-    // Restore persisted session on first build
-    _restoreSessionSync();
     ref.onDispose(() {
       _cancelTimer();
     });
-    return state;
+    // Restore persisted session asynchronously after build completes
+    Future.microtask(() => _restoreSession());
+    return null;
+  }
+
+  /// Async session restoration (called after build)
+  Future<void> _restoreSession() async {
+    try {
+      final box = await Hive.openBox(_kSessionBoxName);
+      final jsonString = box.get(_kSessionKey) as String?;
+      if (jsonString == null) return;
+
+      var session = CookingSession.fromJsonString(jsonString);
+
+      // If timer was running, calculate elapsed time since save
+      if (session.timerStatus == TimerStatus.running &&
+          session.timerStartedAt != null) {
+        final elapsed =
+            DateTime.now().difference(session.timerStartedAt!).inSeconds;
+        final remaining = session.timerRemainingSeconds - elapsed;
+
+        if (remaining <= 0) {
+          session = session.copyWith(
+            timerRemainingSeconds: 0,
+            timerStatus: TimerStatus.completed,
+          );
+        } else {
+          session = session.copyWith(
+            timerRemainingSeconds: remaining,
+          );
+        }
+      }
+
+      state = session;
+
+      // Resume countdown if timer was running
+      if (state?.timerStatus == TimerStatus.running) {
+        _startCountdown();
+      }
+    } catch (e) {
+      // If restore fails, start fresh
+      debugPrint('[CookingSession] Restore failed: $e');
+    }
   }
 
   // ── Session Lifecycle ──────────────────────────────────────────
@@ -281,51 +322,6 @@ class CookingSessionNotifier extends Notifier<CookingSession?> {
       await box.delete(_kSessionKey);
     } catch (e) {
       // Silently fail
-    }
-  }
-
-  void _restoreSessionSync() {
-    try {
-      // Hive box should already be open from CacheService init
-      if (Hive.isBoxOpen(_kSessionBoxName)) {
-        final box = Hive.box(_kSessionBoxName);
-        final jsonString = box.get(_kSessionKey) as String?;
-        if (jsonString != null) {
-          final session = CookingSession.fromJsonString(jsonString);
-
-          // If timer was running, calculate elapsed time since save
-          if (session.timerStatus == TimerStatus.running &&
-              session.timerStartedAt != null) {
-            final elapsed =
-                DateTime.now().difference(session.timerStartedAt!).inSeconds;
-            final remaining = session.timerRemainingSeconds - elapsed;
-
-            if (remaining <= 0) {
-              state = session.copyWith(
-                timerRemainingSeconds: 0,
-                timerStatus: TimerStatus.completed,
-              );
-            } else {
-              state = session.copyWith(
-                timerRemainingSeconds: remaining,
-              );
-              _startCountdown();
-            }
-          } else {
-            state = session;
-          }
-        }
-      } else {
-        // Open box async and restore
-        Hive.openBox(_kSessionBoxName).then((box) {
-          final jsonString = box.get(_kSessionKey) as String?;
-          if (jsonString != null) {
-            state = CookingSession.fromJsonString(jsonString);
-          }
-        });
-      }
-    } catch (e) {
-      // If restore fails, start fresh
     }
   }
 
