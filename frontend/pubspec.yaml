@@ -71,6 +71,13 @@ dev_dependencies:
   flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4
 
+# Override the Windows notification plugin with an empty stub
+# to avoid the atlbase.h C++ compilation error on Windows.
+# The notification service is already no-op on desktop platforms.
+dependency_overrides:
+  flutter_local_notifications_windows:
+    path: stubs/flutter_local_notifications_windows
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
