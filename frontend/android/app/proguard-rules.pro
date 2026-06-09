@@ -29,3 +29,7 @@
 
 # Prevent R8 from stripping error info
 -keepattributes Exceptions
+
+# Ignore missing Play Core classes referenced by Flutter Play Store split library
+-dontwarn com.google.android.play.core.**
+
