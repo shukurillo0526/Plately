@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.plately.plately_app"
+        applicationId = "com.plately.myapp"
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
