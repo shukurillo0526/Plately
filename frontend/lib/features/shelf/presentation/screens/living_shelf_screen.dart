@@ -398,19 +398,29 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
         .toList();
 
     if (allZoneItems.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.only(top: 100),
-        child: EmptyStateIllustration(
-          emoji: _zoneEmoji(zone),
-          title: AppLocalizations.of(context)?.zoneEmptyTitle(_getLocalizedZone(zone)) ?? 'Your ${_getLocalizedZone(zone)} is Empty',
-          description:
-              AppLocalizations.of(context)?.zoneEmptyDesc ?? 'Ready to fill up your digital kitchen.\nAdd items manually or tap scan.',
-          actionLabel: AppLocalizations.of(context)?.addIngredient ?? 'Add Ingredient',
-          onAction: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ScanScreen()),
-            );
-          },
+      return LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: EmptyStateIllustration(
+                  emoji: _zoneEmoji(zone),
+                  title: AppLocalizations.of(context)?.zoneEmptyTitle(_getLocalizedZone(zone)) ?? 'Your ${_getLocalizedZone(zone)} is Empty',
+                  description:
+                      AppLocalizations.of(context)?.zoneEmptyDesc ?? 'Ready to fill up your digital kitchen.\nAdd items manually or tap scan.',
+                  actionLabel: AppLocalizations.of(context)?.addIngredient ?? 'Add Ingredient',
+                  onAction: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ScanScreen()),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
         ),
       );
     }

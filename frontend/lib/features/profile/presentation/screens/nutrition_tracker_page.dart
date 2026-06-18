@@ -21,6 +21,13 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
   List<dynamic> _history = [];
   bool _loading = true;
 
+  // Progressive profiling: age & weight prompt
+  bool _showProfilePrompt = false;
+  bool _profilePromptDismissed = false;
+  final _ageController = TextEditingController();
+  final _weightController = TextEditingController();
+  bool _savingProfile = false;
+
   @override
   void initState() { super.initState(); _load(); }
 
@@ -30,6 +37,14 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
       final result = await _api.getDailyNutrition(uid);
       
       final supabase = Supabase.instance.client;
+
+      // Check if age/weight are set
+      final userData = await supabase
+          .from('users')
+          .select('age, weight_kg')
+          .eq('id', uid)
+          .maybeSingle();
+
       final historyData = await supabase
           .from('user_recipe_history')
           .select('cooked_at, recipes(id, title, image_url, calories_per_serving)')
@@ -41,7 +56,9 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
         setState(() { 
           _daily = result; 
           _history = historyData as List<dynamic>;
-          _loading = false; 
+          _loading = false;
+          // Show prompt if age or weight is missing
+          _showProfilePrompt = (userData?['age'] == null || userData?['weight_kg'] == null);
         });
       }
     } catch (e) {
@@ -51,8 +68,54 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
     }
   }
 
+  Future<void> _saveProfileData() async {
+    final age = int.tryParse(_ageController.text.trim());
+    final weight = double.tryParse(_weightController.text.trim());
+
+    if (age == null || weight == null || age < 10 || age > 120 || weight < 20 || weight > 300) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter valid age (10-120) and weight (20-300 kg)'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _savingProfile = true);
+    try {
+      await Supabase.instance.client.from('users').update({
+        'age': age,
+        'weight_kg': weight,
+      }).eq('id', currentUserId());
+
+      if (mounted) {
+        setState(() {
+          _showProfilePrompt = false;
+          _savingProfile = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile updated! Nutrition goals personalized.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _savingProfile = false);
+        debugPrint('[NutritionTracker] Failed to save profile: $e');
+      }
+    }
+  }
+
   @override
-  void dispose() { _api.dispose(); super.dispose(); }
+  void dispose() { 
+    _api.dispose(); 
+    _ageController.dispose();
+    _weightController.dispose();
+    super.dispose(); 
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +130,10 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
               child: ListView(
                 padding: EdgeInsets.all(20),
                 children: [
+                  // Progressive profiling: age/weight prompt
+                  if (_showProfilePrompt && !_profilePromptDismissed)
+                    _buildProfilePrompt(),
+
                   // Calorie Ring
                   _buildCalorieRing(),
                   SizedBox(height: 24),
@@ -91,6 +158,117 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildProfilePrompt() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tune, color: Theme.of(context).colorScheme.primary, size: 22),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Personalize Your Nutrition Goals',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _profilePromptDismissed = true),
+                child: Icon(Icons.close, size: 20,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            'For accurate calorie and macro goals, tell us a bit about yourself.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              fontSize: 13,
+            ),
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _ageController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Age',
+                    hintText: 'e.g. 25',
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _weightController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Weight (kg)',
+                    hintText: 'e.g. 70',
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _savingProfile ? null : _saveProfileData,
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: _savingProfile
+                  ? SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('Save', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

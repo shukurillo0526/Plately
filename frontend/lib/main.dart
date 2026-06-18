@@ -37,9 +37,11 @@ import 'package:plately_app/core/services/cache_service.dart';
 import 'package:plately_app/core/services/tutorial_service.dart';
 import 'package:plately_app/core/widgets/tutorial_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // ── Global Error Handling ──
   FlutterError.onError = (details) {
@@ -79,6 +81,9 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] Notification init skipped: $e');
   }
+
+  // Remove splash screen now that initialization is complete
+  FlutterNativeSplash.remove();
 
   runApp(const ProviderScope(child: PlatelyApp()));
 }

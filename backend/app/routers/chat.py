@@ -90,17 +90,21 @@ async def chat(request: Request, req: ChatRequest):
         # Streaming SSE response
         async def event_generator():
             try:
+                full_response = ""
                 async for chunk in ollama.generate_text_stream(
                     messages=messages,
                     temperature=0.7,
                     max_tokens=800,
                 ):
+                    full_response += chunk
                     # SSE format: data: <json>\n\n
                     yield f"data: {json.dumps({'content': chunk})}\n\n"
                 yield f"data: {json.dumps({'done': True})}\n\n"
             except Exception as e:
                 logger.error(f"[Chat] Streaming error: {e}")
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                error_msg = "I'm sorry, I'm having trouble connecting right now. Please try again in a moment."
+                yield f"data: {json.dumps({'content': error_msg})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
 
         return StreamingResponse(
             event_generator(),

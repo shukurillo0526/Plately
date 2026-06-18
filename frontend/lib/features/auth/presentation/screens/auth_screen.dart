@@ -82,8 +82,13 @@ class _AuthScreenState extends State<AuthScreen>
 
           if (mounted) {
             setState(() => _loading = false);
-            // If email confirmation is required, session will be null
-            if (signUpResult.session == null) {
+            // If identities is empty, the email already exists in Supabase.
+            // This means the original sign-in failed due to wrong password,
+            // NOT because the user doesn't exist.
+            if (signUpResult.user?.identities?.isEmpty == true) {
+              setState(() => _error = 'Invalid email or password. Please try again.');
+            } else if (signUpResult.session == null) {
+              // Genuine new sign-up — needs email verification
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(l10n?.auth_checkEmail ?? 'Please check your email to verify your account.'),

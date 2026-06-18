@@ -6,18 +6,18 @@ Supports vision (qwen2.5vl:7b), text generation (qwen3:8b),
 and embeddings (nomic-embed-text).
 
 Architecture:
-  - 16GB VRAM budget (RTX 5070 Ti)
-  - qwen2.5vl:7b (6.0GB) primary vision model — purpose-built for structured JSON from images
-  - qwen3:8b (5.2GB) primary text model — recipe generation, parsing, tips
-  - gemma3:12b (8.1GB) available as multimodal fallback
-  - Embeddings model runs on CPU (~270MB) alongside GPU models
-  - Automatic fallback to cloud Gemini if Ollama is unavailable
+  - 16GB VRAM budget (RTX 5070 Ti) — local dev only
+  - On production (Railway), Ollama is unavailable → auto-fallback to cloud Gemini
+  - Cloud Gemini is the PRIMARY AI for production deployments
+  - Ollama is SECONDARY, used only when running locally with GPU
+  - Cached availability check prevents repeated health probes
 """
 
 import httpx
 import base64
 import json
 import logging
+import time
 from typing import Optional, Dict, List, Any
 
 logger = logging.getLogger("plately.ollama")
@@ -36,21 +36,30 @@ MODEL_REGISTRY = {
 
 
 class OllamaService:
-    """Unified interface to the local Ollama server."""
+    """Unified interface to the local Ollama server with automatic cloud fallback."""
 
     def __init__(self, base_url: str = OLLAMA_BASE_URL, timeout: float = 120.0):
         self.base_url = base_url
         self.timeout = timeout
         self._client = httpx.AsyncClient(timeout=timeout)
         self._available_models: Optional[List[str]] = None
+        # Cached availability — avoid repeated health checks
+        self._available_cache: Optional[bool] = None
+        self._available_cache_time: float = 0
+        self._CACHE_TTL = 60.0  # Re-check every 60 seconds
 
     async def is_available(self) -> bool:
-        """Check if the Ollama server is running."""
+        """Check if the Ollama server is running (cached for 60s)."""
+        now = time.monotonic()
+        if self._available_cache is not None and (now - self._available_cache_time) < self._CACHE_TTL:
+            return self._available_cache
         try:
-            resp = await self._client.get(f"{self.base_url}/api/tags")
-            return resp.status_code == 200
+            resp = await self._client.get(f"{self.base_url}/api/tags", timeout=5.0)
+            self._available_cache = resp.status_code == 200
         except (httpx.ConnectError, httpx.TimeoutException):
-            return False
+            self._available_cache = False
+        self._available_cache_time = now
+        return self._available_cache
 
     async def list_models(self) -> List[str]:
         """Return names of locally available models."""
@@ -89,36 +98,68 @@ class OllamaService:
         """
         Send an image + prompt to a vision model via /api/chat.
         Returns the raw text response.
+        Falls back to cloud AI if Ollama is unavailable.
         """
-        model = model or await self._resolve_model("vision")
-        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        # Check availability first — skip Ollama entirely if down
+        if not await self.is_available():
+            logger.info("[Ollama] Unavailable, using cloud for vision")
+            return await self._cloud_vision_fallback(image_bytes, prompt, temperature, max_tokens)
 
-        messages = []
-        messages.append({
-            "role": "user",
-            "content": prompt,
-            "images": [b64_image],
-        })
+        try:
+            model = model or await self._resolve_model("vision")
+            b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens,
-            },
-        }
+            messages = []
+            messages.append({
+                "role": "user",
+                "content": prompt,
+                "images": [b64_image],
+            })
 
-        logger.info(f"[Ollama] Vision request → {model} (temp={temperature}, max_tok={max_tokens})")
-        resp = await self._client.post(
-            f"{self.base_url}/api/chat",
-            json=payload,
-        )
-        resp.raise_for_status()
-        result = resp.json()
-        msg = result.get("message", {})
-        return self._strip_thinking_tags(msg.get("content", ""))
+            payload = {
+                "model": model,
+                "messages": messages,
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                },
+            }
+
+            logger.info(f"[Ollama] Vision request → {model} (temp={temperature}, max_tok={max_tokens})")
+            resp = await self._client.post(
+                f"{self.base_url}/api/chat",
+                json=payload,
+            )
+            resp.raise_for_status()
+            result = resp.json()
+            msg = result.get("message", {})
+            return self._strip_thinking_tags(msg.get("content", ""))
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            logger.warning(f"[Ollama] Vision failed, trying cloud fallback: {e}")
+            self._available_cache = False  # Invalidate cache
+            return await self._cloud_vision_fallback(image_bytes, prompt, temperature, max_tokens)
+
+    async def _cloud_vision_fallback(
+        self, image_bytes: bytes, prompt: str,
+        temperature: float = 0.2, max_tokens: int = 2048,
+    ) -> str:
+        """Fall back to cloud AI for vision tasks."""
+        try:
+            from app.services.cloud_ai_service import get_cloud_ai_service
+            cloud = get_cloud_ai_service()
+            if cloud.is_configured:
+                logger.info(f"[Ollama] Cloud vision fallback → {cloud.provider}")
+                return await cloud.generate_text(
+                    prompt=prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    image_bytes=image_bytes,
+                    mime_type="image/jpeg",
+                )
+        except Exception as fallback_err:
+            logger.error(f"[Ollama] Cloud vision fallback also failed: {fallback_err}")
+        raise httpx.ConnectError("Both Ollama and cloud AI are unavailable for vision")
 
     async def analyze_image_json(
         self,
@@ -144,9 +185,15 @@ class OllamaService:
         """
         Generate text from a prompt using a local LLM via /api/chat.
         Returns the raw text response.
+        Falls back to cloud AI if Ollama is unavailable.
         """
         # If explicitly asking for a Gemini model, skip local Ollama completely
         if model and model.startswith("gemini-"):
+            return await self._cloud_fallback(prompt, system_prompt, temperature, max_tokens, format, model)
+
+        # Check availability first — skip Ollama entirely if down
+        if not await self.is_available():
+            logger.info("[Ollama] Unavailable, using cloud for text generation")
             return await self._cloud_fallback(prompt, system_prompt, temperature, max_tokens, format, model)
 
         model = model or await self._resolve_model("text")
@@ -181,6 +228,7 @@ class OllamaService:
             return self._strip_thinking_tags(msg.get("content", ""))
         except (httpx.ConnectError, httpx.TimeoutException) as e:
             logger.warning(f"[Ollama] Unavailable, trying cloud fallback: {e}")
+            self._available_cache = False  # Invalidate cache
             return await self._cloud_fallback(prompt, system_prompt, temperature, max_tokens, format, model)
 
     async def _cloud_fallback(
@@ -262,6 +310,7 @@ class OllamaService:
         """
         Stream text generation token-by-token.
         Yields individual text chunks as they arrive from Ollama.
+        Falls back to cloud AI (non-streaming, yielded as single chunk) if Ollama is unavailable.
         
         Args:
             messages: Full chat history [{"role": "user", "content": "..."}]
@@ -272,8 +321,14 @@ class OllamaService:
         Yields:
             str: Individual text chunks
         """
-        model = model or await self._resolve_model("text")
+        # Check availability first — if Ollama is down, use cloud fallback
+        if not await self.is_available():
+            logger.info("[Ollama] Unavailable for streaming, falling back to cloud")
+            async for chunk in self._cloud_stream_fallback(messages, temperature, max_tokens):
+                yield chunk
+            return
 
+        model = model or await self._resolve_model("text")
 
         payload = {
             "model": model,
@@ -287,26 +342,70 @@ class OllamaService:
 
         logger.info(f"[Ollama] Streaming text → {model} ({len(messages)} messages)")
 
-        async with self._client.stream(
-            "POST", f"{self.base_url}/api/chat", json=payload
-        ) as resp:
-            resp.raise_for_status()
-            async for line in resp.aiter_lines():
-                if not line.strip():
-                    continue
-                try:
-                    chunk = json.loads(line)
-                    content = chunk.get("message", {}).get("content", "")
-                    if content:
-                        # Strip thinking tags inline
-                        import re
-                        if "<think>" not in content:
-                            yield content
-                    if chunk.get("done", False):
-                        break
-                except json.JSONDecodeError:
-                    continue
+        try:
+            async with self._client.stream(
+                "POST", f"{self.base_url}/api/chat", json=payload
+            ) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.strip():
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                        content = chunk.get("message", {}).get("content", "")
+                        if content:
+                            # Strip thinking tags inline
+                            import re
+                            if "<think>" not in content:
+                                yield content
+                        if chunk.get("done", False):
+                            break
+                    except json.JSONDecodeError:
+                        continue
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            logger.warning(f"[Ollama] Streaming failed, falling back to cloud: {e}")
+            self._available_cache = False  # Invalidate cache
+            async for chunk in self._cloud_stream_fallback(messages, temperature, max_tokens):
+                yield chunk
 
+    async def _cloud_stream_fallback(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 1024,
+    ):
+        """
+        Cloud fallback for streaming: calls cloud AI non-streaming,
+        then yields the response in word-sized chunks to simulate streaming.
+        """
+        try:
+            from app.services.cloud_ai_service import get_cloud_ai_service
+            cloud = get_cloud_ai_service()
+            if cloud.is_configured:
+                # Extract user message and system prompt from message list
+                system_prompt = None
+                user_prompt = ""
+                for msg in messages:
+                    if msg.get("role") == "system":
+                        system_prompt = msg.get("content", "")
+                    elif msg.get("role") == "user":
+                        user_prompt = msg.get("content", "")
+
+                logger.info(f"[Ollama] Cloud stream fallback → {cloud.provider}")
+                full_response = await cloud.generate_text(
+                    prompt=user_prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                # Yield in word-sized chunks to simulate streaming
+                words = full_response.split(" ")
+                for i, word in enumerate(words):
+                    yield word if i == 0 else f" {word}"
+                return
+        except Exception as e:
+            logger.error(f"[Ollama] Cloud stream fallback failed: {e}")
+            yield "I'm sorry, AI is temporarily unavailable. Please try again later."
 
     # ── Response Processing Helpers ────────────────────────────────
 

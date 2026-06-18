@@ -105,6 +105,7 @@ class _ScanScreenState extends State<ScanScreen>
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
+        requestFullMetadata: false,
       );
       if (image == null) return;
 
@@ -147,6 +148,7 @@ class _ScanScreenState extends State<ScanScreen>
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
+        requestFullMetadata: false,
       );
       if (image == null) return;
 
@@ -1074,14 +1076,19 @@ class _ManualEntryBottomSheetState extends State<_ManualEntryBottomSheet> {
     });
   }
 
+  bool _submitting = false;
+
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      if (_submitting) return; // Prevent double-taps
+      setState(() => _submitting = true);
+
       // Insert via backend API (bypasses RLS)
+      final api = ApiService();
       try {
         final userId = currentUserId();
-        final api = ApiService();
 
         await api.addInventoryItem(
           userId: userId,
@@ -1102,13 +1109,18 @@ class _ManualEntryBottomSheetState extends State<_ManualEntryBottomSheet> {
           ),
         );
       } catch (e) {
+        debugPrint('[ManualEntry] Failed to add item: $e');
         if (!mounted) return;
+        setState(() => _submitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.errorX(e.toString()) ?? 'Error: $e'),
+            content: Text(AppLocalizations.of(context)?.errorX('Failed to add item. Check your connection.') ?? 'Failed to add item. Check your connection.'),
             backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
           ),
         );
+      } finally {
+        api.dispose();
       }
     }
   }
@@ -1504,7 +1516,8 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
   Future<void> _captureAndAnalyze(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
-        source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 85);
+        source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 85,
+        requestFullMetadata: false);
       if (image == null) return;
 
       final bytes = await image.readAsBytes();

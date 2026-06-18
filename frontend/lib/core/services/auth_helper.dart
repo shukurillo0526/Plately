@@ -6,6 +6,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/api_service.dart';
+import 'package:plately_app/core/services/location_service.dart';
 
 /// Returns the current authenticated user's UUID.
 /// Throws if called without an auth session (should never happen
@@ -49,6 +50,7 @@ String? currentUserAvatar() {
 /// Ensures the user's profile rows exist in the database.
 /// Should be called once after sign-in / sign-up.
 /// Idempotent — safe to call multiple times.
+/// Also auto-detects location using LocationService if not already set.
 Future<void> ensureUserInitialized() async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return;
@@ -65,6 +67,36 @@ Future<void> ensureUserInitialized() async {
   } catch (e) {
     debugPrint('ensureUserInitialized failed: $e');
     // Non-fatal — profile screen has fallback handling
+  }
+
+  // Auto-detect location silently (non-blocking)
+  _autoDetectLocation(user.id);
+}
+
+/// Auto-detect and store the user's location if not already set.
+Future<void> _autoDetectLocation(String userId) async {
+  try {
+    final client = Supabase.instance.client;
+    final existing = await client
+        .from('users')
+        .select('location')
+        .eq('id', userId)
+        .maybeSingle();
+
+    // Only set if location is null/empty
+    if (existing != null && (existing['location'] == null || existing['location'] == '')) {
+      // Use LocationService which is already initialized in main()
+      final locationService = LocationService();
+      final city = locationService.locality;
+      if (city.isNotEmpty) {
+        await client.from('users').update({
+          'location': city,
+        }).eq('id', userId);
+        debugPrint('[AuthHelper] Auto-detected location: $city');
+      }
+    }
+  } catch (e) {
+    debugPrint('[AuthHelper] Location auto-detect failed (non-fatal): $e');
   }
 }
 

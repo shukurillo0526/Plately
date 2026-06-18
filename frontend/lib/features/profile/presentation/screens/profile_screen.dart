@@ -37,7 +37,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // User data
   String _userName = 'Chef';
+  String _username = '';
   String _userEmail = '';
+  String _userLocation = '';
   int _totalXp = 0;
   int _level = 1;
 
@@ -155,7 +157,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         // User
         _userName = userData?['display_name'] ?? 'Chef';
+        _username = userData?['username'] ?? '';
         _userEmail = client.auth.currentUser?.email ?? '';
+        _userLocation = userData?['location'] ?? '';
 
         // Gamification
         _totalXp = (statsData?['xp_points'] as int?) ?? 0;
@@ -376,6 +380,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 12,
                           ),
                         ),
+                      if (_username.isNotEmpty) ...[
+                        SizedBox(height: 2),
+                        Text(
+                          '@$_username',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 4),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),

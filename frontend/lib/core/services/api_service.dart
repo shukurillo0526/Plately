@@ -1,12 +1,12 @@
 // Plately — API Service
 // ======================
 // Shared HTTP client for all Flutter ↔ backend communication.
-// Auto-detects environment: localhost → local backend, GitHub Pages → Railway.
+// Auto-detects environment: localhost → local backend, GitHub Pages / Play Store → Railway.
 
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -15,8 +15,11 @@ class ApiConfig {
       'https://merry-motivation-production-3529.up.railway.app';
 
   /// Automatically picks the right backend URL based on where the app is running.
-  /// - `flutter run -d Chrome` → localhost:8000 (local Ollama AI)
-  /// - GitHub Pages (*.github.io) → Railway production backend
+  /// - Web: GitHub Pages (*.github.io) → Railway production backend
+  /// - Web: localhost → local backend (dev)
+  /// - Mobile release (Play Store) → Railway production backend
+  /// - Mobile debug (emulator) → localhost via 10.0.2.2
+  /// - Desktop → localhost
   static String get baseUrl {
     if (kIsWeb) {
       final host = Uri.base.host;
@@ -24,17 +27,24 @@ class ApiConfig {
       if (host != 'localhost' && host != '127.0.0.1') {
         return _productionUrl;
       }
+      return 'http://localhost:8000';
     }
-    // Local development (flutter run, desktop, emulator)
+    // Mobile: release builds (Play Store) always use production
     if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
+      return kReleaseMode ? _productionUrl : 'http://10.0.2.2:8000';
     }
+    // iOS release also uses production
+    if (!kIsWeb && Platform.isIOS) {
+      return kReleaseMode ? _productionUrl : 'http://localhost:8000';
+    }
+    // Desktop (Windows/macOS/Linux) — local dev
     return 'http://localhost:8000';
   }
 
   /// True when connecting to the local backend (Ollama AI available).
   static bool get isLocal => baseUrl.contains('localhost') || baseUrl.contains('10.0.2.2');
 }
+
 
 class ApiService {
   final http.Client _client;
