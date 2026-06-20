@@ -135,6 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       // Upsert user profile with dietary preferences
       await client.from('users').upsert({
         'id': userId,
+        'email': client.auth.currentUser?.email ?? '${userId}@anon.plately.local',
         'display_name': displayName,
         'username': username,
         'dietary_preferences': _selectedDiets.toList(),
