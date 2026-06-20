@@ -398,29 +398,33 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
         .toList();
 
     if (allZoneItems.isEmpty) {
-      return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
+      return RefreshIndicator(
+        onRefresh: _loadInventory,
+        color: Theme.of(context).colorScheme.primary,
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: EmptyStateIllustration(
-                  emoji: _zoneEmoji(zone),
-                  title: AppLocalizations.of(context)?.zoneEmptyTitle(_getLocalizedZone(zone)) ?? 'Your ${_getLocalizedZone(zone)} is Empty',
-                  description:
-                      AppLocalizations.of(context)?.zoneEmptyDesc ?? 'Ready to fill up your digital kitchen.\nAdd items manually or tap scan.',
-                  actionLabel: AppLocalizations.of(context)?.addIngredient ?? 'Add Ingredient',
-                  onAction: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ScanScreen()),
-                    );
-                  },
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: EmptyStateIllustration(
+                    emoji: _zoneEmoji(zone),
+                    title: AppLocalizations.of(context)?.zoneEmptyTitle(_getLocalizedZone(zone)) ?? 'Your ${_getLocalizedZone(zone)} is Empty',
+                    description:
+                        AppLocalizations.of(context)?.zoneEmptyDesc ?? 'Ready to fill up your digital kitchen.\nAdd items manually or tap scan.',
+                    actionLabel: AppLocalizations.of(context)?.addIngredient ?? 'Add Ingredient',
+                    onAction: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ScanScreen()),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       );
     }

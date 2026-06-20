@@ -1096,7 +1096,7 @@ class _ManualEntryBottomSheetState extends State<_ManualEntryBottomSheet> {
           category: _category,
           quantity: _quantity,
           unit: _unit,
-          location: _location,
+          location: _location.toLowerCase(),
           expiryDate: _expiryDate.toIso8601String(),
         );
 

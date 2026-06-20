@@ -874,6 +874,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: () => _showThemePicker(),
                         ),
                         _SettingsRow(
+                          icon: Icons.school_outlined,
+                          label: 'Replay Tutorial',
+                          trailing: Icon(Icons.refresh, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                          onTap: () async {
+                            await TutorialService().reset(TutorialService.homeWalkthrough);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Tutorial will show on next app restart.'),
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        _SettingsRow(
                           icon: Icons.info_outline,
                             label: AppLocalizations.of(context)?.aboutApp ?? 'About Plately',
                           onTap: () {

@@ -63,6 +63,9 @@ void main() async {
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
   await AppSettings().init();
   await LocationService().init();
@@ -327,27 +330,33 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     setState(() {});
   }
 
-  /// Show the home walkthrough tutorial for first-time users.
+  /// Show the interactive home walkthrough tutorial for first-time users.
+  /// This version navigates to each tab during the tutorial to give context.
   void _showHomeTutorialIfNeeded() {
     final l10n = AppLocalizations.of(context);
 
     TutorialOverlay.show(
       context: context,
       tutorialId: TutorialService.homeWalkthrough,
+      onTabSwitch: (tabIndex) {
+        if (mounted) {
+          setState(() => _currentIndex = tabIndex);
+        }
+      },
       steps: [
         TutorialStep(
-          emoji: '🍽️',
-          title: l10n?.tutorial_cookTitle ?? 'Your Recipes',
-          description: l10n?.tutorial_cookDesc ??
-              'Browse AI-matched recipes based on what\'s in your fridge. The higher the match %, the more ingredients you already have!',
+          emoji: '👋',
+          title: l10n?.tutorial_cookTitle ?? 'Welcome to Plately!',
+          description: 'Let\'s take a quick tour of your AI kitchen assistant. It only takes 30 seconds!',
           tooltipPosition: TooltipPosition.center,
         ),
         TutorialStep(
-          emoji: '📸',
-          title: l10n?.tutorial_scanTitle ?? 'Scan Ingredients',
-          description: l10n?.tutorial_scanDesc ??
-              'Use your camera to scan receipts, barcodes, or snap a photo of ingredients. Our AI will identify them instantly.',
+          emoji: '🍽️',
+          title: 'Cook — Your Recipes',
+          description: l10n?.tutorial_cookDesc ??
+              'Browse AI-matched recipes based on what\'s in your fridge. The higher the match %, the more ingredients you already have!',
           tooltipPosition: TooltipPosition.center,
+          targetTabIndex: 0,
         ),
         TutorialStep(
           emoji: '📦',
@@ -355,13 +364,22 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
           description: l10n?.tutorial_shelfDesc ??
               'Your digital fridge, freezer, and pantry. Track expiry dates and quantities — we\'ll warn you before food goes bad.',
           tooltipPosition: TooltipPosition.center,
+          targetTabIndex: 2,
         ),
         TutorialStep(
-          emoji: '👤',
-          title: l10n?.tutorial_profileTitle ?? 'Profile & Settings',
-          description: l10n?.tutorial_profileDesc ??
-              'Tap the profile icon to change language, theme, manage your flavor profile, and track cooking streaks!',
+          emoji: '📸',
+          title: l10n?.tutorial_scanTitle ?? 'Scan or Add Ingredients',
+          description: l10n?.tutorial_scanDesc ??
+              'Use your camera to scan receipts, barcodes, or snap a photo of ingredients. You can also add items manually!',
           tooltipPosition: TooltipPosition.center,
+          targetTabIndex: 1,
+        ),
+        TutorialStep(
+          emoji: '🚀',
+          title: 'You\'re All Set!',
+          description: 'Start by adding some ingredients to your shelf — then watch the recipes appear automatically. Happy cooking! 🎉',
+          tooltipPosition: TooltipPosition.center,
+          targetTabIndex: 0,
         ),
       ],
     );

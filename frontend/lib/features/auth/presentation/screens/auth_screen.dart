@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
@@ -26,6 +27,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   bool _loading = false;
   String? _error;
+  bool _obscurePassword = true;
   late AnimationController _pulseController;
 
   @override
@@ -86,7 +88,8 @@ class _AuthScreenState extends State<AuthScreen>
             // This means the original sign-in failed due to wrong password,
             // NOT because the user doesn't exist.
             if (signUpResult.user?.identities?.isEmpty == true) {
-              setState(() => _error = 'Invalid email or password. Please try again.');
+              // Email exists but password was wrong — clear error message
+              setState(() => _error = 'Incorrect password. Please try again or reset your password.');
             } else if (signUpResult.session == null) {
               // Genuine new sign-up — needs email verification
               ScaffoldMessenger.of(context).showSnackBar(
@@ -127,27 +130,78 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+    final l10n = AppLocalizations.of(context);
+    if (email.isEmpty) {
+      setState(() => _error = l10n?.auth_enterBoth ?? 'Please enter your email address first.');
+      return;
+    }
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n?.auth_resetSent ?? 'Password reset email sent. Check your inbox.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Failed to send reset email. Please try again.');
+      }
+    }
+  }
+
   Future<void> _signInWithGoogle() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      // On web: redirect back to wherever the app is actually running.
-      // On mobile: use deep link scheme.
-      final redirectUrl = kIsWeb
-          ? Uri.base.toString().replaceAll(RegExp(r'[#?].*'), '')  // preserve /Plately/ base path
-          : 'io.supabase.flutter://login-callback';
+      if (kIsWeb) {
+        // Web: Use OAuth redirect (existing behavior)
+        final redirectUrl = Uri.base.toString().replaceAll(RegExp(r'[#?].*'), '');
+        await Supabase.instance.client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: redirectUrl,
+        );
+      } else {
+        // Mobile: Use native Google Sign-In for reliability
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          serverClientId: '194605188460-5dd926tsovdm29mc23enqqdupbnkcaf7.apps.googleusercontent.com',
+        );
+        final googleUser = await googleSignIn.signIn();
+        if (googleUser == null) {
+          // User cancelled
+          if (mounted) setState(() => _loading = false);
+          return;
+        }
+        final googleAuth = await googleUser.authentication;
+        final idToken = googleAuth.idToken;
+        final accessToken = googleAuth.accessToken;
 
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectUrl,
-      );
+        if (idToken == null) {
+          throw Exception('No ID token received from Google.');
+        }
+
+        await Supabase.instance.client.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+
+        // Initialize profile
+        await ensureUserInitialized();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
           final l10n = AppLocalizations.of(context);
-          _error = l10n?.auth_googleFailed ?? 'Google sign‑in failed. Please try again.';
+          _error = l10n?.auth_googleFailed ?? 'Google sign\u2011in failed. Please try again.';
           _loading = false;
         });
       }
@@ -400,7 +454,15 @@ class _AuthScreenState extends State<AuthScreen>
                       controller: _passwordController,
                       hintText: l10n?.auth_password ?? 'Password',
                       icon: Icons.lock_outline,
-                      obscureText: true,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          size: 22,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
                     ),
 
                     const SizedBox(height: 12),
@@ -413,6 +475,21 @@ class _AuthScreenState extends State<AuthScreen>
                         fontSize: 12,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _resetPassword,
+                        child: Text(
+                          l10n?.auth_forgotPassword ?? 'Forgot Password?',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -584,6 +661,7 @@ class _TextField extends StatelessWidget {
   final IconData icon;
   final bool obscureText;
   final TextInputType keyboardType;
+  final Widget? suffixIcon;
 
   const _TextField({
     required this.controller,
@@ -591,6 +669,7 @@ class _TextField extends StatelessWidget {
     required this.icon,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
+    this.suffixIcon,
   });
 
   @override
@@ -610,6 +689,7 @@ class _TextField extends StatelessWidget {
           hintText: hintText,
           hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
           prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 22),
+          suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),

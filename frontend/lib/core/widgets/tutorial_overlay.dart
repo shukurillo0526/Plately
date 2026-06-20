@@ -25,12 +25,16 @@ class TutorialStep {
   /// Target area to spotlight (null = center of screen, no spotlight).
   final Rect? targetRect;
 
+  /// Tab index to switch to before showing this step (null = stay on current tab).
+  final int? targetTabIndex;
+
   const TutorialStep({
     required this.title,
     required this.description,
     this.emoji = '💡',
     this.tooltipPosition = TooltipPosition.below,
     this.targetRect,
+    this.targetTabIndex,
   });
 }
 
@@ -49,26 +53,33 @@ class TutorialOverlay extends StatefulWidget {
   final List<TutorialStep> steps;
   final String tutorialId;
   final VoidCallback onComplete;
+  final void Function(int tabIndex)? onTabSwitch;
 
   const TutorialOverlay({
     super.key,
     required this.steps,
     required this.tutorialId,
     required this.onComplete,
+    this.onTabSwitch,
   });
 
   /// Show the tutorial if it hasn't been completed yet.
-  /// Returns true if the tutorial was shown, false if already completed.
   static Future<bool> show({
     required BuildContext context,
     required String tutorialId,
     required List<TutorialStep> steps,
+    void Function(int tabIndex)? onTabSwitch,
   }) async {
     final service = TutorialService();
     final completed = await service.isCompleted(tutorialId);
     if (completed) return false;
 
     if (!context.mounted) return false;
+
+    // Switch to the first step's tab if specified
+    if (steps.isNotEmpty && steps.first.targetTabIndex != null && onTabSwitch != null) {
+      onTabSwitch(steps.first.targetTabIndex!);
+    }
 
     await Navigator.of(context).push(
       PageRouteBuilder(
@@ -77,6 +88,7 @@ class TutorialOverlay extends StatefulWidget {
         pageBuilder: (ctx, anim, secondAnim) => TutorialOverlay(
           steps: steps,
           tutorialId: tutorialId,
+          onTabSwitch: onTabSwitch,
           onComplete: () {
             service.markCompleted(tutorialId);
             Navigator.of(ctx).pop();
@@ -129,6 +141,11 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     if (_currentStep < widget.steps.length - 1) {
       _animController.reset();
       setState(() => _currentStep++);
+      // Switch tab if the step has a target
+      final step = widget.steps[_currentStep];
+      if (step.targetTabIndex != null && widget.onTabSwitch != null) {
+        widget.onTabSwitch!(step.targetTabIndex!);
+      }
       _animController.forward();
     } else {
       widget.onComplete();

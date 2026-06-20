@@ -30,6 +30,32 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool _savingProfile = false;
   String? _usernameError;
 
+  // Dietary preferences
+  final Set<String> _selectedDiets = {};
+  final Set<String> _selectedAllergies = {};
+
+  static const _dietOptions = [
+    ('🥗', 'None'),
+    ('🌱', 'Vegetarian'),
+    ('🌿', 'Vegan'),
+    ('☪️', 'Halal'),
+    ('✡️', 'Kosher'),
+    ('🥩', 'Keto'),
+    ('🚫🌾', 'Gluten-Free'),
+    ('🥚', 'Paleo'),
+  ];
+
+  static const _allergyOptions = [
+    ('🥜', 'Nuts'),
+    ('🥛', 'Dairy'),
+    ('🦐', 'Shellfish'),
+    ('🥚', 'Eggs'),
+    ('🫘', 'Soy'),
+    ('🌾', 'Gluten'),
+    ('🐟', 'Fish'),
+    ('🫑', 'Sesame'),
+  ];
+
   static final _infoPages = [
     _OnboardingPage(
       icon: Icons.kitchen,
@@ -57,8 +83,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
   ];
 
-  // Total pages = info pages + 1 profile page
-  int get _totalPages => _infoPages.length + 1;
+  // Total pages = info pages + profile page + preferences page
+  int get _totalPages => _infoPages.length + 2;
 
   @override
   void initState() {
@@ -106,11 +132,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         return;
       }
 
-      // Upsert user profile
+      // Upsert user profile with dietary preferences
       await client.from('users').upsert({
         'id': userId,
         'display_name': displayName,
         'username': username,
+        'dietary_preferences': _selectedDiets.toList(),
+        'allergies': _selectedAllergies.toList(),
       }, onConflict: 'id');
 
       // Complete onboarding
@@ -149,7 +177,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               if (index < _infoPages.length) {
                 return _buildPage(_infoPages[index], index);
               }
-              return _buildProfileSetupPage();
+              if (index == _infoPages.length) {
+                return _buildProfileSetupPage();
+              }
+              return _buildPreferencesPage();
             },
           ),
 
@@ -375,34 +406,32 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
                 SizedBox(height: 40),
 
-                // Get Started button
+                // Next button (goes to preferences page)
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed: _savingProfile ? null : _saveProfile,
+                    onPressed: () {
+                      if (!_profileFormKey.currentState!.validate()) return;
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOutCubic,
+                      );
+                    },
                     style: FilledButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: _savingProfile
-                        ? SizedBox(
-                            width: 24, height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          )
-                        : Text(
-                            'Get Started 🚀',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
+                    child: Text(
+                      'Next →',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 16),
@@ -428,6 +457,239 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 SizedBox(height: 60),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreferencesPage() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.teal.shade900.withValues(alpha: 0.3),
+            Theme.of(context).scaffoldBackgroundColor,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 60),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 800),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: child,
+                ),
+                child: Text('🍽️', style: TextStyle(fontSize: 80)),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Personalize Your Kitchen',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Help us recommend better recipes for you',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 15,
+                ),
+              ),
+              SizedBox(height: 36),
+
+              // Dietary preferences
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Dietary Preferences',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select all that apply (optional)',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _dietOptions.map((option) {
+                  final selected = _selectedDiets.contains(option.$2);
+                  return FilterChip(
+                    label: Text('${option.$1} ${option.$2}'),
+                    selected: selected,
+                    onSelected: (v) => setState(() {
+                      if (option.$2 == 'None') {
+                        _selectedDiets.clear();
+                        if (v) _selectedDiets.add('None');
+                      } else {
+                        _selectedDiets.remove('None');
+                        v ? _selectedDiets.add(option.$2) : _selectedDiets.remove(option.$2);
+                      }
+                    }),
+                    selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                    checkmarkColor: Theme.of(context).colorScheme.primary,
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    side: BorderSide(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  );
+                }).toList(),
+              ),
+
+              SizedBox(height: 28),
+
+              // Allergies
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Allergies & Intolerances',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'We\'ll flag recipes with these ingredients',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _allergyOptions.map((option) {
+                  final selected = _selectedAllergies.contains(option.$2);
+                  return FilterChip(
+                    label: Text('${option.$1} ${option.$2}'),
+                    selected: selected,
+                    onSelected: (v) => setState(() {
+                      v ? _selectedAllergies.add(option.$2) : _selectedAllergies.remove(option.$2);
+                    }),
+                    selectedColor: Colors.redAccent.withValues(alpha: 0.15),
+                    checkmarkColor: Colors.redAccent,
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? Colors.redAccent
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    side: BorderSide(
+                      color: selected
+                          ? Colors.redAccent
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  );
+                }).toList(),
+              ),
+
+              SizedBox(height: 40),
+
+              // Get Started button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _savingProfile ? null : _saveProfile,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _savingProfile
+                      ? SizedBox(
+                          width: 24, height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        )
+                      : Text(
+                          'Get Started 🚀',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                ),
+              ),
+              SizedBox(height: 8),
+              TextButton(
+                onPressed: _savingProfile ? null : _saveProfile,
+                child: Text(
+                  'Skip for now',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              // Page dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  _totalPages,
+                  (i) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentPage == i ? 32 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _currentPage == i
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 40),
+            ],
           ),
         ),
       ),

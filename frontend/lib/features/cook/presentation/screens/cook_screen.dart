@@ -4,6 +4,7 @@
 // Queries recipes + recipe_ingredients from Supabase, compares against the
 // user's inventory, and computes a match score.
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -43,11 +44,11 @@ class _CookScreenState extends State<CookScreen>
   String? _cuisineFilter;
 
   List<({String label, IconData icon, String key})> _getTierMeta(BuildContext context) => [
+    (label: AppLocalizations.of(context)?.tierExplore ?? 'Explore', icon: Icons.explore, key: '5'),
     (label: AppLocalizations.of(context)?.tierPerfect ?? 'Perfect', icon: Icons.verified, key: '1'),
     (label: AppLocalizations.of(context)?.tierForYou ?? 'For You', icon: Icons.auto_awesome, key: '2'),
     (label: AppLocalizations.of(context)?.tierUseItUp ?? 'Use It Up', icon: Icons.timer, key: '3'),
     (label: AppLocalizations.of(context)?.tierAlmost ?? 'Almost', icon: Icons.shopping_cart_outlined, key: '4'),
-    (label: AppLocalizations.of(context)?.tierExplore ?? 'Explore', icon: Icons.explore, key: '5'),
   ];
 
   @override
@@ -106,7 +107,7 @@ class _CookScreenState extends State<CookScreen>
           userId: currentUserId(),
           maxPerTier: 10,
           cuisineFilter: _cuisineFilter,
-        );
+        ).timeout(const Duration(seconds: 3));
 
         final data = serverResult['data'] as Map<String, dynamic>?;
         if (data != null && data['tiers'] != null) {
@@ -146,7 +147,10 @@ class _CookScreenState extends State<CookScreen>
             _loading = false;
           });
           useServerScoring = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _autoNavigateToBestTier());
         }
+      } on TimeoutException {
+        debugPrint('[Cook] Server scoring timed out, falling back to client');
       } catch (e) {
         debugPrint('[Cook] Server scoring unavailable, falling back to client: $e');
       }
@@ -329,6 +333,9 @@ class _CookScreenState extends State<CookScreen>
         _loading = false;
       });
 
+      // Auto-navigate to the first non-empty tier
+      WidgetsBinding.instance.addPostFrameCallback((_) => _autoNavigateToBestTier());
+
       // Trigger batch title translation for non-English users
       if (currentLang != 'en') {
         _batchTranslateTitles(currentLang);
@@ -338,6 +345,20 @@ class _CookScreenState extends State<CookScreen>
         _error = e.toString();
         _loading = false;
       });
+    }
+  }
+
+  /// Auto-navigate to the first non-empty tier in display order.
+  void _autoNavigateToBestTier() {
+    final displayOrder = _getTierMeta(context);
+    for (int i = 0; i < displayOrder.length; i++) {
+      final key = displayOrder[i].key;
+      if ((_tiers[key] ?? []).isNotEmpty) {
+        if (_tabController.index != i) {
+          _tabController.animateTo(i);
+        }
+        return;
+      }
     }
   }
 
