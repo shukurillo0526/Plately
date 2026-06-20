@@ -28,6 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final _usernameController = TextEditingController();
   final _profileFormKey = GlobalKey<FormState>();
   bool _savingProfile = false;
+  bool _checkingUsername = false;
   String? _usernameError;
 
   // Dietary preferences
@@ -106,8 +107,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Future<void> _saveProfile() async {
-    if (!_profileFormKey.currentState!.validate()) return;
-
     setState(() => _savingProfile = true);
 
     try {
@@ -115,22 +114,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       final userId = currentUserId();
       final displayName = _nameController.text.trim();
       final username = _usernameController.text.trim().toLowerCase();
-
-      // Check username uniqueness
-      final existing = await client
-          .from('users')
-          .select('id')
-          .eq('username', username)
-          .neq('id', userId)
-          .maybeSingle();
-
-      if (existing != null) {
-        setState(() {
-          _usernameError = 'Username already taken. Try another one.';
-          _savingProfile = false;
-        });
-        return;
-      }
 
       // Upsert user profile with dietary preferences
       await client.from('users').upsert({
@@ -412,12 +395,45 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed: () {
+                    onPressed: _checkingUsername ? null : () async {
                       if (!_profileFormKey.currentState!.validate()) return;
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeInOutCubic,
-                      );
+                      
+                      setState(() {
+                        _checkingUsername = true;
+                        _usernameError = null;
+                      });
+                      
+                      try {
+                        final client = Supabase.instance.client;
+                        final userId = currentUserId();
+                        final username = _usernameController.text.trim().toLowerCase();
+                        
+                        final existing = await client
+                            .from('users')
+                            .select('id')
+                            .eq('username', username)
+                            .neq('id', userId)
+                            .maybeSingle();
+                            
+                        if (existing != null) {
+                          setState(() {
+                            _usernameError = 'Username already taken. Try another one.';
+                            _checkingUsername = false;
+                          });
+                          return;
+                        }
+                        
+                        setState(() => _checkingUsername = false);
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOutCubic,
+                        );
+                      } catch (e) {
+                        setState(() {
+                          _usernameError = 'Error checking username. Please try again.';
+                          _checkingUsername = false;
+                        });
+                      }
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -425,14 +441,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Text(
-                      'Next →',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
+                    child: _checkingUsername
+                        ? SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          )
+                        : Text(
+                            'Next →',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                   ),
                 ),
                 SizedBox(height: 16),
