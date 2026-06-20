@@ -1004,6 +1004,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get auth_guestFailed => '게스트 로그인에 실패했습니다. 이메일이나 Google을 사용해 보세요.';
 
   @override
+  String get auth_resetSent => '비밀번호 재설정 이메일이 발송되었습니다. 받은 편지함을 확인하세요.';
+
+  @override
+  String get auth_forgotPassword => '비밀번호를 잊으셨나요?';
+
+  @override
   String get import_recipe => '레시피 가져오기';
 
   @override

@@ -1928,6 +1928,18 @@ abstract class AppLocalizations {
   /// **'Guest sign‑in failed. Please try email or Google instead.'**
   String get auth_guestFailed;
 
+  /// No description provided for @auth_resetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent. Check your inbox.'**
+  String get auth_resetSent;
+
+  /// No description provided for @auth_forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get auth_forgotPassword;
+
   /// No description provided for @import_recipe.
   ///
   /// In en, this message translates to:

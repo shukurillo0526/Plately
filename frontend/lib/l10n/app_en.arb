@@ -599,6 +599,9 @@
     "auth_unexpectedError": "An unexpected error occurred. Please try again.",
     "auth_googleFailed": "Google sign‑in failed. Please try again.",
     "auth_guestFailed": "Guest sign‑in failed. Please try email or Google instead.",
+    "auth_resetSent": "Password reset email sent. Check your inbox.",
+    "auth_forgotPassword": "Forgot Password?",
+
 
     "import_recipe": "Import Recipe",
     "import_pasteRaw": "Paste Raw Recipe",

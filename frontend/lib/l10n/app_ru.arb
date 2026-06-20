@@ -408,6 +408,9 @@
     "auth_unexpectedError": "Произошла непредвиденная ошибка. Попробуйте ещё раз.",
     "auth_googleFailed": "Вход через Google не удался. Попробуйте ещё раз.",
     "auth_guestFailed": "Гостевой вход не удался. Попробуйте email или Google.",
+    "auth_resetSent": "Ссылка для сброса пароля отправлена на email. Проверьте почту.",
+    "auth_forgotPassword": "Забыли пароль?",
+
 
     "import_recipe": "Импорт рецепта",
     "import_pasteRaw": "Вставьте текст рецепта",

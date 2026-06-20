@@ -358,6 +358,9 @@
     "auth_unexpectedError": "예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.",
     "auth_googleFailed": "Google 로그인에 실패했습니다. 다시 시도해 주세요.",
     "auth_guestFailed": "게스트 로그인에 실패했습니다. 이메일이나 Google을 사용해 보세요.",
+    "auth_resetSent": "비밀번호 재설정 이메일이 발송되었습니다. 받은 편지함을 확인하세요.",
+    "auth_forgotPassword": "비밀번호를 잊으셨나요?",
+
 
     "import_recipe": "레시피 가져오기",
     "import_pasteRaw": "레시피 텍스트 붙여넣기",

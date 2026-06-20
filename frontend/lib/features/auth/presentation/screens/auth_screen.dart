@@ -171,10 +171,11 @@ class _AuthScreenState extends State<AuthScreen>
         );
       } else {
         // Mobile: Use native Google Sign-In for reliability
-        final GoogleSignIn googleSignIn = GoogleSignIn(
+        final googleSignIn = GoogleSignIn.instance;
+        await googleSignIn.initialize(
           serverClientId: '194605188460-5dd926tsovdm29mc23enqqdupbnkcaf7.apps.googleusercontent.com',
         );
-        final googleUser = await googleSignIn.signIn();
+        final googleUser = await googleSignIn.authenticate();
         if (googleUser == null) {
           // User cancelled
           if (mounted) setState(() => _loading = false);
@@ -182,7 +183,6 @@ class _AuthScreenState extends State<AuthScreen>
         }
         final googleAuth = await googleUser.authentication;
         final idToken = googleAuth.idToken;
-        final accessToken = googleAuth.accessToken;
 
         if (idToken == null) {
           throw Exception('No ID token received from Google.');
@@ -191,7 +191,6 @@ class _AuthScreenState extends State<AuthScreen>
         await Supabase.instance.client.auth.signInWithIdToken(
           provider: OAuthProvider.google,
           idToken: idToken,
-          accessToken: accessToken,
         );
 
         // Initialize profile

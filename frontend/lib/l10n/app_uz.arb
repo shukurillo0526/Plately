@@ -406,6 +406,9 @@
     "auth_unexpectedError": "Kutilmagan xatolik yuz berdi. Qayta urinib ko'ring.",
     "auth_googleFailed": "Google orqali kirish amalga oshmadi. Qayta urinib ko'ring.",
     "auth_guestFailed": "Mehmon sifatida kirish amalga oshmadi. Email yoki Google orqali urinib ko'ring.",
+    "auth_resetSent": "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
+    "auth_forgotPassword": "Parolni unutdingizmi?",
+
 
     "import_recipe": "Retsept import qilish",
     "import_pasteRaw": "Retsept matnini joylashtiring",

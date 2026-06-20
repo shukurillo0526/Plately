@@ -1022,6 +1022,13 @@ class AppLocalizationsUz extends AppLocalizations {
       'Mehmon sifatida kirish amalga oshmadi. Email yoki Google orqali urinib ko\'ring.';
 
   @override
+  String get auth_resetSent =>
+      'Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.';
+
+  @override
+  String get auth_forgotPassword => 'Parolni unutdingizmi?';
+
+  @override
   String get import_recipe => 'Retsept import qilish';
 
   @override

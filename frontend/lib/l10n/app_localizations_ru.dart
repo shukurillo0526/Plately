@@ -1018,6 +1018,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Гостевой вход не удался. Попробуйте email или Google.';
 
   @override
+  String get auth_resetSent =>
+      'Ссылка для сброса пароля отправлена на email. Проверьте почту.';
+
+  @override
+  String get auth_forgotPassword => 'Забыли пароль?';
+
+  @override
   String get import_recipe => 'Импорт рецепта';
 
   @override

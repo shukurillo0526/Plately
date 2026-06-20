@@ -1014,6 +1014,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Guest sign‑in failed. Please try email or Google instead.';
 
   @override
+  String get auth_resetSent => 'Password reset email sent. Check your inbox.';
+
+  @override
+  String get auth_forgotPassword => 'Forgot Password?';
+
+  @override
   String get import_recipe => 'Import Recipe';
 
   @override
