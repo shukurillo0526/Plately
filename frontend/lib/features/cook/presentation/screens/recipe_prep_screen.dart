@@ -6,6 +6,7 @@
 // and serving size scaler with proper math.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/core/services/api_service.dart';
@@ -14,8 +15,9 @@ import 'package:plately_app/core/utils/unit_converter.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/core/utils/ingredient_icons.dart';
 import 'package:plately_app/features/cook/presentation/screens/cooking_run_screen.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class RecipePrepScreen extends StatefulWidget {
+class RecipePrepScreen extends ConsumerStatefulWidget {
   final String recipeId;
   final String title;
   final int originalServings;
@@ -42,10 +44,10 @@ class RecipePrepScreen extends StatefulWidget {
   });
 
   @override
-  State<RecipePrepScreen> createState() => _RecipePrepScreenState();
+  ConsumerState<RecipePrepScreen> createState() => _RecipePrepScreenState();
 }
 
-class _RecipePrepScreenState extends State<RecipePrepScreen> {
+class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
   late int _servings;
   final ApiService _api = ApiService();
 
@@ -150,6 +152,26 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
 
     setState(() => _loadingSub[index] = true);
 
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      String mockSub = 'No substitutions found.';
+      if (name.toLowerCase().contains('chicken')) {
+        mockSub = '• Tofu (1:1 ratio) — Great vegetarian alternative. Make sure to press out excess water first.\n• Pork Loin (1:1 ratio) — Slice thinly and cook until done.';
+      } else if (name.toLowerCase().contains('broccoli')) {
+        mockSub = '• Cauliflower (1:1 ratio) — Similar texture and cook time.\n• Sugar Snap Peas (1:1 ratio) — Sweeter and crunchier; toss in near the end.';
+      } else if (name.toLowerCase().contains('soy')) {
+        mockSub = '• Tamari (1:1 ratio) — Gluten-free and slightly richer.\n• Coconut Aminos (1:1 ratio) — Soy-free, lower sodium, slightly sweeter.';
+      } else if (name.toLowerCase().contains('garlic')) {
+        mockSub = '• Garlic Powder (1/4 tsp per clove) — Good pantry substitute.\n• Shallot (1 tbsp minced) — Milder, sweeter onion profile.';
+      } else if (name.toLowerCase().contains('sesame')) {
+        mockSub = '• Toasted Sesame Seeds & Neutral Oil (1:1 ratio) — Mimics toasted nutty flavor.\n• Peanut Oil (1:1 ratio) — High smoke point, neutral taste.';
+      }
+      setState(() {
+        _substitutions[index] = mockSub;
+        _loadingSub[index] = false;
+      });
+      return;
+    }
+
     // Build full inventory context so AI knows what user has available
     String fullInventoryText = 'User has: ';
     try {
@@ -204,6 +226,25 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
   Future<void> _askAiChat() async {
     if (_aiQuestion.trim().isEmpty || _aiLoading) return;
     setState(() => _aiLoading = true);
+
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      final q = _aiQuestion.toLowerCase();
+      String response = "For this Chicken Stir-fry, make sure to cut the chicken and broccoli into uniform sizes for even cooking. Heat the wok until hot before adding oil!";
+      if (q.contains('oil') || q.contains('peanut') || q.contains('sesame')) {
+        response = "You can use peanut oil or canola oil instead of sesame oil. Peanut oil handles high heat very well, though sesame oil gives that signature toasted aroma.";
+      } else if (q.contains('tofu') || q.contains('vegetarian') || q.contains('vegan')) {
+        response = "Yes! To make this vegetarian, substitute the chicken with extra-firm tofu. Press the tofu first to drain moisture, cube it, and pan-fry until golden.";
+      } else if (q.contains('broccoli') || q.contains('vegetable') || q.contains('carrot')) {
+        response = "You can add other veggies like carrots, bell peppers, or snap peas to this stir-fry. Just slice them thinly so they cook quickly!";
+      } else if (q.contains('salt') || q.contains('soy') || q.contains('salty')) {
+        response = "Soy sauce is naturally salty. If you are watching your sodium, low-sodium soy sauce or tamari works perfectly.";
+      }
+      setState(() {
+        _aiResponse = response;
+        _aiLoading = false;
+      });
+      return;
+    }
 
     try {
       final locale = Localizations.localeOf(context).languageCode;
@@ -266,6 +307,9 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
   }
 
   Future<String> _buildUserInventoryText() async {
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      return 'Recipe ingredients context: Chicken Breast, Broccoli, Soy Sauce, Garlic, Sesame Oil\n\nENTIRE INVENTORY: Chicken Breast, Broccoli, Soy Sauce, Garlic, Sesame Oil';
+    }
     final recipeIngs = widget.ingredients.map((ing) {
       final name = ing['translated_name'] ?? ing['name'] ?? 'Unknown';
       final ingId = ing['ingredient_id'] ?? ing['id'] ?? ing['name'] ?? '';
@@ -305,6 +349,10 @@ class _RecipePrepScreenState extends State<RecipePrepScreen> {
 
   Future<void> _startCooking() async {
     final inventoryText = await _buildUserInventoryText();
+    
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.cookingRun);
+    }
     
     if (!mounted) return;
     Navigator.pushReplacement(

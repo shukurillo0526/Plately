@@ -18,15 +18,17 @@ import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class LivingShelfScreen extends StatefulWidget {
+class LivingShelfScreen extends ConsumerStatefulWidget {
   const LivingShelfScreen({super.key});
 
   @override
-  State<LivingShelfScreen> createState() => _LivingShelfScreenState();
+  ConsumerState<LivingShelfScreen> createState() => _LivingShelfScreenState();
 }
 
-class _LivingShelfScreenState extends State<LivingShelfScreen>
+class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<String> _zones = ['Fridge', 'Freezer', 'Pantry'];
@@ -35,6 +37,123 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
   bool _loading = true;
   String? _error;
   RealtimeChannel? _channel;
+
+  List<InventoryItem> get _displayItems {
+    final tutorialState = ref.watch(tutorialControllerProvider);
+    if (tutorialState != TutorialState.none) {
+      if (tutorialState == TutorialState.shelfIntro ||
+          tutorialState == TutorialState.clickAdd ||
+          tutorialState == TutorialState.scanIntro ||
+          tutorialState == TutorialState.welcome) {
+        return [];
+      } else {
+        return _getMockTutorialItems();
+      }
+    }
+    return _items;
+  }
+
+  List<InventoryItem> _getMockTutorialItems() {
+    final now = DateTime.now();
+    final purchase = now.subtract(const Duration(days: 1));
+    return [
+      InventoryItem(
+        id: 'tutorial-chicken',
+        ingredientId: 'ing-chicken',
+        name: 'Chicken Breast',
+        quantity: 500,
+        unit: 'g',
+        itemState: 'sealed',
+        purchaseDate: purchase,
+        computedExpiry: now.add(const Duration(days: 6)),
+        location: 'fridge',
+        category: 'poultry',
+        localizedNames: {
+          'en': 'Chicken Breast',
+          'ko': '닭가슴살',
+          'uz': 'Tovuq ko\'kragi',
+          'uz_cyrl': 'Товуқ кўкраги',
+          'ru': 'Куриная грудка',
+        },
+      ),
+      InventoryItem(
+        id: 'tutorial-broccoli',
+        ingredientId: 'ing-broccoli',
+        name: 'Broccoli',
+        quantity: 1,
+        unit: 'head',
+        itemState: 'sealed',
+        purchaseDate: purchase,
+        computedExpiry: now.add(const Duration(days: 4)),
+        location: 'fridge',
+        category: 'vegetable',
+        localizedNames: {
+          'en': 'Broccoli',
+          'ko': '브로콜리',
+          'uz': 'Brokkoli',
+          'uz_cyrl': 'Брокколи',
+          'ru': 'Брокколи',
+        },
+      ),
+      InventoryItem(
+        id: 'tutorial-soysauce',
+        ingredientId: 'ing-soysauce',
+        name: 'Soy Sauce',
+        quantity: 150,
+        unit: 'ml',
+        itemState: 'opened',
+        purchaseDate: purchase,
+        computedExpiry: now.add(const Duration(days: 180)),
+        location: 'pantry',
+        category: 'sauce',
+        localizedNames: {
+          'en': 'Soy Sauce',
+          'ko': '간장',
+          'uz': 'Soya sousi',
+          'uz_cyrl': 'Соя соуси',
+          'ru': 'Соевый соус',
+        },
+      ),
+      InventoryItem(
+        id: 'tutorial-garlic',
+        ingredientId: 'ing-garlic',
+        name: 'Garlic',
+        quantity: 3,
+        unit: 'cloves',
+        itemState: 'sealed',
+        purchaseDate: purchase,
+        computedExpiry: now.add(const Duration(days: 14)),
+        location: 'pantry',
+        category: 'vegetable',
+        localizedNames: {
+          'en': 'Garlic',
+          'ko': '마늘',
+          'uz': 'Sarimsoq',
+          'uz_cyrl': 'Саримсоқ',
+          'ru': 'Чеснок',
+        },
+      ),
+      InventoryItem(
+        id: 'tutorial-sesameoil',
+        ingredientId: 'ing-sesameoil',
+        name: 'Sesame Oil',
+        quantity: 50,
+        unit: 'ml',
+        itemState: 'opened',
+        purchaseDate: purchase,
+        computedExpiry: now.add(const Duration(days: 90)),
+        location: 'pantry',
+        category: 'oil',
+        localizedNames: {
+          'en': 'Sesame Oil',
+          'ko': '참기름',
+          'uz': 'Kunjut yog\'i',
+          'uz_cyrl': 'Кунжут ёғи',
+          'ru': 'Кунжутное масло',
+        },
+      ),
+    ];
+  }
 
   // ── Search, Filter & Sort state ─────────────────────────────
   String _searchQuery = '';
@@ -112,7 +231,7 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
   }
 
   List<InventoryItem> _itemsForZone(String zone) {
-    var filtered = _items.where((i) => i.location == zone.toLowerCase());
+    var filtered = _displayItems.where((i) => i.location == zone.toLowerCase());
 
     // Search filter
     if (_searchQuery.isNotEmpty) {
@@ -152,7 +271,7 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
 
   /// All unique categories currently in the inventory.
   List<String> get _categories {
-    final cats = _items.map((i) => i.category.toLowerCase()).toSet().toList()
+    final cats = _displayItems.map((i) => i.category.toLowerCase()).toSet().toList()
       ..sort();
     return cats;
   }
@@ -188,9 +307,9 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
           tabs: _zones.map((z) => Tab(text: _getLocalizedZone(z))).toList(),
         ),
       ),
-      body: _loading
+      body: (ref.watch(tutorialControllerProvider) != TutorialState.none ? false : _loading)
           ? const ShelfSkeleton()
-          : _error != null
+          : (ref.watch(tutorialControllerProvider) != TutorialState.none ? null : _error) != null
               ? _buildErrorState()
               : TabBarView(
                   controller: _tabController,
@@ -393,7 +512,7 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
 
   Widget _buildShelfGrid(List<InventoryItem> items, String zone) {
     // Get ALL zone items before search/filter for the summary banner
-    final allZoneItems = _items
+    final allZoneItems = _displayItems
         .where((i) => i.location == zone.toLowerCase())
         .toList();
 
@@ -583,7 +702,7 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
   }
 
   int get _alertCount =>
-      _items.where((i) => i.daysUntilExpiry <= 3).length;
+      _displayItems.where((i) => i.daysUntilExpiry <= 3).length;
 
   int _gridColumns(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
@@ -595,10 +714,10 @@ class _LivingShelfScreenState extends State<LivingShelfScreen>
   }
 
   void _showExpiryAlerts() {
-    final expiring = _items
+    final expiring = _displayItems
         .where((i) => i.daysUntilExpiry >= 0 && i.daysUntilExpiry <= 3)
         .toList();
-    final expired = _items.where((i) => i.daysUntilExpiry < 0).toList();
+    final expired = _displayItems.where((i) => i.daysUntilExpiry < 0).toList();
 
     showModalBottomSheet(
       context: context,

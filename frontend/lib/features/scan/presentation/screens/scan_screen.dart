@@ -7,6 +7,7 @@
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,15 +16,16 @@ import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/scan/presentation/screens/audit_screen.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class ScanScreen extends StatefulWidget {
+class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
 
   @override
-  State<ScanScreen> createState() => _ScanScreenState();
+  ConsumerState<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen>
+class _ScanScreenState extends ConsumerState<ScanScreen>
     with TickerProviderStateMixin {
   final ImagePicker _picker = ImagePicker();
   final ApiService _api = ApiService();
@@ -206,11 +208,13 @@ class _ScanScreenState extends State<ScanScreen>
         controller: _topTabController,
         children: [
           // Tab 1: Scan Food (existing)
-          _scanning
-              ? _buildScanningState()
-              : _results != null
-                  ? _buildResults()
-                  : _buildCaptureState(),
+          ref.watch(tutorialControllerProvider) == TutorialState.scanIntro
+              ? _buildTutorialScanPrompt()
+              : _scanning
+                  ? _buildScanningState()
+                  : _results != null
+                      ? _buildResults()
+                      : _buildCaptureState(),
           // Tab 2: Scan Calories (photo-based)
           const _CalorieScanTab(),
         ],
@@ -982,6 +986,102 @@ class _ScanScreenState extends State<ScanScreen>
         _error = 'Barcode lookup failed: $e';
       });
     }
+  }
+
+  Widget _buildTutorialScanPrompt() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '🔍',
+                style: TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Ingredient Scanning',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'In Plately, you can scan a supermarket receipt, snap a photo of food in your fridge, or scan barcodes to log ingredients.\n\nFor this interactive tour, we will simulate loading 5 key ingredients for a special Chicken Stir-fry without writing any data to the database.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // List of mock ingredients to load
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  children: [
+                    _TutorialIngredientRow(emoji: '🍗', name: 'Chicken Breast (500g)'),
+                    _TutorialIngredientRow(emoji: '🥦', name: 'Broccoli (1 head)'),
+                    _TutorialIngredientRow(emoji: '🫗', name: 'Soy Sauce (150ml)'),
+                    _TutorialIngredientRow(emoji: '🧄', name: 'Garlic (3 cloves)'),
+                    _TutorialIngredientRow(emoji: '🫒', name: 'Sesame Oil (50ml)'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: () {
+                    ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.shelfAdded);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'Load Mock Ingredients 🛒',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1782,6 +1882,34 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TutorialIngredientRow extends StatelessWidget {
+  final String emoji;
+  final String name;
+
+  const _TutorialIngredientRow({required this.emoji, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 12),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ],
       ),
     );

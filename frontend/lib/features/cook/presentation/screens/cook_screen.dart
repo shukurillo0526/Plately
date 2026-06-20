@@ -21,15 +21,17 @@ import 'package:plately_app/core/services/cache_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class CookScreen extends StatefulWidget {
+class CookScreen extends ConsumerStatefulWidget {
   const CookScreen({super.key});
 
   @override
-  State<CookScreen> createState() => _CookScreenState();
+  ConsumerState<CookScreen> createState() => _CookScreenState();
 }
 
-class _CookScreenState extends State<CookScreen>
+class _CookScreenState extends ConsumerState<CookScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -39,6 +41,95 @@ class _CookScreenState extends State<CookScreen>
   // Recipes grouped by tier key ('1'–'5')
   Map<String, List<Map<String, dynamic>>> _tiers = {};
   Set<String> _ownedIngredientIds = {};
+
+  Map<String, List<Map<String, dynamic>>> get _displayTiers {
+    final tutorialState = ref.watch(tutorialControllerProvider);
+    if (tutorialState != TutorialState.none) {
+      return {
+        '1': [{
+          'id': 'tutorial-stir-fry',
+          'title': 'Tutorial Chicken Stir-fry',
+          'description': 'A quick and healthy chicken stir-fry packed with broccoli and savory garlic sauce.',
+          'cuisine': 'Asian',
+          'difficulty': 1,
+          'prep_time_minutes': 10,
+          'cook_time_minutes': 15,
+          'servings': 2,
+          'tags': ['Healthy', 'Stir-fry', 'Quick'],
+          'match_pct': 1.0,
+          'matched': 5,
+          'total': 5,
+          'missing': [],
+          'image_url': 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=400&q=80',
+        }],
+        '2': [{
+          'id': 'tutorial-salmon',
+          'title': 'Sesame Ginger Salmon',
+          'description': 'Pan-seared salmon fillet glazed with soy sauce, sesame oil, and ginger.',
+          'cuisine': 'Asian',
+          'difficulty': 2,
+          'prep_time_minutes': 10,
+          'cook_time_minutes': 12,
+          'servings': 2,
+          'tags': ['Seafood', 'Omega-3'],
+          'match_pct': 0.8,
+          'matched': 4,
+          'total': 5,
+          'missing': ['Salmon Fillet'],
+          'image_url': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80',
+        }],
+        '3': [{
+          'id': 'tutorial-broccoli-soup',
+          'title': 'Broccoli Cheddar Soup',
+          'description': 'Rich and creamy soup featuring fresh broccoli and cheddar cheese.',
+          'cuisine': 'American',
+          'difficulty': 2,
+          'prep_time_minutes': 15,
+          'cook_time_minutes': 20,
+          'servings': 4,
+          'tags': ['Soup', 'Comfort Food'],
+          'match_pct': 0.6,
+          'matched': 3,
+          'total': 5,
+          'missing': ['Cheddar Cheese', 'Chicken Broth'],
+          'image_url': 'https://images.unsplash.com/photo-1607532941433-304659e8198a?w=400&q=80',
+        }],
+        '4': [{
+          'id': 'tutorial-garlic-bread',
+          'title': 'Garlic Bread',
+          'description': 'Crispy toasted baguette brushed with garlic, butter, and sesame oil.',
+          'cuisine': 'Italian',
+          'difficulty': 1,
+          'prep_time_minutes': 5,
+          'cook_time_minutes': 8,
+          'servings': 4,
+          'tags': ['Appetizer', 'Quick'],
+          'match_pct': 0.33,
+          'matched': 1,
+          'total': 3,
+          'missing': ['Baguette', 'Butter'],
+          'image_url': 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=400&q=80',
+        }],
+        '5': [{
+          'id': 'tutorial-lasagna',
+          'title': 'Classic Beef Lasagna',
+          'description': 'Layers of pasta sheets, savory beef sauce, and melted ricotta cheese.',
+          'cuisine': 'Italian',
+          'difficulty': 3,
+          'prep_time_minutes': 30,
+          'cook_time_minutes': 45,
+          'servings': 6,
+          'tags': ['Pasta', 'Bake', 'Classic'],
+          'match_pct': 0.0,
+          'matched': 0,
+          'total': 8,
+          'missing': ['Ground Beef', 'Lasagna Sheets', 'Tomato Sauce', 'Ricotta', 'Mozzarella', 'Parmesan', 'Onion', 'Egg'],
+          'image_url': 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&q=80',
+        }],
+      };
+    }
+    return _tiers;
+  }
 
   // Cuisine filter (Batch 2)
   String? _cuisineFilter;
@@ -353,7 +444,7 @@ class _CookScreenState extends State<CookScreen>
     final displayOrder = _getTierMeta(context);
     for (int i = 0; i < displayOrder.length; i++) {
       final key = displayOrder[i].key;
-      if ((_tiers[key] ?? []).isNotEmpty) {
+      if ((_displayTiers[key] ?? []).isNotEmpty) {
         if (_tabController.index != i) {
           _tabController.animateTo(i);
         }
@@ -367,7 +458,7 @@ class _CookScreenState extends State<CookScreen>
     try {
       // Collect all recipe IDs that still have English titles
       final allIds = <String>[];
-      for (final tier in _tiers.values) {
+      for (final tier in _displayTiers.values) {
         for (final r in tier) {
           allIds.add(r['id'] as String);
         }
@@ -386,7 +477,7 @@ class _CookScreenState extends State<CookScreen>
           final data = result['data'] as Map<String, dynamic>?;
           if (data != null && mounted) {
             setState(() {
-              for (final tier in _tiers.values) {
+              for (final tier in _displayTiers.values) {
                 for (final r in tier) {
                   final t = data[r['id']];
                   if (t != null && t['title'] != null) {
@@ -423,7 +514,7 @@ class _CookScreenState extends State<CookScreen>
   void _openSearch(BuildContext context) {
     // Collect all recipes across tiers for search
     final allRecipes = <Map<String, dynamic>>[];
-    for (final tier in _tiers.values) {
+    for (final tier in _displayTiers.values) {
       allRecipes.addAll(tier);
     }
     showSearch(
@@ -741,7 +832,7 @@ class _CookScreenState extends State<CookScreen>
           unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
           tabAlignment: TabAlignment.start,
           tabs: _getTierMeta(context).map((t) {
-            final count = (_tiers[t.key] ?? []).length;
+            final count = (_displayTiers[t.key] ?? []).length;
             return Tab(
               icon: Icon(t.icon, size: 18),
               text: count > 0 ? '${t.label} ($count)' : t.label,
@@ -754,11 +845,12 @@ class _CookScreenState extends State<CookScreen>
   }
 
   Widget _buildBody() {
-    if (_loading) {
+    final isTutorial = ref.watch(tutorialControllerProvider) != TutorialState.none;
+    if (_loading && !isTutorial) {
       return const RecipeListSkeleton();
     }
 
-    if (_error != null) {
+    if (_error != null && !isTutorial) {
       return Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -811,7 +903,7 @@ class _CookScreenState extends State<CookScreen>
   static const _pinnedCuisines = ['Uzbek', 'Korean', 'Japanese', 'Italian', 'Mexican', 'Indian', 'Chinese'];
   List<String> get _allCuisines {
     final c = <String>{};
-    for (final tier in _tiers.values) {
+    for (final tier in _displayTiers.values) {
       for (final r in tier) {
         final cuisine = (r['cuisine'] ?? '').toString().trim();
         if (cuisine.isNotEmpty) c.add(cuisine);
@@ -825,7 +917,7 @@ class _CookScreenState extends State<CookScreen>
   }
 
   Widget _buildTierList(String tierKey, String tierLabel) {
-    var recipes = _tiers[tierKey] ?? [];
+    var recipes = _displayTiers[tierKey] ?? [];
 
     // Apply cuisine filter
     if (_cuisineFilter != null) {
@@ -835,7 +927,7 @@ class _CookScreenState extends State<CookScreen>
           .toList();
     }
 
-    if ((_tiers[tierKey] ?? []).isEmpty) {
+    if ((_displayTiers[tierKey] ?? []).isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

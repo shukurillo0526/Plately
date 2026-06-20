@@ -14,8 +14,10 @@ import 'package:plately_app/features/cook/presentation/screens/recipe_prep_scree
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class RecipeDetailScreen extends StatefulWidget {
+class RecipeDetailScreen extends ConsumerStatefulWidget {
   final String recipeId;
   final String title;
   final String? description;
@@ -46,10 +48,10 @@ class RecipeDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+  ConsumerState<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
 }
 
-class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   bool _loading = true;
   bool _isTranslated = false;
   List<Map<String, dynamic>> _ingredients = [];
@@ -73,9 +75,115 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   void initState() {
     super.initState();
     _loadDetails();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.recipeId == 'tutorial-stir-fry') {
+        ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.recipeDetail);
+      }
+    });
   }
 
     Future<void> _loadDetails() async {
+      if (widget.recipeId == 'tutorial-stir-fry') {
+        _ingredients = [
+          {
+            'name': 'Chicken Breast',
+            'ingredient_id': 'ing-chicken',
+            'quantity': 500.0,
+            'unit': 'g',
+            'prep_note': 'cut into bite-sized pieces',
+            'is_optional': false,
+            'canonical_name': 'Chicken Breast',
+            'category': 'poultry',
+            'name_en': 'Chicken Breast',
+          },
+          {
+            'name': 'Broccoli',
+            'ingredient_id': 'ing-broccoli',
+            'quantity': 1.0,
+            'unit': 'head',
+            'prep_note': 'cut into florets',
+            'is_optional': false,
+            'canonical_name': 'Broccoli',
+            'category': 'vegetable',
+            'name_en': 'Broccoli',
+          },
+          {
+            'name': 'Soy Sauce',
+            'ingredient_id': 'ing-soysauce',
+            'quantity': 3.0,
+            'unit': 'tbsp',
+            'prep_note': '',
+            'is_optional': false,
+            'canonical_name': 'Soy Sauce',
+            'category': 'sauce',
+            'name_en': 'Soy Sauce',
+          },
+          {
+            'name': 'Garlic',
+            'ingredient_id': 'ing-garlic',
+            'quantity': 3.0,
+            'unit': 'cloves',
+            'prep_note': 'minced',
+            'is_optional': false,
+            'canonical_name': 'Garlic',
+            'category': 'vegetable',
+            'name_en': 'Garlic',
+          },
+          {
+            'name': 'Sesame Oil',
+            'ingredient_id': 'ing-sesameoil',
+            'quantity': 1.0,
+            'unit': 'tbsp',
+            'prep_note': '',
+            'is_optional': false,
+            'canonical_name': 'Sesame Oil',
+            'category': 'oil',
+            'name_en': 'Sesame Oil',
+          },
+        ];
+        _steps = [
+          {
+            'step_number': 1,
+            'instruction': 'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.',
+            'duration_minutes': 5,
+            'beginner_text': 'Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.',
+          },
+          {
+            'step_number': 2,
+            'instruction': 'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.',
+            'duration_minutes': 2,
+            'beginner_text': 'Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn\'t burn.',
+          },
+          {
+            'step_number': 3,
+            'instruction': 'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.',
+            'duration_minutes': 6,
+            'beginner_text': 'Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.',
+          },
+          {
+            'step_number': 4,
+            'instruction': 'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.',
+            'duration_minutes': 4,
+            'beginner_text': 'Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.',
+          },
+          {
+            'step_number': 5,
+            'instruction': 'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!',
+            'duration_minutes': 1,
+            'beginner_text': 'Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!',
+          },
+        ];
+        _displayTitle = widget.title;
+        _displayDescription = widget.description;
+        _imageUrl = 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=400&q=80';
+        _dynamicCalories = 380;
+        _dynamicProtein = 35.0;
+        _dynamicCarbs = 12.0;
+        _dynamicFat = 18.0;
+        _loading = false;
+        if (mounted) setState(() {});
+        return;
+      }
     try {
       final supabase = Supabase.instance.client;
       final locale = Localizations.localeOf(context);
@@ -1538,6 +1646,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   width: double.infinity,
                   child: FloatingActionButton.extended(
                     onPressed: () {
+                      if (widget.recipeId == 'tutorial-stir-fry') {
+                        ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.cookingPrep);
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(

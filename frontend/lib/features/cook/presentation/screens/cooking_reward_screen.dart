@@ -4,11 +4,13 @@
 // Awards XP, deducts inventory, logs nutrition, and provides a return to the dashboard.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/features/gamification/data/gamification_repository.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class CookingRewardScreen extends StatefulWidget {
+class CookingRewardScreen extends ConsumerStatefulWidget {
   final String recipeId;
   final String title;
   final int matchedIngredientsCount;
@@ -39,10 +41,10 @@ class CookingRewardScreen extends StatefulWidget {
   });
 
   @override
-  State<CookingRewardScreen> createState() => _CookingRewardScreenState();
+  ConsumerState<CookingRewardScreen> createState() => _CookingRewardScreenState();
 }
 
-class _CookingRewardScreenState extends State<CookingRewardScreen>
+class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
@@ -82,6 +84,22 @@ class _CookingRewardScreenState extends State<CookingRewardScreen>
   }
 
   Future<void> _saveRewards() async {
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      _consumedItems = [
+        {'name': 'Chicken Breast', 'deducted': 125.0, 'unit': 'g'},
+        {'name': 'Broccoli', 'deducted': 0.25, 'unit': 'head'},
+        {'name': 'Soy Sauce', 'deducted': 15.0, 'unit': 'ml'},
+        {'name': 'Garlic', 'deducted': 1.0, 'unit': 'clove'},
+        {'name': 'Sesame Oil', 'deducted': 5.0, 'unit': 'ml'},
+      ];
+      _caloriesLogged = 380;
+      ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.finish);
+      setState(() {
+        _isSaving = false;
+      });
+      _animController.forward();
+      return;
+    }
     try {
       final user = Supabase.instance.client.auth.currentUser;
       // Using demo user ID for prototype if no auth

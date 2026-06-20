@@ -34,8 +34,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:plately_app/core/services/cache_service.dart';
-import 'package:plately_app/core/services/tutorial_service.dart';
-import 'package:plately_app/core/widgets/tutorial_overlay.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/core/widgets/tutorial_guide_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
@@ -307,10 +307,6 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
       }
     };
 
-    // Trigger tutorial on first app load (after onboarding)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showHomeTutorialIfNeeded();
-    });
   }
 
   @override
@@ -330,61 +326,6 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     setState(() {});
   }
 
-  /// Show the interactive home walkthrough tutorial for first-time users.
-  /// This version navigates to each tab during the tutorial to give context.
-  void _showHomeTutorialIfNeeded() {
-    final l10n = AppLocalizations.of(context);
-
-    TutorialOverlay.show(
-      context: context,
-      tutorialId: TutorialService.homeWalkthrough,
-      onTabSwitch: (tabIndex) {
-        if (mounted) {
-          setState(() => _currentIndex = tabIndex);
-        }
-      },
-      steps: [
-        TutorialStep(
-          emoji: '👋',
-          title: l10n?.tutorial_cookTitle ?? 'Welcome to Plately!',
-          description: 'Let\'s take a quick tour of your AI kitchen assistant. It only takes 30 seconds!',
-          tooltipPosition: TooltipPosition.center,
-        ),
-        TutorialStep(
-          emoji: '🍽️',
-          title: 'Cook — Your Recipes',
-          description: l10n?.tutorial_cookDesc ??
-              'Browse AI-matched recipes based on what\'s in your fridge. The higher the match %, the more ingredients you already have!',
-          tooltipPosition: TooltipPosition.center,
-          targetTabIndex: 0,
-        ),
-        TutorialStep(
-          emoji: '📦',
-          title: l10n?.tutorial_shelfTitle ?? 'Your Living Shelf',
-          description: l10n?.tutorial_shelfDesc ??
-              'Your digital fridge, freezer, and pantry. Track expiry dates and quantities — we\'ll warn you before food goes bad.',
-          tooltipPosition: TooltipPosition.center,
-          targetTabIndex: 2,
-        ),
-        TutorialStep(
-          emoji: '📸',
-          title: l10n?.tutorial_scanTitle ?? 'Scan or Add Ingredients',
-          description: l10n?.tutorial_scanDesc ??
-              'Use your camera to scan receipts, barcodes, or snap a photo of ingredients. You can also add items manually!',
-          tooltipPosition: TooltipPosition.center,
-          targetTabIndex: 1,
-        ),
-        TutorialStep(
-          emoji: '🚀',
-          title: 'You\'re All Set!',
-          description: 'Start by adding some ingredients to your shelf — then watch the recipes appear automatically. Happy cooking! 🎉',
-          tooltipPosition: TooltipPosition.center,
-          targetTabIndex: 0,
-        ),
-      ],
-    );
-  }
-
   void _switchMode(AppMode mode) {
     if (_settings.appMode == mode) return;
     _currentIndex = 0; // Reset to first tab on mode switch
@@ -398,42 +339,75 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     final screens = _cookScreens;
     final navItems = _cookNavItems(l10n);
 
+    // Reactively listen to tutorial state transitions to auto-navigate tabs
+    ref.listen<TutorialState>(tutorialControllerProvider, (previous, next) {
+      if (next == TutorialState.shelfIntro || next == TutorialState.shelfAdded) {
+        if (mounted) setState(() => _currentIndex = 2);
+      } else if (next == TutorialState.scanIntro) {
+        if (mounted) setState(() => _currentIndex = 1);
+      } else if (next == TutorialState.roamCook) {
+        if (mounted) setState(() => _currentIndex = 0);
+      }
+    });
+
     return Scaffold(
       extendBody: true,
-      body: Column(
+      body: Stack(
         children: [
-          // ── Mode Switch Bar ─────────────────────────
-          _ModeSwitchBar(
-            currentMode: _settings.appMode,
-            onModeChanged: _switchMode,
+          Column(
+            children: [
+              // ── Mode Switch Bar ─────────────────────────
+              _ModeSwitchBar(
+                currentMode: _settings.appMode,
+                onModeChanged: _switchMode,
+              ),
+
+              // ── Screen Content ──────────────────────────
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  ),
+                  child: KeyedSubtree(
+                    key: ValueKey('${AppMode.cook}_$_currentIndex'),
+                    child: screens[_currentIndex],
+                  ),
+                ),
+              ),
+
+              // ── Cooking Mini-Player ─────────────────────
+              const CookingMiniPlayer(),
+            ],
           ),
 
-          // ── Screen Content ──────────────────────────
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
-              child: KeyedSubtree(
-                key: ValueKey('${AppMode.cook}_$_currentIndex'),
-                child: screens[_currentIndex],
-              ),
-            ),
-          ),
-
-          // ── Cooking Mini-Player ─────────────────────
-          const CookingMiniPlayer(),
+          // ── Guided Tutorial Overlay ──
+          const TutorialGuideOverlay(),
         ],
       ),
       bottomNavigationBar: DualModeNavBar(
         currentIndex: _currentIndex,
         items: navItems,
         mode: AppMode.cook,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          final tutorialState = ref.read(tutorialControllerProvider);
+          if (tutorialState == TutorialState.none) {
+            setState(() => _currentIndex = i);
+            return;
+          }
+
+          // In interactive tutorial mode, restrict navigation to explicit guidance
+          if (tutorialState == TutorialState.shelfAdded && i == 0) {
+            ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.roamCook);
+            setState(() => _currentIndex = 0);
+          } else if (tutorialState == TutorialState.clickAdd && i == 1) {
+            ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.scanIntro);
+            setState(() => _currentIndex = 1);
+          }
+        },
       ),
     );
   }

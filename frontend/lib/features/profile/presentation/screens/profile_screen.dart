@@ -23,15 +23,17 @@ import 'package:plately_app/features/profile/presentation/screens/meal_planner_p
 import 'package:plately_app/features/profile/presentation/screens/shopping_list_page.dart';
 import 'package:plately_app/core/services/social_service.dart';
 import 'package:plately_app/core/services/tutorial_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:plately_app/core/services/tutorial_controller.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _loading = true;
   String? _error;
 
@@ -755,14 +757,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: Icons.school_outlined,
                           label: l10n?.tutorial_replay ?? 'Replay Tutorial',
                           onTap: () async {
-                            await TutorialService().resetAll();
+                            await ref.read(tutorialControllerProvider.notifier).resetAndStart();
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n?.tutorial_replayConfirm ?? 'Tutorial will show on next app launch.'),
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                ),
-                              );
+                              Navigator.popUntil(context, (route) => route.isFirst);
                             }
                           },
                         ),

@@ -565,6 +565,201 @@ A massive polishing release ensuring stability, extensive localization, local-fi
 
 ### Phase 4: In-App Tutorial Walkthrough
 - **Production-Grade Onboarding**: Developed a robust `TutorialOverlay` employing custom painters for dynamic UI spotlights.
+- **Supabase Ingredient Columns:** Added `display_name_ko`, `display_name_uz`, `display_name_uz_cyrl`, `display_name_ru` to the `ingredients` table.
+
+---
+
+# 📦 v0.0.3 — AI Translation Pipeline & Recipe Translations
+
+Translated all recipes and ingredients across 4 languages using a hybrid AI pipeline.
+
+### Highlights
+- **Hybrid Translation Engine:** `qwen3:14b` via Ollama (primary) with Google Gemini Flash fallback when rate-limited.
+- **Culinary Glossary:** Curated term mappings ensuring domain-accurate translations (e.g., "gochujang" → "고추장", "plov" → "плов").
+- **Recipe Translations:** Title, description, and step-by-step instructions for all 133 recipes translated and cached in `recipe_translations` table.
+- **Ingredient Translations:** 319 canonical ingredients translated to Korean, Uzbek Latin, Uzbek Cyrillic, and Russian (100% coverage across all languages).
+- **Translation Scripts:** `scripts/translate_all.py`, `scripts/translate_missed.py`, `scripts/patch_translation_ollama.py` for batch and incremental translation runs.
+
+---
+
+# 📦 v0.0.4 — Plately: Multilingual Ingredients, Relational Recipes & Rebrand
+
+The pivotal release where I-Fridge became **Plately** — rebuilt the recipe-ingredient data model from the ground up with full multilingual support.
+
+### Phase Q-1: Multilingual Translation System
+- **4-Language Support:** English, Korean (한국어), Uzbek Latin (O'zbekcha), Uzbek Cyrillic (Ўзбекча), Russian (Русский).
+- **AI Translation Pipeline:** Hybrid local/cloud system — `qwen3:14b` via Ollama (primary) with Gemini Flash fallback when rate-limited.
+- **Glossary System:** Curated culinary glossary ensuring consistent translation of specialized terms (e.g., "gochujang" → "고추장" not "빨간 고추 된장").
+- **Ingredient Translations:** All 319 canonical ingredients translated to 4 languages with full coverage:
+  - Korean: 319/319 (100%)
+  - Uzbek Latin: 319/319 (100%)
+  - Russian: 319/319 (100%)
+- **Recipe Translations:** Title, description, and cooking steps translated via AI with caching in `recipe_translations` table.
+
+### Phase Q-2: Ingredient Database Expansion
+- **319 canonical ingredients** (up from ~100) with complete metadata:
+  - Display names in 4 languages (EN/KO/UZ/RU) + Uzbek Cyrillic
+  - Category, default unit, sealed/opened shelf life, storage zone
+- **41 new ingredients added** via migration 013: broths, ground meats, specialty items (dashima, nori, panko, lemongrass, tamarind, wonton wrappers, etc.).
+- **Normalization map:** 255 unique recipe ingredient strings → canonical names (100% mapped, 0 unmatched).
+
+### Phase Q-3: Relational Recipe-Ingredient Architecture
+- **Restored `recipe_ingredients` table** with proper foreign keys:
+  ```sql
+  recipe_ingredients(recipe_id → recipes, ingredient_id → ingredients,
+                     quantity, unit, prep_note, is_optional, display_order)
+  ```
+- **1,218 relational links** created across 133 recipes (avg 9.2 ingredients/recipe).
+- **Frontend migration:** All 4 consumer screens updated:
+  - `recipe_detail_screen`: Reads from `recipe_ingredients` JOIN `ingredients` — ingredient names auto-localized per user's language.
+  - `cook_screen`: Scoring uses ingredient ID matching instead of fuzzy name strings.
+  - `cooking_run_screen`: Updated data format for relational ingredients.
+  - `recipe_import_screen`: Creates `recipe_ingredients` entries on recipe import.
+- **Cyrillic support:** `uz_Cyrl` locale detection via `scriptCode` — uses `display_name_uz_cyrl` column.
+
+### Phase Q-4: Performance Fix
+- **Batch query optimization:** Replaced 133 individual `recipe_ingredients` queries in cook_screen with a single batch fetch, then client-side grouping. Loading time reduced from ~30s to <1s.
+
+### Phase Q-5: Full Rebrand — I-Fridge → Plately
+- **229 files renamed** across the entire codebase (670 replacements).
+- Package: `ifridge_app` → `plately_app`
+- Android: `com.ifridge.ifridge_app` → `com.plately.plately_app`
+- iOS: `com.ifridge.ifridgeApp` → `com.plately.platelyApp`, display name "Plately"
+- Windows: project name and window title updated
+- Web: manifest, index.html, service worker
+- Git remote: `shukurillo0526/Plately.git`
+- Zero remaining references to iFridge in source files.
+
+---
+
+# 📦 v0.0.5 — Smart Ingredient Resolution, Inventory & Scan UI Localization
+
+Full localization of the inventory and scan modules, a smart ingredient resolution system for unknown inputs, and category translation infrastructure.
+
+### Phase 1: Ingredient Index & Database Schema
+- **`code` column:** Added stable integer index to `ingredients` table for cross-module referencing (AI, recipes, inventory).
+- **New metadata columns:** `type_primary`, `type_secondary`, `protein`, `fat`, `carbs`, `source`, `verified`, `created_by` — laying groundwork for nutritional data and user-contributed ingredients.
+- **`pg_trgm` extension:** Enabled in Supabase for trigram-based fuzzy matching.
+- **`fuzzy_match_ingredient` RPC:** PostgreSQL function using `similarity()` for typo-tolerant ingredient lookups (threshold: 0.3).
+
+### Phase 2: Smart Ingredient Resolution (Backend)
+- **`/api/v1/ingredients/resolve` endpoint:** Cascading resolution flow:
+  1. Exact match on `canonical_name`
+  2. Canonical match (lowercased, stripped)
+  3. Fuzzy match via `pg_trgm` similarity scoring
+  4. Auto-create as `user_contributed` with provenance tracking (`source='user_contributed'`, `verified=false`, `created_by=user_id`)
+- **`/api/v1/ingredients/fuzzy` endpoint:** Standalone fuzzy search returning similarity scores for autocomplete/suggestions.
+- **Provenance tracking in `add-item`:** All auto-created ingredients tagged with source and creator for later admin review.
+
+### Phase 3: Inventory UI Full Localization
+- **25 new ARB keys × 5 languages = 125 translations** covering:
+  - Detail labels: `inv_quantity`, `inv_purchased`, `inv_expires`, `inv_source`
+  - Section headers: `inv_storageLocation`, `inv_itemState`
+  - Freshness states: `inv_freshLabel` → `inv_expiredLabel` (5 states)
+  - State badges: `inv_stateOpened`, `inv_stateFrozen`, `inv_stateThawed`, `inv_statePartial`
+  - Expiry messages: `inv_expiredDaysAgo`, `inv_expiresToday`, `inv_expiresTomorrow`, `inv_daysRemaining`
+  - Sort modes: `inv_sortExpiry`, `inv_sortName`, `inv_sortCategory`, `inv_sortNewest`
+- **`inventory_detail_sheet.dart`:** All labels wired to `AppLocalizations.of(context)?.inv_*` keys.
+- **`inventory_item_card.dart`:** State badges and expiry labels fully localized.
+
+### Phase 4: Scan / Add Ingredient Dialog Localization
+- **8 new `manual_*` ARB keys × 5 languages** for the manual entry form:
+  - `manual_addIngredient`, `manual_ingredientName`, `manual_ingredientHint`, `manual_category`, `manual_qty`, `manual_metricType`, `manual_estimatedExpiry`, `manual_required`
+- **Multi-language autocomplete search:** Queries across all `display_name_*` columns (`en`, `ko`, `uz`, `uz_cyrl`, `ru`) + `canonical_name` simultaneously.
+- **Localized search results:** Ingredient names and category subtitles displayed in current language.
+- **`L10nHelper.translateCategory()`:** New utility translating 30 ingredient categories to UZ/RU/KO — used in both the category dropdown and search result tiles.
+
+### Phase 5: Locale Parity Fix
+- **UZ_Cyrl ARB cleanup:** Fixed all broken `Х0Х` / `Х1Х` hardcoded placeholders → proper ICU `{param}` format. Removed duplicate keys and corrupted lines.
+- **KO ARB backfill:** Added 29 missing recipe-related keys (`tierBadge1-5`, `needLabel`, `nOfNIngredients`, `servingsLabel`, `nHave`, `nMissing`, `ingredientsHeader`, `swapButton`, `aiAssistant`, `aiHint`, `editIngredient`, `nameLabel`, `qtyLabel`, `unitLabel`, `handsOn`, `automatic`, `noStepsAvailableYet`, `failedToRecordX`, `failedToAddItemsX`).
+- **Result:** `flutter gen-l10n` produces **zero untranslated message warnings** across all 5 locales.
+
+### Frontend API Methods
+- `fuzzySearchIngredients(query)` — trigram-based fuzzy search
+- `resolveIngredient(name, userId)` — smart resolve-or-create
+
+# 📦 v0.0.6 — Branding, Gamification & CI/CD
+### App Branding & Iconography
+- Configured `flutter_launcher_icons` to generate native Android, iOS, and PWA icons using a professional 3D "P" logo.
+
+### Gamification Overhaul
+- **New Achievements:** Added highly requested meme-based badges: `streak15` ("Flatten the Chaos") and `streak30` ("Determined March").
+- **UI Modernization:** Refactored the rigid `GamificationPage` grid into an interactive, tap-to-expand premium badge gallery using `ClipRRect` and scalable dialogs.
+
+### CI/CD Fixes
+- Fixed `.github/workflows/backend-tests.yml` to explicitly install testing frameworks (`pytest`), keeping `requirements.txt` strictly optimized for production.
+
+---
+
+# 📦 v0.0.7 — Gemini 2.5 Architecture & UI Polish
+### AI Engine Overhaul (Gemini 2.5 Triad)
+- **Primary Engine (`gemini-2.5-flash`):** Set as the core backend model for high-volume receipt scanning, raw recipe parsing, and Tier-1 translations.
+- **Cost-Optimized Engine (`gemini-2.5-flash-lite`):** Specifically routed high-frequency, simple endpoints (Cooking Tips, Ingredient Substitutes) to the extremely cheap `$0.10/1M` model.
+- **Complex Reasoning Engine (`gemini-2.5-pro`):** Dynamically triggered solely for translating recipes into low-resource languages (e.g., Uzbek) to guarantee native grammar and context.
+- **SDK Optimization:** Ripped out the heavy `google.generativeai` package in favor of lightweight native REST calls via `httpx` with strict `application/json` enforcement.
+
+### UI & Asset Polish
+- **Web Favicon:** Built a Python-based processing script (`round_icon.py`) to flawlessly zoom-crop and squircle-mask the web tab icon to match Apple/Instagram standards.
+- **Gamification Images:** Added a dynamic `Transform.scale` mask in the Flutter UI to perfectly crop out blurred screenshot UI edges from user-provided meme badge images, preserving the original text context while looking natively embedded.
+
+---
+
+# 📦 v0.0.8 — Context-Aware AI & Dynamic Nutrition
+
+This update dramatically enhances the cooking experience by providing the AI with global inventory awareness and surfacing crucial nutritional information directly in the cooking flow.
+
+### Highlights
+- **Global Inventory AI Context:** Re-architected the `RecipePrepScreen` and `CookingRunScreen` context builders. The AI now pulls the user's *entire* inventory (not just the recipe's ingredients) from Supabase on demand, allowing it to suggest highly accurate, personalized ingredient substitutions based on what the user actually owns.
+- **Dynamic Macro Calculations:** Integrated the backend's dynamic calorie calculator directly into the frontend. The `RecipeDetailScreen` now fetches and visually displays Calories, Protein, Carbs, and Fat scaled per serving in real-time.
+- **Inventory Deduction Fix:** Patched a critical bug in the post-cooking `Skip` dialog where skipping deduction would falsely return an empty array (which triggered a full deduction) instead of gracefully bypassing it.
+- **Curated Recipe Photography:** Successfully populated all 133 recipes with high-quality, verified stock photography mapped to their respective cuisines, replacing the placeholder gradient fallback system.
+
+---
+
+## 🚀 The VISION — Three-Pillar Marketplace
+
+Plately is now positioned as a **3-sided food commerce ecosystem**:
+
+| Side | App | Value |
+|------|-----|-------|
+| **Consumers** | Plately (existing) | Cook at home + order food (pickup/delivery) |
+| **Restaurants** | Plately Business (in-app dashboard) | Receive orders, manage menu, no cashier needed |
+| **Drivers** | Plately Fleet (planned) | Shared delivery fleet, more jobs, lower commission |
+
+### Planned Pillars:
+1. **Mobile Order & Pickup** (Luckin Coffee model) — ✅ Foundation built
+2. **Self-Service Kiosk Hardware** (Korean 무인주문기 model) — 🔲 Planned
+3. **Shared Delivery Network** (Plately Fleet) — 🔲 Planned
+
+### Competitive Edge:
+- **3–5% commission** vs 30%+ on Uber Eats/Coupang Eats
+- Restaurant **owns their customer data**
+- Full **AI kitchen integration** (recipes, inventory, smart suggestions)
+- **Open hardware** (any Android tablet for kiosk)
+
+See `vision_docs/VISION_ABOUT.md` and `vision_docs/ECOSYSTEM_STRATEGY.md` for the complete business plan and technical architecture.
+
+---
+
+# 📦 v0.0.9 — Performance & Usability Overhaul
+
+A massive polishing release ensuring stability, extensive localization, local-first data behavior, and AI infrastructure optimizations for a true production-ready app.
+
+### Phase 1: Auth & Navigation Polish
+- **Unified Login/Signup Flow**: Seamless automatic detection of login vs sign up. Language picker added directly to the login screen for accessibility.
+- **Sign-Out Navigation Fix**: Safely clears auth state and routes users immediately back to the AuthGate without pushing dead-end screens.
+
+### Phase 2: Comprehensive Localization & Gamification
+- **In-Depth i18n Maps**: `L10nHelper` now fully translates over 50+ cooking measurement units, 14 common prep notes, and dynamic nutritional chips (kcal, Protein, Carbs, Fat) across all 5 supported locales (EN, KO, UZ Latin, UZ Cyrl, RU).
+- **Gamification Badges**: Simplified 15 and 30-day streak badges for visual clarity while keeping higher-tier streak badges meme-centric. 
+- **Navigation Icons**: Standardized core navigation icons (e.g. `restaurant`, `camera_alt`).
+
+### Phase 3: Local-First Recipe Storage & Inventory-Aware Swaps
+- **Offline-First Storage**: Implemented `local_recipes` Hive box within `CacheService`. Recipe imports now instantly save locally without requiring remote Supabase sync.
+- **Inventory-Aware AI**: The AI now actively pulls from the user's `inventory_ingredients` and prioritizes suggesting substitutes the user already has, marking them explicitly as available.
+
+### Phase 4: In-App Tutorial Walkthrough
+- **Production-Grade Onboarding**: Developed a robust `TutorialOverlay` employing custom painters for dynamic UI spotlights.
 - **Guided Flow**: Introduces a 4-step home walkthrough (Cook Tab, Scan Fab, Shelf, Profile) that automatically runs for new users.
 - **State Persistence**: Uses SharedPreferences (`TutorialService`) to ensure users only see it once. Users can manually re-trigger it from their Profile settings.
 
@@ -572,9 +767,29 @@ A massive polishing release ensuring stability, extensive localization, local-fi
 - **Static Substitution Map**: Deployed an offline, hardcoded 105-rule dictionary for 35+ of the most common cooking ingredients. Completely eliminates ~60% of AI calls for simple swaps (like butter to oil).
 - **AI Response LRU Cache**: Implemented an in-memory, TTL-backed LRU cache using SHA-256 key hashing to serve identical requests instantly across the user base.
 - **Three-Tier Pipeline**: Substitutions now check Static Map -> AI Cache -> Live AI (Gemini Flash Lite), saving massive amounts of latency and LLM token usage. Included `/api/v1/ai/cache-stats` for monitoring.
-U p d a t e d   G a m i f i c a t i o n ,   N u t r i t i o n ,   B a c k e n d   N a m e E r r o r ,   a n d   M y   R e c i p e s   U I  
-   
+U p d a t e d   G a m i f i c a t i o n ,   N u t r i t i o n ,   B a c k e n d   N a m e E r r o r ,   a n d   M y   R e c i p e s   U I  
+   
 ### Phase 6: AI Cooking Flow and Nutrition History  
 - **AI Recipe Save vs Cook Flow:** Replaced the static AI recipe modal with a dynamic _GeneratedRecipeSheet. Ephemeral AI recipes can now be saved natively to Hive local storage or directly cooked using a zero-persistence Cook Now path.  
 - **Nutrition Tracker History:** Implemented a scrollable Cooking History section inside the Nutrition Tracker. It directly queries user_recipe_history, presenting chronological meal logs with thumbnail images, dates, and calorie chips.  
 - **Code Cleanup:** Resolved 13+ use_build_context_synchronously warnings across async gaps in recipe_detail_screen.dart via modern context.mounted checks. 
+
+---
+
+# 📦 v0.1.4 — In-Memory Sandboxed Interactive Tutorial
+
+A fully sandboxed, task-oriented interactive tutorial that guides new users through the complete Plately cycle—from ingredient scanning to active cooking—without affecting production database records.
+
+### Highlights
+- **Interactive Multi-Step Guided Workflow:** Replaced the static overlay walkthrough with an interactive task-oriented state machine managed via Riverpod (`TutorialState` and `TutorialController`).
+- **Step-by-Step Milestones:**
+  - **Launch Dialog:** Asks users if they want to complete the interactive tutorial or skip.
+  - **Shelf Discovery:** Guides the user through the three storage tabs (Fridge, Freezer, Pantry) and prompts them to tap the "Add Ingredient" FAB.
+  - **Simulated Scanning:** Introduces the scanning pipeline and automatically populates mock ingredients (Chicken Breast, Broccoli, Garlic) for the tutorial.
+  - **Shelf Updates:** Displays the freshly added mock ingredients in-memory on the Shelf and directs the user to the Cook tab.
+  - **Match Feeds & Recipe Selection:** Explains the 5 recipe match tiers and requests selection of the special Tutorial Chicken Stir-Fry recipe.
+  - **Preparation & Active Cooking:** Walks the user through the Prep screen and step-by-step cook flow with inline interactive timers.
+- **Strict In-Memory Sandboxing:**
+  - **Data Isolation:** All operations performed during the tutorial are isolated in transient RAM state. Absolutely no database records are inserted or deleted in Supabase.
+  - **Clean State Persistence:** Inventory additions, consumed items, calories, macro history, and gamification rewards (XP/streaks) earned during the tutorial are not written to the backend DB, ensuring the user's actual profile is completely clean.
+- **Tutorial Replay Support:** Added a "Replay Tutorial" action button under the Profile settings screen, allowing users to re-trigger the guided interactive walkthrough at any time.
