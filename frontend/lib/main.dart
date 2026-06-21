@@ -4,6 +4,7 @@
 // Dual-mode app: ORDER (eat out) and COOK (cook at home).
 // The bottom navigation changes dynamically based on the active mode.
 
+import 'dart:async';
 import 'package:plately_app/core/services/location_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -180,11 +181,24 @@ class _AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<_AuthGate> {
   bool? _onboardingComplete;
+  StreamSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
     super.initState();
     _checkOnboarding();
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null && _onboardingComplete == false) {
+        _checkDatabaseOnboarding(session.user.id);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkOnboarding() async {
@@ -192,6 +206,32 @@ class _AuthGateState extends State<_AuthGate> {
     setState(() {
       _onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
     });
+  }
+
+  Future<void> _checkDatabaseOnboarding(String userId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('users')
+          .select('username, display_name')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null) {
+        final username = response['username'] as String?;
+        final displayName = response['display_name'] as String?;
+        if ((username != null && username.isNotEmpty) || (displayName != null && displayName.isNotEmpty)) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('onboarding_complete', true);
+          if (mounted) {
+            setState(() {
+              _onboardingComplete = true;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[AuthGate] Failed to check database onboarding: $e');
+    }
   }
 
   @override

@@ -25,6 +25,7 @@ import 'package:plately_app/core/services/social_service.dart';
 import 'package:plately_app/core/services/tutorial_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -790,6 +791,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                             );
                             if (confirm == true) {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.remove('onboarding_complete');
                               await Supabase.instance.client.auth.signOut();
                               if (mounted) {
                                 Navigator.of(context).popUntil((route) => route.isFirst);

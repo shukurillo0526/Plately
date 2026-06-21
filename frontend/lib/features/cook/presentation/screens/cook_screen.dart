@@ -418,6 +418,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _tiers = tiers;
         _ownedIngredientIds = ownedIds;
@@ -432,6 +433,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
         _batchTranslateTitles(currentLang);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;

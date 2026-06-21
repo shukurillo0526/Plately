@@ -71,7 +71,7 @@ class TutorialGuideOverlay extends ConsumerWidget {
         description = 'Here you can scan receipts, barcodes, or snap a photo of ingredients. For this tutorial, we will automatically load 5 mock ingredients needed for a special stir-fry recipe.';
         primaryButtonLabel = 'Load Mock Ingredients 🛒';
         onPrimaryPressed = () {
-          // The page will handle the actual mock load and state transition
+          notifier.setStep(TutorialState.shelfAdded);
         };
         break;
 
