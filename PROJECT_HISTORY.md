@@ -793,4 +793,9 @@ A fully sandboxed, task-oriented interactive tutorial that guides new users thro
   - **Data Isolation:** All operations performed during the tutorial are isolated in transient RAM state. Absolutely no database records are inserted or deleted in Supabase.
   - **Clean State Persistence:** Inventory additions, consumed items, calories, macro history, and gamification rewards (XP/streaks) earned during the tutorial are not written to the backend DB, ensuring the user's actual profile is completely clean.
 - **Tutorial Replay Support:** Added a "Replay Tutorial" action button under the Profile settings screen, allowing users to re-trigger the guided interactive walkthrough at any time.
-- **Bug Fixes:** Resolved a critical layout crash (`type 'ParentData' is not a subtype of type 'StackParentData' in type cast`) caused by wrapping a `Positioned` widget inside a non-Stack wrapper (`IgnorePointer`) in `tutorial_guide_overlay.dart`. Proper layout ordering restored.
+- **Bug Fixes:** 
+  - Resolved a critical layout crash (`type 'ParentData' is not a subtype of type 'StackParentData' in type cast`) caused by wrapping a `Positioned` widget inside a non-Stack wrapper (`IgnorePointer`) in `tutorial_guide_overlay.dart`. Proper layout ordering restored.
+  - Fixed an unresponsive "Load Mock Ingredients" button on the Scan step of the tutorial. The overlay card's empty `onPrimaryPressed` callback was wired to set the state to `shelfAdded`, enabling smooth navigation back to the Shelf with populated ingredients.
+  - Bypassed repeated onboarding (nickname/preferences prompts) on every login. The `AuthGate` now queries the database upon login. If a user profile is found in the `users` table with a non-empty username or display name, they are automatically marked as onboarded (`onboarding_complete = true`), and the setup screens are bypassed.
+  - Added onboarding state cleanup to the signout handler to ensure correct onboarding state evaluations when switching accounts on the same device.
+  - Resolved async `setState` warnings in `cook_screen.dart` via checking widget `mounted` state.
