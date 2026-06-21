@@ -776,7 +776,7 @@ U p d a t e d   G a m i f i c a t i o n ,   N u t r i t i o n ,   B a c k e n d 
 
 ---
 
-# 📦 v0.1.4 — In-Memory Sandboxed Interactive Tutorial
+# 📦 v0.1.5 — In-Memory Sandboxed Interactive Tutorial
 
 A fully sandboxed, task-oriented interactive tutorial that guides new users through the complete Plately cycle—from ingredient scanning to active cooking—without affecting production database records.
 
