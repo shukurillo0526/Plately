@@ -139,9 +139,9 @@ class TutorialGuideOverlay extends ConsumerWidget {
     return Stack(
       children: [
         // ── Spotlight Mask ──
-        IgnorePointer(
-          ignoring: state == TutorialState.clickAdd || state == TutorialState.shelfAdded || state == TutorialState.roamCook,
-          child: Positioned.fill(
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: state == TutorialState.clickAdd || state == TutorialState.shelfAdded || state == TutorialState.roamCook,
             child: CustomPaint(
               painter: _SpotlightPainter(
                 targetRect: spotlightRect,
