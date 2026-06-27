@@ -18,6 +18,7 @@ asyncpg>=0.30.0
 
 # --- Computation ---
 numpy>=2.1.0
+google-generativeai>=0.8.0
 
 # --- Utilities ---
 python-dotenv>=1.0.1
