@@ -26,34 +26,34 @@ router = APIRouter()
 
 # ── Single-stage prompt (gemma3:12b reads + structures) ───────
 
-RECEIPT_PARSE_PROMPT = """This is a photo of a grocery store receipt. Read ALL the text on this receipt and extract the structured data.
+RECEIPT_PARSE_PROMPT = """This is a photo of a grocery store receipt. The receipt may be in ANY language (Uzbek, Russian, Korean, English, etc.). Read ALL the text on this receipt and extract structured data.
 
 RULES:
-1. Extract store name (translate Korean to English if needed, e.g. "진안식자재마트" → "Jinan Food Materials Mart")
-2. Extract purchase date in YYYY-MM-DD format (e.g. "26-02-22" → "2026-02-22")
+1. Extract store name (translate to English if needed, e.g. "KORZINKA" → "Korzinka", "진안식자재마트" → "Jinan Food Materials Mart")
+2. Extract purchase date in YYYY-MM-DD format (e.g. "27.06.2026" → "2026-06-27", "26-02-22" → "2026-02-22")
 3. For EACH food product listed on the receipt:
-   - item_name: Generic English name. Translate Korean → English:
-     * 갓밀크/우유 → "Milk"
-     * 당근 → "Carrot"
-     * 삼겹살 → "Pork Belly"
-     * 계란 → "Eggs"
-     * 닭가슴살/Chicken breast → "Chicken Breast"
-     * 치즈 → "Cheese"
-     * 빵 → "Bread"
-   - quantity: number from the receipt (quantity column, or extract from name like "1L", "500g", "2입")
+   - item_name: Generic English name. Translate from any language to English:
+     UZBEK: Non/Buxanka → "Bread", Sut → "Milk", Mol go'shti → "Beef", Tovuq → "Chicken",
+            Guruch → "Rice", Shakar → "Sugar", Kungaboqar yog'i → "Sunflower Oil",
+            Tuxum → "Eggs", Sabzi → "Carrot", Kartoshka → "Potato", Piyoz → "Onion"
+     KOREAN: 갓밀크/우유 → "Milk", 당근 → "Carrot", 삼겹살 → "Pork Belly", 계란 → "Eggs"
+     RUSSIAN: Молоко → "Milk", Хлеб → "Bread", Говядина → "Beef", Сахар → "Sugar"
+   - quantity: number from the receipt (e.g. "1.000 dona" → 1, "2.000 kg" → 2, "1.500 kg" → 1.5)
    - unit: one of pcs, g, kg, ml, L, pack, bunch
-   - category: one of Produce, Vegetable, Fruit, Meat, Poultry, Seafood, Dairy, Milk, Cheese, Yogurt, Eggs, Bakery, Bread, Pantry, Canned, Frozen, Beverage, Juice, Snack, Condiment, Spices, Oil, Sauce
-   - price: the total price for that item (the last number on the item line)
-4. SKIP non-food items: bags, discounts, tax lines, card info, totals, barcodes
+   - category: one of Produce, Vegetable, Fruit, Meat, Poultry, Seafood, Dairy, Milk, Cheese, Yogurt, Eggs, Bakery, Bread, Pantry, Canned, Frozen, Beverage, Juice, Snack, Condiment, Spices, Oil, Sauce, Grain
+   - price: the total price for that item (the rightmost number on the item's line)
+4. SKIP non-food items: bags (Paket), discounts, tax lines, VAT, card info, totals, barcodes
 5. Include ALL food items — do not skip any
 
-IMPORTANT: Extract EVERY food item. If you see 4 items, return 4 items.
+IMPORTANT: Extract EVERY food item. If you see 7 items, return 7 items (minus non-food like bags).
 
 Return ONLY valid JSON, no other text:
-{"store": "Store Name", "date": "2026-02-22", "items": [{"item_name": "Milk", "quantity": 1, "unit": "L", "category": "Milk", "price": 1980}, {"item_name": "Carrot", "quantity": 2, "unit": "pcs", "category": "Vegetable", "price": 1300}]}"""
+{"store": "Store Name", "date": "2026-06-27", "items": [{"item_name": "Bread", "quantity": 1, "unit": "pcs", "category": "Bakery", "price": 2800}]}"""
 
 # Fallback: simpler prompt
-RECEIPT_PARSE_FALLBACK = """Read this grocery receipt image. List the store name, date, and every food product with its name (in English), quantity, unit, category, and price.
+RECEIPT_PARSE_FALLBACK = """Read this grocery receipt image. It may be in any language (Uzbek, Russian, Korean, English, etc.). 
+List the store name, date, and every food product with its English name, quantity, unit, category, and price.
+Skip non-food items like bags.
 
 Return ONLY valid JSON:
 {"store": "...", "date": "YYYY-MM-DD", "items": [{"item_name": "...", "quantity": 1, "unit": "pcs", "category": "...", "price": 0}]}"""
@@ -61,25 +61,36 @@ Return ONLY valid JSON:
 # ── Cloud Gemini (single-stage fallback) ──────────────────────
 
 CLOUD_RECEIPT_PROMPT = """
-You are an expert Korean grocery receipt parser for the Plately smart kitchen app.
+You are an expert multilingual grocery receipt parser for the Plately smart kitchen app.
+The receipt may be in ANY language: Uzbek, Russian, Korean, English, or others.
 
-RECEIPT FORMAT (Korean marts like 진안식자재마트, 이마트, 홈플러스, etc.):
-- Store name is on the first line, often prefixed with (주) or (사)
-- Date line: "판매일:YY-MM-DD HH:MM" → convert to "20YY-MM-DD"
-- Item table header: "NO. 상품명 단가 수량 금액"
-- Each item has TWO lines:
-  Line 1: NO. [Korean product name] [size info like 1L, 500g]
-  Line 2: [barcode number] [unit_price] [qty] [total_price] [tax marker like #]
-- Items marked with # are tax-exempt food (면세물품) — these are always food.
-- Total line: "합 계:" followed by the total amount
-- Skip non-food rows (bags, discounts, tax summaries, card info, barcodes)
+RECEIPT FORMATS BY LANGUAGE:
 
-TRANSLATION RULES for Korean food names:
-- "갓밀크 저지방 1L" → item_name: "Low Fat Milk", quantity: 1, unit: "L", category: "Milk"
-- "세척당근(송국산) 2입/1팩" → item_name: "Washed Carrot", quantity: 2, unit: "pcs", category: "Vegetable"
-- "삼겹살 600g" → item_name: "Pork Belly", quantity: 600, unit: "g", category: "Meat"
-- "계란 30구" → item_name: "Eggs", quantity: 30, unit: "pcs", category: "Eggs"
-- Extract volume/weight from the product name (e.g., "1L", "500ml", "200g")
+UZBEK (Korzinka, Makro, Havas, etc.):
+- Store name at top, often in quotes like "KORZINKA" UZ
+- Date line: "Sana: DD.MM.YYYY" → convert to "YYYY-MM-DD"
+- Items listed as: NO. [Product name] / [quantity] dona/kg x [unit_price] → [total_price]
+- "dona" = pieces, "kg" = kilograms
+- "Paket" = bag (skip this, not food)
+- "JAMI (TOTAL):" = total line (skip)
+- Common items: Non = Bread, Sut = Milk, Mol go'shti = Beef, Guruch = Rice,
+  Shakar = Sugar, Kungaboqar yog'i = Sunflower Oil, Tuxum = Eggs, Lazer = brand name (ignore)
+
+KOREAN (진안식자재마트, 이마트, 홈플러스, etc.):
+- Date: "판매일:YY-MM-DD HH:MM" → "20YY-MM-DD"
+- Items marked with # are tax-exempt food
+- Common: 갓밀크 = Milk, 당근 = Carrot, 삼겹살 = Pork Belly, 계란 = Eggs
+
+RUSSIAN (Магнит, Пятёрочка, etc.):
+- Date: "Дата: DD.MM.YYYY" → "YYYY-MM-DD"
+- Common: Молоко = Milk, Хлеб = Bread, Говядина = Beef
+
+RULES:
+1. Translate ALL product names to English
+2. Extract quantity and unit correctly ("1.250 kg" → quantity: 1.25, unit: "kg")
+3. Use these categories: Produce, Vegetable, Fruit, Meat, Poultry, Seafood, Dairy, Milk, Cheese, Yogurt, Eggs, Bakery, Bread, Pantry, Canned, Frozen, Beverage, Juice, Snack, Condiment, Spices, Oil, Sauce, Grain
+4. Skip non-food: bags, discounts, tax, VAT, totals, card info
+5. Price = total price for that line item (rightmost number)
 
 Return STRICT JSON ONLY with NO markdown formatting, NO code fences:
 {
