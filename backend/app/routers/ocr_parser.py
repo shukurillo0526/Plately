@@ -170,7 +170,7 @@ async def scan_receipt(file: UploadFile = File(...)):
             if api_key:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-3.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 logger.info("[OCR] Calling Gemini Vision API...")
                 response = model.generate_content(
                     [
@@ -234,7 +234,7 @@ async def scan_debug():
         try:
             import google.generativeai as genai
             genai.configure(api_key=effective_key)
-            model = genai.GenerativeModel('gemini-3.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content("Say hello in one word.")
             result["gemini_test"] = "success"
             result["gemini_response"] = response.text.strip()[:100]
