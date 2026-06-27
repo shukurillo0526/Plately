@@ -163,11 +163,15 @@ async def scan_receipt(file: UploadFile = File(...)):
     if parsed_data is None:
         try:
             from app.core.config import get_settings
-            api_key = get_settings().GEMINI_API_KEY
+            import os
+            # Try env var directly first, then settings
+            api_key = os.environ.get("GEMINI_API_KEY") or get_settings().GEMINI_API_KEY
+            logger.info(f"[OCR] Gemini key present: {bool(api_key)}, length: {len(api_key) if api_key else 0}")
             if api_key:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
                 model = genai.GenerativeModel('gemini-1.5-flash')
+                logger.info("[OCR] Calling Gemini Vision API...")
                 response = model.generate_content(
                     [
                         CLOUD_RECEIPT_PROMPT,
@@ -179,6 +183,7 @@ async def scan_receipt(file: UploadFile = File(...)):
                     ),
                 )
                 raw_text = response.text.strip()
+                logger.info(f"[OCR] Gemini raw response (first 200 chars): {raw_text[:200]}")
                 if raw_text.startswith("```"):
                     raw_text = raw_text.split("\n", 1)[1]
                     if raw_text.endswith("```"):
@@ -186,8 +191,10 @@ async def scan_receipt(file: UploadFile = File(...)):
                 parsed_data = json.loads(raw_text)
                 source = "gemini"
                 logger.info(f"[OCR] Gemini success: {len(parsed_data.get('items', []))} items")
+            else:
+                logger.warning("[OCR] No GEMINI_API_KEY found in env or settings — skipping Gemini")
         except Exception as e:
-            logger.warning(f"[OCR] Gemini failed: {e}")
+            logger.warning(f"[OCR] Gemini failed: {type(e).__name__}: {e}")
 
     # ── Attempt 3: Mock fallback ────────────────────────────────
     if parsed_data is None:
@@ -203,3 +210,39 @@ async def scan_receipt(file: UploadFile = File(...)):
         "source": source,
         "data": processed,
     }
+
+
+@router.get("/api/v1/receipt/debug")
+async def scan_debug():
+    """Debug endpoint to check Gemini configuration on Railway."""
+    import os
+    from app.core.config import get_settings
+    settings = get_settings()
+    env_key = os.environ.get("GEMINI_API_KEY", "")
+    settings_key = settings.GEMINI_API_KEY
+
+    result = {
+        "env_key_present": bool(env_key),
+        "env_key_length": len(env_key),
+        "settings_key_present": bool(settings_key),
+        "settings_key_length": len(settings_key),
+    }
+
+    # Quick test if the key actually works
+    effective_key = env_key or settings_key
+    if effective_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=effective_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content("Say hello in one word.")
+            result["gemini_test"] = "success"
+            result["gemini_response"] = response.text.strip()[:100]
+        except Exception as e:
+            result["gemini_test"] = "failed"
+            result["gemini_error"] = f"{type(e).__name__}: {str(e)[:200]}"
+    else:
+        result["gemini_test"] = "skipped_no_key"
+
+    return result
+
