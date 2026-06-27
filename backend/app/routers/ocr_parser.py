@@ -163,7 +163,7 @@ async def scan_receipt(file: UploadFile = File(...)):
     if parsed_data is None:
         try:
             from app.core.config import get_settings
-            api_key = get_settings().GEMINI_API_KEY or "AIzaSyC6TLhT7bPion_d6GgTNaPQEVyAJHw7KY4"
+            api_key = get_settings().GEMINI_API_KEY
             if api_key:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
