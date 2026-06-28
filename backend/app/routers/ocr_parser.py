@@ -24,12 +24,31 @@ logger = logging.getLogger("plately.ocr")
 
 router = APIRouter()
 
-# ── Prompts ────────────────────────────────────────────────────
 
-RECEIPT_PARSE_PROMPT = """You are looking at a grocery receipt image. Extract all food items from it.
+LANG_MAP = {
+    "uz": "Uzbek",
+    "ko": "Korean",
+    "ru": "Russian",
+    "en": "English",
+}
+
+@router.post("/api/v1/receipt/scan")
+async def scan_receipt(file: UploadFile = File(...), lang: str = "en"):
+    """
+    Receives a receipt image and returns structured ingredient data.
+    Single-stage pipeline: gemma3:12b reads receipt + structures JSON in one pass.
+    """
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    language_name = LANG_MAP.get(lang.lower(), "English")
+    
+    # Construct prompts dynamically with target language
+    parse_prompt = f"""You are looking at a grocery receipt image. Extract all food items from it.
 
 For each food item return:
 - item_name: English name of the product (translate if needed)
+- item_name_translated: translate the item name to {language_name} (e.g. if the item is 'Bread', return 'Non' for Uzbek, 'Хлеб' for Russian, '빵' for Korean).
 - quantity: numeric amount purchased
 - unit: one of pcs, g, kg, ml, L, pack, bunch
 - category: one of Produce, Vegetable, Fruit, Meat, Poultry, Seafood, Dairy, Milk, Cheese, Yogurt, Eggs, Bakery, Bread, Pantry, Canned, Frozen, Beverage, Juice, Snack, Condiment, Spices, Oil, Sauce, Grain
@@ -39,19 +58,20 @@ Also extract the store name and purchase date (YYYY-MM-DD format).
 Skip non-food items (bags, discounts, tax, totals, card info).
 
 Return ONLY valid JSON:
-{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{"item_name": "Bread", "quantity": 1, "unit": "pcs", "category": "Bakery", "price": 2800}]}"""
+{{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{{"item_name": "Bread", "item_name_translated": "Non", "quantity": 1, "unit": "pcs", "category": "Bakery", "price": 2800}}]}}"""
 
-RECEIPT_PARSE_FALLBACK = """Extract all food items from this grocery receipt image.
-Return store name, date (YYYY-MM-DD), and each food item with its English name, quantity, unit, category, and price.
+    fallback_prompt = f"""Extract all food items from this grocery receipt image.
+Return store name, date (YYYY-MM-DD), and each food item with its English name, its translated name in {language_name} as 'item_name_translated', quantity, unit, category, and price.
 Skip non-food items.
 
 Return ONLY valid JSON:
-{"store": "...", "date": "YYYY-MM-DD", "items": [{"item_name": "...", "quantity": 1, "unit": "pcs", "category": "...", "price": 0}]}"""
+{{"store": "...", "date": "YYYY-MM-DD", "items": [{{"item_name": "...", "item_name_translated": "...", "quantity": 1, "unit": "pcs", "category": "...", "price": 0}}]}}"""
 
-CLOUD_RECEIPT_PROMPT = """Extract all food items from this grocery receipt image.
+    cloud_prompt = f"""Extract all food items from this grocery receipt image.
 
 For each food item return:
 - item_name: English name (translate if needed)
+- item_name_translated: translate the item name to {language_name} (e.g. if the item is 'Bread', return 'Non' for Uzbek, 'Хлеб' for Russian, '빵' for Korean).
 - quantity: numeric amount
 - unit: one of pcs, g, kg, ml, L, pack, bunch
 - category: one of Produce, Vegetable, Fruit, Meat, Poultry, Seafood, Dairy, Milk, Cheese, Yogurt, Eggs, Bakery, Bread, Pantry, Canned, Frozen, Beverage, Juice, Snack, Condiment, Spices, Oil, Sauce, Grain
@@ -61,31 +81,11 @@ Also extract store name and purchase date (YYYY-MM-DD).
 Skip non-food items (bags, discounts, tax, totals).
 
 Return STRICT JSON ONLY, no markdown, no code fences:
-{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{"item_name": "...", "quantity": 1.0, "unit": "pcs", "category": "...", "price": 0}]}
+{{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{{"item_name": "...", "item_name_translated": "...", "quantity": 1.0, "unit": "pcs", "category": "...", "price": 0}}]}}
 """
 
-# Mock response
-MOCK_RESPONSE = {
-    "store": "Jinan Food Materials Mart",
-    "date": "2026-02-22",
-    "items": [
-        {"item_name": "Low Fat Milk", "quantity": 1.0, "unit": "L", "category": "Milk", "price": 1980},
-        {"item_name": "Washed Carrot", "quantity": 2.0, "unit": "pcs", "category": "Vegetable", "price": 1300},
-    ]
-}
-
-
-@router.post("/api/v1/receipt/scan")
-async def scan_receipt(file: UploadFile = File(...)):
-    """
-    Receives a receipt image and returns structured ingredient data.
-    Single-stage pipeline: gemma3:12b reads receipt + structures JSON in one pass.
-    """
-    if not file.content_type or not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
     image_bytes = await file.read()
-    source = "mock"
+    source = "error"
     parsed_data = None
 
     # ── Attempt 1: Local single-stage pipeline (gemma3:12b) ──────
@@ -97,7 +97,7 @@ async def scan_receipt(file: UploadFile = File(...)):
             try:
                 result = await ollama.analyze_image_json(
                     image_bytes=image_bytes,
-                    prompt=RECEIPT_PARSE_PROMPT,
+                    prompt=parse_prompt,
                 )
                 if "error" not in result and result.get("items"):
                     parsed_data = result
@@ -114,7 +114,7 @@ async def scan_receipt(file: UploadFile = File(...)):
                 try:
                     result = await ollama.analyze_image_json(
                         image_bytes=image_bytes,
-                        prompt=RECEIPT_PARSE_FALLBACK,
+                        prompt=fallback_prompt,
                     )
                     if "error" not in result and result.get("items"):
                         parsed_data = result
@@ -141,7 +141,7 @@ async def scan_receipt(file: UploadFile = File(...)):
                 logger.info("[OCR] Calling Gemini Vision API...")
                 response = model.generate_content(
                     [
-                        CLOUD_RECEIPT_PROMPT,
+                        cloud_prompt,
                         {"mime_type": file.content_type, "data": image_bytes},
                     ],
                     generation_config=genai.GenerationConfig(
@@ -163,11 +163,12 @@ async def scan_receipt(file: UploadFile = File(...)):
         except Exception as e:
             logger.warning(f"[OCR] Gemini failed: {type(e).__name__}: {e}")
 
-    # ── Attempt 3: Mock fallback ────────────────────────────────
-    if parsed_data is None:
-        logger.info("[OCR] Using mock fallback data")
-        parsed_data = MOCK_RESPONSE
-        source = "mock"
+    # ── Verify that we actually parsed something ────────────────
+    if parsed_data is None or not parsed_data.get("items"):
+        raise HTTPException(
+            status_code=422,
+            detail="Could not read or parse the receipt. Please try taking a clearer, well-lit photo of the receipt."
+        )
 
     # Process through heuristic expiry engine
     processed = process_gemini_receipt_json(json.dumps(parsed_data))

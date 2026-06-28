@@ -123,6 +123,7 @@ def process_gemini_receipt_json(receipt_json_str: str) -> Dict:
         processed_items.append({
             "raw_name": item.get('item_name', 'Unknown Item'),
             "canonical_name": item.get('item_name', 'Unknown Item'),
+            "display_name_translated": item.get('item_name_translated'),
             "quantity": float(item.get('quantity', 1.0)),
             "unit": item.get('unit', 'pcs'),
             "category": cat,
