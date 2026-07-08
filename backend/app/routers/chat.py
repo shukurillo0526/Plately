@@ -16,9 +16,10 @@ import json
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser
+from app.core.security import raise_internal_error
 from app.services.ollama_service import get_ollama_service
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -55,13 +56,13 @@ Rules:
 
 class ChatMessage(BaseModel):
     role: str  # "user" or "assistant" only — system prompt is server-controlled
-    content: str
+    content: str = Field(..., max_length=4000)
 
 
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
+    messages: List[ChatMessage] = Field(..., max_length=50)
     stream: bool = True
-    context: Optional[str] = None  # Optional: user's inventory/recipe context
+    context: Optional[str] = Field(None, max_length=2000)
 
 
 @router.post("/api/v1/ai/chat")
@@ -137,5 +138,4 @@ async def chat(request: Request, req: ChatRequest, current: CurrentUser):
                 },
             }
         except Exception as e:
-            logger.error(f"[Chat] Generation error: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise_internal_error(logger, "[Chat] Generation error", e)

@@ -844,3 +844,27 @@ This release fully activates the Visual Calorie and Carb Plate Scanner, optimizi
   - Created and executed a python testing script (`test_plate_scanner.py`) asserting accurate portion payload parsing.
   - Ran and verified that all 52 backend unit tests pass successfully.
 
+---
+
+# 🛡️ v0.1.8 — Comprehensive SAST Security Audit & Full-Stack Remediation
+
+This release resolves 100% of the 14 security vulnerabilities, logical flaws, and architectural hardening items identified during a rigorous Static Application Security Testing (SAST) review across both backend (FastAPI) and frontend (Flutter) codebases.
+
+### Highlights
+- **Critical & High Priority Remediations (Phase 1)**:
+  - **Hardcoded Credentials Elimination**: Removed fallback Supabase credentials from `main.dart`, enforcing strict `--dart-define` validation in release mode (`!kDebugMode`).
+  - **Service-Role Auth Enforcement**: Protected `GET /api/v1/ai/status` and `GET /api/v1/calories/recipe/{id}` with mandatory `CurrentUser` authentication.
+  - **Information Disclosure Prevention**: Replaced all 13 raw exception stack/detail leaks (`detail=str(e)`) with secure `raise_internal_error()` wrappers across all backend routers.
+  - **Authoritative Server-Side Pricing**: Secured `POST /api/v1/orders` to verify item pricing directly against the `menu_items` database table rather than trusting client payloads.
+  - **Legacy Route Cleanup**: Removed unauthenticated legacy routes (`app/api/routes/`).
+  - **IDOR Remediation**: Fixed Insecure Direct Object Reference on recipe sentiment feedback by deriving user identity strictly from verified JWT tokens.
+- **Hardening & Attack Surface Reduction (Phase 2 & 3)**:
+  - **PostgREST Injection Protection**: Sanitized user food search strings using `sanitize_search_query()` before executing `.ilike()` database queries.
+  - **Cryptographic Randomness**: Upgraded pickup code generation and security-relevant helpers from standard `random` to cryptographically secure `secrets.choice()`.
+  - **HTTP Security Headers Middleware**: Added `security_headers_middleware` in `main.py` enforcing HSTS (`max-age=31536000`), `X-Content-Type-Options: nosniff`, and `X-Frame-Options: DENY`.
+  - **DoS Mitigation**: Added strict Pydantic length constraints to AI chat endpoints (`ChatMessage` & `ChatRequest`).
+  - **GDPR PII Masking**: Created `mask_user_id()` utility in `security.py` for safe user UUID obfuscation in application logs.
+- **Verification**:
+  - All 52 backend automated regression tests pass cleanly.
+
+

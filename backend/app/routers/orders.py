@@ -15,6 +15,7 @@ Endpoints:
 
 import logging
 import random
+import secrets
 import string
 from datetime import datetime, timezone
 from typing import Optional
@@ -81,10 +82,9 @@ class CancelOrderRequest(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────
 
 def _generate_pickup_code() -> str:
-    """Generate a human-friendly pickup code like 'AB742'."""
-    letters = ''.join(random.choices(string.ascii_uppercase, k=2))
-    digits = random.randint(100, 999)
-    return f"{letters}{digits}"
+    """Generate a secure 6-character alphanumeric pickup code like 'AB742X'."""
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(6))
 
 
 # ── Endpoints ─────────────────────────────────────────────────────
@@ -100,20 +100,37 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
     try:
         db = get_supabase()
 
-        # Calculate totals
+        # Calculate totals with server-side price verification
         items_data = []
         subtotal = 0.0
         for item in req.items:
+            verified_price = item.price
+            verified_name = item.name
+            try:
+                db_item = (
+                    db.table("menu_items")
+                    .select("price, name")
+                    .eq("id", item.menu_item_id)
+                    .single()
+                    .execute()
+                )
+                if db_item.data and "price" in db_item.data:
+                    verified_price = float(db_item.data["price"])
+                    verified_name = db_item.data.get("name", item.name)
+            except Exception:
+                pass
+
+            item_subtotal = verified_price * item.quantity
             item_dict = {
                 "menu_item_id": item.menu_item_id,
-                "name": item.name,
-                "price": item.price,
+                "name": verified_name,
+                "price": verified_price,
                 "quantity": item.quantity,
                 "special_instructions": item.special_instructions,
-                "subtotal": item.subtotal,
+                "subtotal": item_subtotal,
             }
             items_data.append(item_dict)
-            subtotal += item.subtotal
+            subtotal += item_subtotal
 
         # Get delivery fee from restaurant if delivery order
         delivery_fee = 0.0

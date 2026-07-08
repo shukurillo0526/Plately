@@ -77,7 +77,7 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
         # 1. Body size check for mutating methods
         if request.method in ("POST", "PUT", "PATCH"):
             content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > MAX_BODY_SIZE:
+            if content_length and content_length.isdigit() and int(content_length) > MAX_BODY_SIZE:
                 return JSONResponse(
                     status_code=413,
                     content={
@@ -85,6 +85,9 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
                         "message": f"Request body too large. Max: {MAX_BODY_SIZE // (1024*1024)}MB",
                     },
                 )
+            elif request.headers.get("transfer-encoding", "").lower() == "chunked":
+                # Ensure chunked uploads are logged/monitored for downstream handler validation
+                logger.debug(f"[Security] Chunked request received on {request.url.path}")
 
         # 2. UUID path parameter validation
         import re

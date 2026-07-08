@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from app.core.auth import CurrentUser, require_user_id
-from app.core.security import raise_internal_error, validate_image_upload
+from app.core.security import raise_internal_error, validate_image_upload, sanitize_search_query
 from app.db.supabase_client import get_supabase
 from app.services.ollama_service import get_ollama_service
 
@@ -113,10 +113,11 @@ async def analyze_calories(req: CalorieAnalyzeRequest, current: CurrentUser):
 
     for item_name in req.food_items:
         # Try DB lookup first
+        safe_name = sanitize_search_query(item_name)
         match = (
             db.table("ingredients")
             .select("display_name_en, calories_per_100g, default_unit, category")
-            .ilike("display_name_en", f"%{item_name}%")
+            .ilike("display_name_en", f"%{safe_name}%")
             .limit(1)
             .execute()
         )
@@ -235,8 +236,7 @@ async def get_daily_nutrition(user_id: str, current: CurrentUser, date: Optional
         }
 
     except Exception as e:
-        logger.error(f"[Calories] Daily fetch failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Calories] Daily fetch failed", e)
 
 
 def _estimate_serving(category: str) -> int:
@@ -281,7 +281,7 @@ def _unit_to_grams(quantity: float, unit: str, category: str = "") -> float:
 
 
 @router.get("/api/v1/calories/recipe/{recipe_id}")
-async def get_recipe_calories(recipe_id: str, servings: Optional[int] = None):
+async def get_recipe_calories(recipe_id: str, current: CurrentUser, servings: Optional[int] = None):
     """
     Compute total and per-serving calories + macros for a recipe.
     Uses per-ingredient calories_per_100g from the ingredients table.
@@ -401,6 +401,5 @@ Return JSON only:
         }
 
     except Exception as e:
-        logger.error(f"[Calories] Recipe calorie computation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Calories] Recipe calorie computation failed", e)
 

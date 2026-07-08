@@ -1,7 +1,7 @@
 # 🍽️ Plately — Feature Registry
 
 > **Complete catalog of every feature, screen, widget, service, and interaction in the Plately app.**
-> Last updated: 2026-05-23
+> Last updated: 2026-07-08 (v0.1.8)
 
 ---
 
@@ -1053,3 +1053,24 @@
 ### 15.6 App Info Constants
 - **File:** `lib/core/constants/app_info.dart`
 - **Purpose:** App version, build number, and other constants.
+
+---
+
+## 16. Security & Hardening Layer (v0.1.8)
+
+### 16.1 Backend Security Utilities
+- **File:** `backend/app/core/security.py`
+- **Purpose:** Centralized SAST-compliant security helpers.
+- **Methods:**
+  - `raise_internal_error(logger, message, exc)` — Logs detailed traceback internally while returning sanitized generic error messages to API consumers.
+  - `sanitize_search_query(query)` — Strips PostgREST filter injection symbols before executing database queries.
+  - `mask_user_id(user_id)` — Obfuscates user UUIDs for GDPR-compliant PII logging.
+  - `validate_image_upload(file)` — Validates uploaded image content type, magic bytes, and size limits.
+
+### 16.2 HTTP Security Headers & Middleware
+- **File:** `backend/app/main.py`
+- **Purpose:** Enforces production security headers across all API responses (`Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`).
+
+### 16.3 Client Runtime Environment Hardening
+- **File:** `frontend/lib/main.dart`
+- **Purpose:** Validates environment variable definitions (`SUPABASE_URL`, `SUPABASE_ANON_KEY`) passed via `--dart-define`, failing fast in release builds if credentials are missing.

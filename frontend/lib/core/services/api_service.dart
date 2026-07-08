@@ -77,59 +77,6 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  /// Send a food image for AI recognition.
-  /// Returns categorized predictions (auto_added, confirm, correct).
-  Future<Map<String, dynamic>> recognizeImage({
-    required String userId,
-    required Uint8List imageBytes,
-    String filename = 'photo.jpg',
-  }) async {
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/api/v1/vision/recognize?user_id=$userId',
-    );
-
-    final request = http.MultipartRequest('POST', uri)
-      ..headers.addAll(_headers)
-      ..files.add(http.MultipartFile.fromBytes(
-        'image',
-        imageBytes,
-        filename: filename,
-        contentType: MediaType('image', 'jpeg'),
-      ));
-
-    final streamedResponse = await _client.send(request);
-    final response = await http.Response.fromStream(streamedResponse);
-    return _handleResponse(response);
-  }
-
-  /// Submit a user correction for a vision prediction.
-  Future<Map<String, dynamic>> submitCorrection({
-    required String userId,
-    required String originalPrediction,
-    required String correctedIngredientId,
-    String? clarifaiConceptId,
-    double? confidence,
-    String? imageStoragePath,
-  }) async {
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/api/v1/vision/correct?user_id=$userId',
-    );
-
-    final body = {
-      'original_prediction': originalPrediction,
-      'corrected_ingredient_id': correctedIngredientId,
-      'clarifai_concept_id': ?clarifaiConceptId,
-      'confidence': ?confidence,
-      'image_storage_path': ?imageStoragePath,
-    };
-
-    final response = await _client.post(
-      uri,
-      headers: {..._headers, 'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-    return _handleResponse(response);
-  }
 
   // ── AI (Local Ollama) ───────────────────────────────────────────
 

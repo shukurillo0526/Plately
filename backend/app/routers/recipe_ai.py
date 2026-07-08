@@ -18,6 +18,7 @@ from app.services.youtube_intelligence import extract_recipe_from_youtube
 from app.services.static_substitutes import get_static_substitute
 from app.services.ai_cache import get_ai_cache
 from app.core.auth import CurrentUser, require_user_id
+from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -411,8 +412,7 @@ async def extract_youtube_recipe(request: Request, req: YouTubeRecipeRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[YouTubeRecipe] Extraction failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[YouTubeRecipe] Extraction failed", e)
 
 
 @router.post("/api/v1/ai/translate-recipe")
@@ -558,6 +558,5 @@ async def generate_shopping_list(req: ShoppingListRequest):
         }
 
     except Exception as e:
-        logger.error(f"[ShoppingList] Generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[ShoppingList] Generation failed", e)
 

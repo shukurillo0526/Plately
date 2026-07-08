@@ -6,6 +6,7 @@
 
 import 'dart:async';
 import 'package:plately_app/core/services/location_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:plately_app/core/theme/app_theme.dart';
@@ -52,14 +53,21 @@ void main() async {
 
   // ── Supabase Configuration ──
   // Pass via: --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
-  const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://tquyodwsyppwbpvkaunn.supabase.co',
-  );
-  const supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU',
-  );
+  const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  if (!kDebugMode && (envSupabaseUrl.isEmpty || envSupabaseAnonKey.isEmpty)) {
+    throw StateError(
+      'CRITICAL SECURITY: SUPABASE_URL and SUPABASE_ANON_KEY must be provided via --dart-define in release mode.',
+    );
+  }
+
+  final supabaseUrl = envSupabaseUrl.isNotEmpty
+      ? envSupabaseUrl
+      : 'https://tquyodwsyppwbpvkaunn.supabase.co';
+  final supabaseAnonKey = envSupabaseAnonKey.isNotEmpty
+      ? envSupabaseAnonKey
+      : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU';
 
   await Supabase.initialize(
     url: supabaseUrl,

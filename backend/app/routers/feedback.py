@@ -129,20 +129,18 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("[Feedback] Failed to submit feedback: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Feedback] Failed to submit feedback", e)
 
 
 # ── GET  /api/v1/feedback/recipe/{recipe_id}/sentiment ───────────
 @router.get("/api/v1/feedback/recipe/{recipe_id}/sentiment")
-async def get_recipe_sentiment(recipe_id: str, user_id: Optional[str] = None):
+async def get_recipe_sentiment(recipe_id: str, current: CurrentUser):
     """
     Return aggregated thumbs-up / thumbs-down counts for a recipe.
-
-    If ``user_id`` is provided, the response also includes the user's
-    existing vote (``1``, ``-1``, or ``null`` if they haven't voted).
+    Also includes the authenticated user's existing vote.
     """
     try:
+        user_id = current.id
         supabase = get_supabase()
 
         # Fetch all sentiment rows for this recipe
@@ -177,5 +175,4 @@ async def get_recipe_sentiment(recipe_id: str, user_id: Optional[str] = None):
         }
 
     except Exception as e:
-        logger.error("[Feedback] Failed to get sentiment for recipe %s: %s", recipe_id, e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, f"[Feedback] Failed to get sentiment for recipe {recipe_id}", e)

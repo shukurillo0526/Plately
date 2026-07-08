@@ -21,6 +21,7 @@ from app.routers import (
     feedback,
 )
 from app.services.ollama_service import get_ollama_service
+from app.core.auth import CurrentUser
 from app.middleware.request_middleware import RequestIdMiddleware, InputValidationMiddleware
 from app.middleware.error_handlers import register_error_handlers
 from app.core.logging_config import setup_logging
@@ -72,7 +73,7 @@ app = FastAPI(
         "- 📈 **Nutrition**: Calorie analysis and daily tracking\n"
         "- 👤 **User**: Flavor profile auto-learning, engagement tracking\n"
     ),
-    version="0.1.7",
+    version="0.1.8",
     docs_url="/docs" if _settings.DEBUG else None,
     redoc_url="/redoc" if _settings.DEBUG else None,
     openapi_tags=[
@@ -110,6 +111,16 @@ app.add_middleware(RequestIdMiddleware)
 # 3. Input validation (runs last, innermost)
 app.add_middleware(InputValidationMiddleware)
 
+# 4. Security hardening headers (HSTS, Anti-MIME sniffing, Frame protection)
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if not _settings.DEBUG:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
+
 # ── Global Error Handlers ────────────────────────────────────────
 register_error_handlers(app)
 
@@ -142,7 +153,7 @@ async def root():
 
 
 @app.get("/api/v1/ai/status", tags=["AI"])
-async def ai_status():
+async def ai_status(current: CurrentUser):
     """Health check for the local AI pipeline."""
     ollama = get_ollama_service()
     available = await ollama.is_available()

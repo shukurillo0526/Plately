@@ -26,6 +26,13 @@ def raise_internal_error(logger: logging.Logger, message: str, exc: Exception) -
     raise HTTPException(status_code=500, detail="Internal server error")
 
 
+def mask_user_id(user_id: str) -> str:
+    """Mask a user UUID for GDPR-compliant safe logging (e.g., '12345678-***')."""
+    if not user_id or len(user_id) < 8:
+        return "***"
+    return f"{user_id[:8]}-***"
+
+
 def _is_valid_image(data: bytes) -> bool:
     if len(data) < 12:
         return False
