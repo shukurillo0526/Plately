@@ -21,13 +21,9 @@ CREATE POLICY "Allow public read active video_feeds"
 -- unless using the service_role key (which bypasses RLS safely from backend).
 
 
--- 2. Fix CRITICAL: RLS Disabled on public.spatial_ref_sys (PostGIS metadata)
--- Enable RLS on spatial_ref_sys to clear the Supabase Security Advisor warning
-ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public read spatial_ref_sys" ON public.spatial_ref_sys;
-
-CREATE POLICY "Allow public read spatial_ref_sys"
-  ON public.spatial_ref_sys
-  FOR SELECT
-  USING (true);
+-- 2. Note on public.spatial_ref_sys (PostGIS metadata table):
+-- In Supabase, spatial_ref_sys is owned by the internal supabase_admin superuser.
+-- Attempting 'ALTER TABLE spatial_ref_sys ENABLE ROW LEVEL SECURITY;' returns
+-- ERROR 42501 (must be owner of table spatial_ref_sys).
+-- This is a known Supabase platform false positive; you can safely dismiss/ignore
+-- the spatial_ref_sys advisory in the Supabase Security Advisor dashboard.
