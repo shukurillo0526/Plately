@@ -67,8 +67,8 @@ For each food item return:
 Also extract the store name and purchase date (YYYY-MM-DD format).
 Skip non-food items (bags, discounts, tax, totals, card info).
 
-CRITICAL: If the image is blurry, unreadable, not a receipt, or does not contain identifiable food items, do NOT hallucinate or output mock items. Return an empty items list:
-{{"store": "Unknown", "date": null, "items": []}}
+CRITICAL ANTI-HALLUCINATION RULE: If the photo is blurry, unreadable, not a receipt, or does not clearly show food items, you MUST NOT hallucinate or repeat past store names. Return exactly:
+{{"store": "No items detected", "date": null, "items": []}}
 
 Return ONLY valid JSON:
 {{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{{"item_name": "Bread", "item_name_translated": "Non", "quantity": 1, "unit": "pcs", "category": "Bakery", "price": 2800}}]}}"""
@@ -182,10 +182,17 @@ Return STRICT JSON ONLY, no markdown, no code fences:
 
     # ── Verify that we actually parsed something ────────────────
     if parsed_data is None or not parsed_data.get("items"):
-        raise HTTPException(
-            status_code=422,
-            detail="Could not read or parse the receipt. Please try taking a clearer, well-lit photo of the receipt."
-        )
+        return {
+            "status": "empty",
+            "source": source,
+            "message": "No readable food items detected on the receipt.",
+            "data": {
+                "store": "No items detected",
+                "date": None,
+                "item_count": 0,
+                "items": [],
+            },
+        }
 
     # Process through heuristic expiry engine
     processed = process_gemini_receipt_json(json.dumps(parsed_data))

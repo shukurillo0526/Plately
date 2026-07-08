@@ -59,12 +59,14 @@ async def analyze_image_calories(current: CurrentUser, file: UploadFile = File(.
         "    }\n"
         "  ]\n"
         "}\n"
+        "CRITICAL ANTI-HALLUCINATION RULE: If the photo is blurry, unreadable, or does not clearly show food, return exactly:\n"
+        "{\"status\": \"no_food_detected\", \"items\": [], \"total_estimated_calories\": 0}\n"
         "Return ONLY this JSON object. Do not include markdown formatting or backticks around the JSON."
     )
 
     try:
         result = await ollama.analyze_image_json(image_bytes, prompt)
-        if not result or "total_estimated_calories" not in result:
+        if not result or "total_estimated_calories" not in result or result.get("status") == "no_food_detected":
             return {"status": "no_food_detected", "items": [], "total_estimated_calories": 0}
         
         result["status"] = "success"
@@ -84,7 +86,7 @@ async def analyze_image_calories(current: CurrentUser, file: UploadFile = File(.
         return result
     except Exception as e:
         logger.error(f"[Calories] Plate vision analysis failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to analyze food plate.")
+        return {"status": "no_food_detected", "items": [], "total_estimated_calories": 0}
 
 
 

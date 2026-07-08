@@ -72,7 +72,10 @@ class ApiService {
         contentType: MediaType('image', 'jpeg'),
       ));
 
-    final streamedResponse = await _client.send(request);
+    final streamedResponse = await _client.send(request).timeout(
+      const Duration(seconds: 90),
+      onTimeout: () => throw Exception('Server is warming up (cold start). Please try again.'),
+    );
     final response = await http.Response.fromStream(streamedResponse);
     return _handleResponse(response);
   }
@@ -98,7 +101,10 @@ class ApiService {
         contentType: MediaType('image', 'jpeg'),
       ));
 
-    final streamedResponse = await _client.send(request);
+    final streamedResponse = await _client.send(request).timeout(
+      const Duration(seconds: 90),
+      onTimeout: () => throw Exception('Server is warming up (cold start). Please try again.'),
+    );
     final response = await http.Response.fromStream(streamedResponse);
     return _handleResponse(response);
   }
@@ -317,7 +323,10 @@ class ApiService {
       request.headers['Authorization'] = 'Bearer ${session.accessToken}';
     }
     request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(
+      const Duration(seconds: 90),
+      onTimeout: () => throw Exception('Server is warming up (cold start). Please try again.'),
+    );
     final response = await http.Response.fromStream(streamed);
     return _handleResponse(response);
   }

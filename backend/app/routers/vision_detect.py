@@ -156,16 +156,18 @@ async def detect_ingredients(request: Request, current: CurrentUser, file: Uploa
         except Exception as e:
             logger.warning(f"[Vision] Cloud fallback failed: {e}")
 
-    # ── Attempt 3: Mock fallback ────────────────────────────────
+    # ── Attempt 3: Safe empty fallback (no hallucination) ────────
     if parsed_data is None:
-        parsed_data = MOCK_RESPONSE
-        source = "mock"
+        parsed_data = {"items": []}
+        source = "empty"
 
     items = parsed_data.get("items", [])
+    status = "success" if len(items) > 0 else "empty"
 
     return {
-        "status": "success",
+        "status": status,
         "source": source,
+        "message": "No identifiable food ingredients detected in photo." if len(items) == 0 else "Success",
         "item_count": len(items),
         "data": parsed_data,
     }

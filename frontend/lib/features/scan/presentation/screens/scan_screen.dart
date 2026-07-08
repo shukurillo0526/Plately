@@ -723,6 +723,46 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
             }),
           ],
 
+          if (items.isEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 48, color: Theme.of(context).colorScheme.error),
+                  SizedBox(height: 12),
+                  Text(
+                    _scanMode == 0
+                        ? 'No readable items found on receipt'
+                        : 'No identifiable food items found in photo',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    'Try taking a clearer, well-lit photo with items fully visible, or add items manually below.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+
           SizedBox(height: 32),
 
           // Scan again button
@@ -1664,14 +1704,13 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
       setState(() { _result = result; _analyzing = false; });
     } catch (e) {
       if (!mounted) return;
-      setState(() { _analyzing = false; _errorMessage = null; });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Analysis failed. Check your connection and try again.'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      final msg = e.toString().contains('warming up') || e.toString().contains('Timeout')
+          ? 'Server is warming up from sleep. Please tap Try Again in a few seconds!'
+          : 'Could not analyze photo. Please try a clearer photo with food visible.';
+      setState(() {
+        _analyzing = false;
+        _errorMessage = msg;
+      });
     }
   }
 
