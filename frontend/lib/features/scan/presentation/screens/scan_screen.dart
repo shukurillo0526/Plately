@@ -17,6 +17,7 @@ import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/scan/presentation/screens/audit_screen.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/features/profile/presentation/screens/nutrition_tracker_page.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
@@ -47,17 +48,6 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     _topTabController = TabController(length: 2, vsync: this);
-    _topTabController.addListener(() {
-      if (_topTabController.index == 1) {
-        _topTabController.index = 0;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)?.auto_scanCaloriesIsComingSoon ?? 'Scan Calories is coming soon!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
   }
 
   @override
@@ -85,6 +75,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
           i['category'] = match['category'] ?? i['category'];
           // Prefer DB unit if none provided
           i['unit'] = i['unit'] ?? match['default_unit'];
+          
+          // Copy translations to item map
+          i['display_name_en'] = match['display_name_en'];
+          i['display_name_ko'] = match['display_name_ko'];
+          i['display_name_uz'] = match['display_name_uz'];
+          i['display_name_uz_cyrl'] = match['display_name_uz_cyrl'];
+          i['display_name_ru'] = match['display_name_ru'];
           
           // Auto-fill expiry based on DB shelf life if missing
           if (i['expiry_date'] == null && match['sealed_shelf_life_days'] != null) {
@@ -123,6 +120,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       final result = await _api.parseReceipt(
         imageBytes: bytes,
         filename: image.name,
+        lang: Localizations.localeOf(context).languageCode,
       );
 
       final data = (result['data'] as Map<String, dynamic>?) ?? result;
@@ -675,7 +673,30 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
             ...items.asMap().entries.map((entry) {
               final idx = entry.key;
               final i = entry.value as Map<String, dynamic>;
-              final canonicalName = i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+              
+              // Get localized name based on app locale
+              final localeCode = Localizations.localeOf(context).languageCode;
+              final isUzCyrl = Localizations.localeOf(context).scriptCode == 'Cyrl';
+              
+              String displayName;
+              if (localeCode == 'uz' && isUzCyrl) {
+                displayName = i['display_name_uz_cyrl'] ?? i['display_name_uz'] ?? i['display_name_en'] ?? i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+              } else {
+                switch (localeCode) {
+                  case 'uz':
+                    displayName = i['display_name_uz'] ?? i['display_name_en'] ?? i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+                    break;
+                  case 'ko':
+                    displayName = i['display_name_ko'] ?? i['display_name_en'] ?? i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+                    break;
+                  case 'ru':
+                    displayName = i['display_name_ru'] ?? i['display_name_en'] ?? i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+                    break;
+                  default:
+                    displayName = i['display_name_en'] ?? i['canonical_name'] ?? i['item_name'] ?? 'Unknown';
+                }
+              }
+
               final qty = i['quantity']?.toString() ?? '1';
               final unit = i['unit'] ?? '';
               final category = i['category'] ?? '';
@@ -688,7 +709,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                 opacity: isAdded ? 0.5 : 1.0,
                 child: _resultTile(
                   icon: isAdded ? Icons.check_circle : Icons.check_circle_outline,
-                  title: canonicalName,
+                  title: displayName,
                   subtitle: '$qty $unit • $category\nExp: $expiry',
                   color: isAdded ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4) : Theme.of(context).colorScheme.tertiary,
                   trailing: isAdded
@@ -1604,9 +1625,11 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
   final ImagePicker _picker = ImagePicker();
   final ApiService _api = ApiService();
   bool _analyzing = false;
+  bool _logging = false;
   Map<String, dynamic>? _result;
   Uint8List? _imageBytes;
   String _mealType = 'snack';
+  String? _errorMessage;
 
   final List<String> _mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
   final Map<String, String> _mealEmoji = {
@@ -1621,44 +1644,107 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
       if (image == null) return;
 
       final bytes = await image.readAsBytes();
-      setState(() { _analyzing = true; _result = null; _imageBytes = bytes; });
+      setState(() { _analyzing = true; _result = null; _imageBytes = bytes; _errorMessage = null; });
 
       final result = await _api.analyzeCaloriesImage(bytes, image.name);
+
+      if (!mounted) return;
+
+      // Handle no food detected
+      if (result['status'] == 'no_food_detected' ||
+          ((result['items'] as List?)?.isEmpty ?? true)) {
+        setState(() {
+          _analyzing = false;
+          _errorMessage = 'No food items detected. Try a clearer photo with food visible.';
+          _result = null;
+        });
+        return;
+      }
+
       setState(() { _result = result; _analyzing = false; });
     } catch (e) {
-      setState(() => _analyzing = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.analysisFailedX(e.toString()) ?? 'Analysis failed: $e'), backgroundColor: Colors.redAccent));
-      }
+      if (!mounted) return;
+      setState(() { _analyzing = false; _errorMessage = null; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Analysis failed. Check your connection and try again.'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   Future<void> _logMeal() async {
     if (_result == null) return;
+    setState(() => _logging = true);
     try {
       final userId = currentUserId();
-      final items = ((_result!['items'] as List?) ?? []).map<Map<String, dynamic>>((item) => {
-        'name': item['name'] ?? '',
-        'calories': item['estimated_calories'] ?? 0,
-        'protein_g': item['protein_g'] ?? 0,
-        'carbs_g': item['carbs_g'] ?? 0,
-        'fat_g': item['fat_g'] ?? 0,
-      }).toList();
+      final itemsList = _result!['items'] as List?;
+      final List<Map<String, dynamic>> items = [];
+
+      if (itemsList != null && itemsList.isNotEmpty) {
+        items.addAll(itemsList.map<Map<String, dynamic>>((item) => {
+          'name': item['name'] ?? '',
+          'calories': item['estimated_calories'] ?? 0,
+          'protein_g': item['protein_g'] ?? 0,
+          'carbs_g': item['carbs_g'] ?? 0,
+          'fat_g': item['fat_g'] ?? 0,
+        }));
+      } else {
+        items.add({
+          'name': _result!['meal_name'] ?? 'Scanned Meal',
+          'calories': _result!['total_estimated_calories'] ?? 0,
+          'protein_g': _result!['protein_g'] ?? 0,
+          'carbs_g': _result!['carbs_g'] ?? 0,
+          'fat_g': _result!['fat_g'] ?? 0,
+        });
+      }
 
       await _api.logNutrition(
         userId: userId, mealType: _mealType, foodItems: items);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.auto_mealLogged ?? '✅ Meal logged!'), backgroundColor: Theme.of(context).colorScheme.tertiary));
-        setState(() { _result = null; _imageBytes = null; });
-      }
+
+      if (!mounted) return;
+      setState(() => _logging = false);
+
+      // Show success with option to view tracker
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text('Meal logged!')),
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const NutritionTrackerPage()));
+                },
+                child: Text('VIEW', style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w800,
+                  decoration: TextDecoration.underline)),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      setState(() { _result = null; _imageBytes = null; });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.failedToLogX(e.toString()) ?? 'Failed to log: $e'), backgroundColor: Colors.redAccent));
-      }
+      if (!mounted) return;
+      setState(() => _logging = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to log meal. Try again.'), backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating),
+      );
     }
+  }
+
+  void _clearResults() {
+    setState(() { _result = null; _imageBytes = null; _errorMessage = null; });
   }
 
   @override
@@ -1666,56 +1752,63 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(24, 24, 24, 120),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Preview image or placeholder
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
-              image: _imageBytes != null
-                  ? DecorationImage(image: MemoryImage(_imageBytes!), fit: BoxFit.cover)
-                  : null,
-            ),
-            child: _imageBytes == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.local_fire_department, size: 56, color: Colors.orange),
-                      SizedBox(height: 12),
-                      Text(AppLocalizations.of(context)?.auto_snapYourMeal ?? 'Snap Your Meal',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
-                      SizedBox(height: 6),
-                      Text(AppLocalizations.of(context)?.auto_takeAPhotoAndAiWillEstimateCalories ?? 'Take a photo and AI will estimate calories',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13)),
-                    ],
-                  )
-                : _analyzing
-                    ? Center(
-                        child: Container(
-                          padding: EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.54), borderRadius: BorderRadius.circular(16)),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: Colors.orange),
-                              SizedBox(height: 12),
-                              Text(AppLocalizations.of(context)?.auto_analyzingFood ?? 'Analyzing food...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                      )
+          // ── Image Preview / Placeholder ─────────────────────────
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              height: 220,
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                image: _imageBytes != null
+                    ? DecorationImage(image: MemoryImage(_imageBytes!), fit: BoxFit.cover)
                     : null,
+              ),
+              child: _imageBytes == null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.local_fire_department, size: 56, color: Colors.orange),
+                        SizedBox(height: 12),
+                        Text('Snap Your Meal',
+                          style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
+                        SizedBox(height: 6),
+                        Text('Take a photo and AI will estimate calories',
+                          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 13)),
+                      ],
+                    )
+                  : _analyzing
+                      ? Center(
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(16)),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(color: Colors.orange),
+                                SizedBox(height: 12),
+                                Text('Analyzing food...', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                                SizedBox(height: 4),
+                                Text('Identifying items & estimating calories', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                        )
+                      : null,
+            ),
           ),
           SizedBox(height: 16),
 
-          // Camera / Gallery buttons
+          // ── Camera / Gallery Buttons ────────────────────────────
           Row(
             children: [
               Expanded(
@@ -1724,7 +1817,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                   child: FilledButton.icon(
                     onPressed: _analyzing ? null : () => _captureAndAnalyze(ImageSource.camera),
                     icon: Icon(Icons.camera_alt, size: 20),
-                    label: Text(AppLocalizations.of(context)?.auto_camera ?? 'Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                    label: Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.orange,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
@@ -1738,7 +1831,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                   child: OutlinedButton.icon(
                     onPressed: _analyzing ? null : () => _captureAndAnalyze(ImageSource.gallery),
                     icon: Icon(Icons.photo_library, size: 20, color: Colors.orange),
-                    label: Text(AppLocalizations.of(context)?.auto_gallery ?? 'Gallery', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    label: Text('Gallery', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.orange),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
@@ -1748,34 +1841,75 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
             ],
           ),
 
-          // Results
+          // ── Error / No Food State ──────────────────────────────
+          if (_errorMessage != null) ...[
+            SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.15)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.no_food, size: 40, color: Colors.orange.withValues(alpha: 0.5)),
+                  SizedBox(height: 12),
+                  Text(_errorMessage!, textAlign: TextAlign.center,
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 14)),
+                  SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: _clearResults,
+                    icon: Icon(Icons.refresh, size: 18, color: Colors.orange),
+                    label: Text('Try Again', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Results ────────────────────────────────────────────
           if (_result != null) ...[
             SizedBox(height: 20),
 
-            // Detected items
-            if (_result!['detected_items'] != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: ((_result!['detected_items'] as List?) ?? []).map((item) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8)),
-                    child: Text('🔍 $item',
-                      style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w600)),
-                  )).toList(),
-                ),
+            // Plate name + serving weight info
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Row(
+                children: [
+                  Icon(Icons.restaurant, color: Colors.orange, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _result!['meal_name'] ?? 'Scanned Plate',
+                          style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Estimated plate serving: ~${_result!['estimated_weight_g'] ?? 0}g',
+                          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.54), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 12),
 
-            // Total calories
+            // Total calories hero card with overall plate macros
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.orange.withValues(alpha: 0.15), Theme.of(context).colorScheme.surface],
+                  colors: [Colors.orange.withValues(alpha: 0.15), cs.surface],
                   begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
@@ -1784,59 +1918,61 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                 children: [
                   Text('🔥 ${_result!['total_estimated_calories'] ?? 0}',
                     style: TextStyle(color: Colors.orange, fontSize: 36, fontWeight: FontWeight.w800)),
-                  Text(AppLocalizations.of(context)?.auto_estimatedCalories ?? 'estimated calories',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
-                  SizedBox(height: 8),
-                  Text('${(_result!['items'] as List?)?.length ?? 0} items identified',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 12)),
+                  Text('estimated calories for whole plate',
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: 0.54), fontSize: 13)),
+                  SizedBox(height: 16),
+                  // Overall plate macros
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _macroChip('Protein', _result!['protein_g'] ?? 0, Colors.blue),
+                      SizedBox(width: 8),
+                      _macroChip('Carbs', _result!['carbs_g'] ?? 0, Colors.amber.shade700),
+                      SizedBox(width: 8),
+                      _macroChip('Fat', _result!['fat_g'] ?? 0, Colors.red),
+                    ],
+                  ),
                 ],
               ),
             ),
-            SizedBox(height: 12),
-
-            // Per-item breakdown
-            ...((_result!['items'] as List?) ?? []).map((item) => Container(
-              margin: EdgeInsets.only(bottom: 6),
-              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item['name'] ?? '',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                        Text('${item['calories_per_100g'] ?? '?'} cal/100g • ~${item['estimated_serving_g'] ?? item['serving_g'] ?? '?'}g',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                  Text('${item['estimated_calories'] ?? '?'}',
-                    style: TextStyle(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.w800)),
-                  Text(AppLocalizations.of(context)?.auto_cal ?? ' cal', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 11)),
-                  SizedBox(width: 6),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: (item['source'] == 'database' ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.primary)
-                          .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6)),
-                    child: Text(
-                      item['source'] == 'database' ? 'DB' : 'AI',
-                      style: TextStyle(
-                        color: item['source'] == 'database' ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.primary,
-                        fontSize: 9, fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-            )),
-
             SizedBox(height: 16),
+
+            // Component breakdown title
+            if (((_result!['items'] as List?) ?? []).isNotEmpty) ...[
+              Text(
+                'Plate Components',
+                style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 8),
+              ...((_result!['items'] as List?) ?? []).map((item) => Container(
+                margin: EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.06)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['name'] ?? '',
+                            style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text('~${item['estimated_serving_g'] ?? item['serving_g'] ?? '?'}g portion',
+                            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    Text('${item['estimated_calories'] ?? '?'}',
+                      style: TextStyle(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.w800)),
+                    Text(' cal', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.38), fontSize: 11)),
+                  ],
+                ),
+              )),
+              SizedBox(height: 16),
+            ],
 
             // Meal type selector
             Row(
@@ -1848,17 +1984,17 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                       margin: EdgeInsets.only(right: 4),
                       padding: EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: _mealType == type ? Colors.orange.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surface,
+                        color: _mealType == type ? Colors.orange.withValues(alpha: 0.15) : cs.surface,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: _mealType == type ? Colors.orange.withValues(alpha: 0.4) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+                          color: _mealType == type ? Colors.orange.withValues(alpha: 0.4) : cs.onSurface.withValues(alpha: 0.06)),
                       ),
                       child: Column(
                         children: [
                           Text(_mealEmoji[type] ?? '🍽️', style: TextStyle(fontSize: 16)),
                           Text(type[0].toUpperCase() + type.substring(1),
                             style: TextStyle(
-                              color: _mealType == type ? Colors.orange : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                              color: _mealType == type ? Colors.orange : cs.onSurface.withValues(alpha: 0.38),
                               fontSize: 10, fontWeight: FontWeight.w600)),
                         ],
                       ),
@@ -1868,21 +2004,60 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
               ],
             ),
 
-            SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: _logMeal,
-                icon: Icon(Icons.add_task, size: 20),
-                label: Text(AppLocalizations.of(context)?.auto_logMeal ?? 'Log Meal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.tertiary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              ),
+            SizedBox(height: 16),
+
+            // Consume / Cancel options
+            Row(
+              children: [
+                // Cancel option
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _logging ? null : _clearResults,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: cs.onSurface.withValues(alpha: 0.12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      child: Text('Cancel', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                // Consume option
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: FilledButton.icon(
+                      onPressed: _logging ? null : _logMeal,
+                      icon: _logging
+                          ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Icon(Icons.check_circle, size: 20),
+                      label: Text(_logging ? 'Consuming...' : 'Consume', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.tertiary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _macroChip(String label, dynamic value, Color color) {
+    final v = (value is int) ? value : (value as num?)?.round() ?? 0;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$label: ${v}g',
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }

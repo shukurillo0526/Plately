@@ -134,7 +134,7 @@ class _AuthScreenState extends State<AuthScreen>
     final email = _emailController.text.trim();
     final l10n = AppLocalizations.of(context);
     if (email.isEmpty) {
-      setState(() => _error = l10n?.auth_enterBoth ?? 'Please enter your email address first.');
+      setState(() => _error = l10n?.auth_enterEmail ?? 'Please enter your email address first.');
       return;
     }
     try {
@@ -322,48 +322,6 @@ class _AuthScreenState extends State<AuthScreen>
                     Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Language Picker Button (top-right) ──
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 12,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _showLanguagePicker,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.language,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${AppSettings().currentLanguageFlag} ${AppSettings().currentLanguageName}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -586,6 +544,48 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Language Picker Button (top-right) ──
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 12,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _showLanguagePicker,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.language,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${AppSettings().currentLanguageFlag} ${AppSettings().currentLanguageName}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

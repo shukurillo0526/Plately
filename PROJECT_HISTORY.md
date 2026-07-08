@@ -799,3 +799,48 @@ A fully sandboxed, task-oriented interactive tutorial that guides new users thro
   - Bypassed repeated onboarding (nickname/preferences prompts) on every login. The `AuthGate` now queries the database upon login. If a user profile is found in the `users` table with a non-empty username or display name, they are automatically marked as onboarded (`onboarding_complete = true`), and the setup screens are bypassed.
   - Added onboarding state cleanup to the signout handler to ensure correct onboarding state evaluations when switching accounts on the same device.
   - Resolved async `setState` warnings in `cook_screen.dart` via checking widget `mounted` state.
+
+---
+
+# 📦 v0.1.6 — Cook & Store Leftovers, Swipe Control, & Precise Curation
+
+This milestone introduces robust leftover management, interactive swipe controls in the Shelf, vertical step scrolling in the cooking flow, Android 14 notification crash fixes, and a 100% exact recipe-to-photo curation update.
+
+### Highlights
+- **Cook & Store Leftovers Workflow**: 
+  - Integrated SQL schema additions (`is_cooked_leftover`, `parent_recipe_id`, `portions_count`, `calories_per_portion`, etc.) and process functions (`process_meal_prep`, `eat_leftover_portion`, enhanced `consume_inventory_item`) in Supabase.
+  - Implemented `CookPortionsSheet` so that when a user finishes cooking, they specify servings eaten immediately via a slider. Remaining portions are automatically calculated (`Cooked - Eaten`) and saved to the Shelf as a `cooked_meal` leftover with corresponding macro attributes.
+  - Updated `InventoryDetailSheet` and `LivingShelfScreen` to display and manage leftover portions cleanly.
+- **Interactive Swipe Gestures**:
+  - **Swipe Right (Green / Consume)**: Opens a confirmation dialog allowing users to input the exact number of portions or units to consume. Deducts from inventory and logs to nutrition history.
+  - **Swipe Left (Red / Discard)**: Opens a warning dialog asking how much the user is discarding, confirming delete or updating remaining quantities.
+  - **Tutorial/Onboarding Guard**: Bypasses Supabase RPC calls when swiping mock items with IDs starting with `'tutorial'` to prevent database exceptions during onboarding.
+- **Recipe Step Scrolling**: Wrapped step card layouts in `SingleChildScrollView` to prevent content cropping and ensure smooth vertical scrolling of long instructions on all mobile screens.
+- **Hallucination Prevention**: Prompt-engineered receipt scanner OCR configurations to return an empty item list instead of fallback defaults ("Jian Mart") when receipts are unreadable or blurry.
+- **Precise Recipe Curation**: Executed a programmatic title-matching update that attached 100% accurate, highly relevant Unsplash food photos to all 133 recipes in the database, replacing the repetitive gradient placeholder/generic category system.
+- **Android 14 Compatibility**: Upgraded background notification service using standard plugin managers with the `ongoing` flag to prevent notification security crashes on newer Android devices.
+- **Google Native Auth & Visibility**: Integrated native Google Sign-in mobile flows and PKCE authentication options. Added a visible "Forgot Password?" reset link and password visibility toggle toggles.
+
+---
+
+# 📦 v0.1.7 — Commercial-Grade Visual Calorie Plate Scanner & API Auth Integration
+
+This release fully activates the Visual Calorie and Carb Plate Scanner, optimizing it for prepared outside meals with commercial-grade portion estimation, clean UI action states, and integrated API token authentication.
+
+### Highlights
+- **Prepared Outside Food Plate Scanner**:
+  - Fully enabled the previously blocked "Scan Calories" tab in the `ScanScreen` interface.
+  - Overhauled the vision AI prompt in `calorie_analysis.py` to evaluate the physical portion size and volume of food visible on the plate directly from the image, estimating overall plate weight (grams), calories, and macronutrients in a single optimized pass.
+  - Bypassed the raw ingredients database lookups during photo scans to ensure high accuracy for cooked restaurant meals.
+- **Polished Scan Results Panel & Actions**:
+  - Re-designed the scan results panel in `_CalorieScanTab` to display the plate meal name and portion size weight in a prominent orange-accented header banner.
+  - Implemented overall macro progress chips (**Protein**, **Carbs**, **Fat**) on the total estimated calories card.
+  - Lists component foods on the plate with their portion weights and calories.
+  - Added dedicated **Consume** (logs to daily nutrition logs) and **Cancel** (discards results) options matching standard calorie scanner UX.
+  - Handled "No food items detected" empty states with a user-friendly card and "Try Again" option.
+- **API Token Auth Integration**:
+  - Resolved the critical auth gap by injecting the Supabase user Bearer access token into all API header calls and multipart image uploads. Ensures full compliance with backend session guards.
+- **Verification**:
+  - Created and executed a python testing script (`test_plate_scanner.py`) asserting accurate portion payload parsing.
+  - Ran and verified that all 52 backend unit tests pass successfully.
+

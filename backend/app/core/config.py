@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # --- App ---
     APP_NAME: str = "Plately API"
-    APP_VERSION: str = "3.4.0"
+    APP_VERSION: str = "0.1.7"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     STRUCTURED_LOGS: bool = False  # True for production JSON logs
@@ -51,7 +51,31 @@ class Settings(BaseSettings):
     # --- Sentry (optional — set to enable crash reporting) ---
     SENTRY_DSN: str = ""
 
+    # --- CORS (comma-separated origins; mobile apps ignore CORS) ---
+    CORS_ORIGINS: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+    def cors_origins_list(self) -> list[str]:
+        """Return allowed browser origins. Localhost is included only in DEBUG."""
+        origins: list[str] = []
+        if self.CORS_ORIGINS:
+            origins.extend(
+                origin.strip()
+                for origin in self.CORS_ORIGINS.split(",")
+                if origin.strip()
+            )
+        if self.DEBUG:
+            origins.extend([
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+            ])
+        # Preserve order while deduplicating
+        return list(dict.fromkeys(origins))
 
 
 @lru_cache()

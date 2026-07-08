@@ -10,6 +10,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 
+from app.core.auth import (
+    CurrentUser,
+    require_user_id,
+    verify_meal_plan_ownership,
+    verify_shopping_item_ownership,
+)
+from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("plately.user_data")
@@ -53,12 +60,13 @@ class MealPlanRequest(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────
 
 @router.post("/init")
-async def init_user(req: InitUserRequest):
+async def init_user(req: InitUserRequest, current: CurrentUser):
     """
     Atomically initialize a new user's profile rows.
     Creates users, gamification_stats, and user_flavor_profile.
     Idempotent — safe to call multiple times.
     """
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -90,16 +98,16 @@ async def init_user(req: InitUserRequest):
         return {"status": "success", "user_id": req.user_id}
 
     except Exception as e:
-        logger.error(f"[User] Init failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, f"[User] Init failed for {req.user_id}", e)
 
 
 @router.get("/{user_id}/dashboard")
-async def get_dashboard(user_id: str):
+async def get_dashboard(user_id: str, current: CurrentUser):
     """
     Single endpoint returning all user profile data.
     Replaces 5 parallel queries from the Profile screen.
     """
+    require_user_id(current, user_id)
     db = get_supabase()
 
     try:
@@ -159,13 +167,13 @@ async def get_dashboard(user_id: str):
         }
 
     except Exception as e:
-        logger.error(f"[User] Dashboard load failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, f"[User] Dashboard load failed for {user_id}", e)
 
 
 @router.patch("/profile")
-async def update_profile(req: UpdateProfileRequest):
+async def update_profile(req: UpdateProfileRequest, current: CurrentUser):
     """Update user profile fields."""
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -186,15 +194,15 @@ async def update_profile(req: UpdateProfileRequest):
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[User] Profile update failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, f"[User] Profile update failed for {req.user_id}", e)
 
 
 # ── Shopping List ─────────────────────────────────────────────
 
 @router.post("/shopping-list")
-async def add_shopping_item(req: ShoppingItemRequest):
+async def add_shopping_item(req: ShoppingItemRequest, current: CurrentUser):
     """Add an item to the shopping list."""
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -210,14 +218,14 @@ async def add_shopping_item(req: ShoppingItemRequest):
         return {"status": "success", "id": item.get("id")}
 
     except Exception as e:
-        logger.error(f"[Shopping] Add failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Shopping] Add failed", e)
 
 
 @router.patch("/shopping-list/{item_id}")
-async def toggle_shopping_item(item_id: str, req: ToggleShoppingRequest):
+async def toggle_shopping_item(item_id: str, req: ToggleShoppingRequest, current: CurrentUser):
     """Toggle purchased status of a shopping list item."""
     db = get_supabase()
+    verify_shopping_item_ownership(db, item_id, current.id)
 
     try:
         db.table("shopping_list").update({
@@ -227,29 +235,29 @@ async def toggle_shopping_item(item_id: str, req: ToggleShoppingRequest):
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[Shopping] Toggle failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Shopping] Toggle failed", e)
 
 
 @router.delete("/shopping-list/{item_id}")
-async def delete_shopping_item(item_id: str):
+async def delete_shopping_item(item_id: str, current: CurrentUser):
     """Delete a shopping list item."""
     db = get_supabase()
+    verify_shopping_item_ownership(db, item_id, current.id)
 
     try:
         db.table("shopping_list").delete().eq("id", item_id).execute()
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[Shopping] Delete failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Shopping] Delete failed", e)
 
 
 # ── Meal Plan ─────────────────────────────────────────────────
 
 @router.post("/meal-plan")
-async def add_meal_plan(req: MealPlanRequest):
+async def add_meal_plan(req: MealPlanRequest, current: CurrentUser):
     """Plan a recipe for a specific date."""
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -267,22 +275,21 @@ async def add_meal_plan(req: MealPlanRequest):
         return {"status": "success", "id": item.get("id")}
 
     except Exception as e:
-        logger.error(f"[MealPlan] Add failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[MealPlan] Add failed", e)
 
 
 @router.delete("/meal-plan/{meal_id}")
-async def delete_meal_plan(meal_id: str):
+async def delete_meal_plan(meal_id: str, current: CurrentUser):
     """Remove a planned meal."""
     db = get_supabase()
+    verify_meal_plan_ownership(db, meal_id, current.id)
 
     try:
         db.table("meal_plan").delete().eq("id", meal_id).execute()
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[MealPlan] Delete failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[MealPlan] Delete failed", e)
 
 
 # ── Cook Tracking (with flavor auto-learning) ─────────────────
@@ -293,7 +300,7 @@ class RecordCookRequest(BaseModel):
 
 
 @router.post("/cook")
-async def record_cook(req: RecordCookRequest):
+async def record_cook(req: RecordCookRequest, current: CurrentUser):
     """
     Record that the user cooked a recipe.
     
@@ -303,6 +310,7 @@ async def record_cook(req: RecordCookRequest):
     
     The flavor profile shifts by 15% toward the recipe's flavor vector each time.
     """
+    require_user_id(current, req.user_id)
     from app.services.flavor_learning import record_cook_event
     
     result = await record_cook_event(req.user_id, req.recipe_id)
@@ -318,7 +326,7 @@ class VideoEngagementRequest(BaseModel):
 
 
 @router.post("/engagement")
-async def track_engagement(req: VideoEngagementRequest):
+async def track_engagement(req: VideoEngagementRequest, current: CurrentUser):
     """
     Persist video engagement actions (likes, saves, views).
     
@@ -326,6 +334,7 @@ async def track_engagement(req: VideoEngagementRequest):
     - save/unsave: toggles the saved state
     - view: increments view count (no toggle)
     """
+    require_user_id(current, req.user_id)
     db = get_supabase()
     
     try:
@@ -383,5 +392,4 @@ async def track_engagement(req: VideoEngagementRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[Engagement] Track failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Engagement] Track failed", e)

@@ -5,17 +5,21 @@ Uses local nomic-embed-text via Ollama to generate embeddings
 for recipes and user preferences, enabling semantic similarity search.
 """
 
-import json
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
+from app.core.auth import CurrentUser
+from app.core.security import raise_internal_error
 from app.services.ollama_service import get_ollama_service
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 logger = logging.getLogger("plately.embeddings")
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 class EmbedTextRequest(BaseModel):
@@ -43,7 +47,8 @@ def _cosine_similarity(a: List[float], b: List[float]) -> float:
 
 
 @router.post("/api/v1/ai/embed")
-async def embed_text(req: EmbedTextRequest):
+@limiter.limit("30/minute")
+async def embed_text(request: Request, req: EmbedTextRequest, current: CurrentUser):
     """Generate an embedding vector for a single text."""
     ollama = get_ollama_service()
     if not await ollama.is_available():
@@ -57,11 +62,12 @@ async def embed_text(req: EmbedTextRequest):
             "embedding": vector,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Embed failed", e)
 
 
 @router.post("/api/v1/ai/embed-batch")
-async def embed_batch(req: EmbedBatchRequest):
+@limiter.limit("20/minute")
+async def embed_batch(request: Request, req: EmbedBatchRequest, current: CurrentUser):
     """Generate embeddings for multiple texts at once."""
     ollama = get_ollama_service()
     if not await ollama.is_available():
@@ -76,11 +82,12 @@ async def embed_batch(req: EmbedBatchRequest):
             "embeddings": vectors,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Embed batch failed", e)
 
 
 @router.post("/api/v1/ai/semantic-search")
-async def semantic_search(req: SemanticSearchRequest):
+@limiter.limit("20/minute")
+async def semantic_search(request: Request, req: SemanticSearchRequest, current: CurrentUser):
     """
     Perform semantic search: embed the query, compute similarity
     against pre-computed candidate embeddings, return top-K results.
@@ -93,17 +100,14 @@ async def semantic_search(req: SemanticSearchRequest):
         raise HTTPException(status_code=503, detail="Ollama unavailable")
 
     try:
-        # Embed the search query
         query_vec = await ollama.get_embedding(req.query)
 
-        # Embed all candidate descriptions and compute similarity
         candidate_texts = [
             f"{c.get('title', '')}. {c.get('description', '')}"
             for c in req.candidates
         ]
         candidate_vecs = await ollama.get_embeddings_batch(candidate_texts)
 
-        # Score and rank
         scored = []
         for i, candidate in enumerate(req.candidates):
             if i < len(candidate_vecs):
@@ -114,7 +118,6 @@ async def semantic_search(req: SemanticSearchRequest):
                     "score": round(sim, 4),
                 })
 
-        # Sort by similarity score descending
         scored.sort(key=lambda x: x["score"], reverse=True)
 
         return {
@@ -123,14 +126,17 @@ async def semantic_search(req: SemanticSearchRequest):
             "results": scored[:req.top_k],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Semantic search failed", e)
 
 
 @router.post("/api/v1/ai/personalize")
+@limiter.limit("20/minute")
 async def personalize_recipes(
+    request: Request,
+    current: CurrentUser,
     user_history: List[str],
     candidate_titles: List[str],
-    top_k: int = 10
+    top_k: int = 10,
 ):
     """
     Personalize recipe recommendations based on user cooking history.
@@ -145,14 +151,11 @@ async def personalize_recipes(
         raise HTTPException(status_code=503, detail="Ollama unavailable")
 
     try:
-        # Create a user preference summary
         history_text = f"I enjoy cooking: {', '.join(user_history)}. Recommend similar recipes."
         user_vec = await ollama.get_embedding(history_text)
 
-        # Embed candidates
         candidate_vecs = await ollama.get_embeddings_batch(candidate_titles)
 
-        # Score and rank
         scored = []
         for i, title in enumerate(candidate_titles):
             if i < len(candidate_vecs):
@@ -167,4 +170,4 @@ async def personalize_recipes(
             "results": scored[:top_k],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Personalize failed", e)

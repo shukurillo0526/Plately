@@ -17,6 +17,7 @@ from app.services.ollama_service import get_ollama_service
 from app.services.youtube_intelligence import extract_recipe_from_youtube
 from app.services.static_substitutes import get_static_substitute
 from app.services.ai_cache import get_ai_cache
+from app.core.auth import CurrentUser, require_user_id
 from app.db.supabase_client import get_supabase
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -80,7 +81,7 @@ class RateTranslationRequest(BaseModel):
 
 @router.post("/api/v1/ai/generate-recipe")
 @limiter.limit("10/minute")
-async def generate_recipe(request: Request, req: GenerateRecipeRequest):
+async def generate_recipe(request: Request, req: GenerateRecipeRequest, current: CurrentUser):
     """
     Generate a recipe from available ingredients using the local LLM.
     """
@@ -127,7 +128,7 @@ Return JSON only:
 
 
 @router.post("/api/v1/ai/substitute")
-async def suggest_substitute(req: SubstituteRequest):
+async def suggest_substitute(request: Request, req: SubstituteRequest, current: CurrentUser):
     """
     Suggest substitutes for a missing ingredient.
     

@@ -144,31 +144,31 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         _steps = [
           {
             'step_number': 1,
-            'instruction': 'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.',
+            'text': 'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.',
             'duration_minutes': 5,
             'beginner_text': 'Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.',
           },
           {
             'step_number': 2,
-            'instruction': 'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.',
+            'text': 'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.',
             'duration_minutes': 2,
             'beginner_text': 'Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn\'t burn.',
           },
           {
             'step_number': 3,
-            'instruction': 'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.',
+            'text': 'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.',
             'duration_minutes': 6,
             'beginner_text': 'Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.',
           },
           {
             'step_number': 4,
-            'instruction': 'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.',
+            'text': 'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.',
             'duration_minutes': 4,
             'beginner_text': 'Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.',
           },
           {
             'step_number': 5,
-            'instruction': 'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!',
+            'text': 'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!',
             'duration_minutes': 1,
             'beginner_text': 'Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!',
           },
@@ -1054,6 +1054,30 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.recipeId == 'tutorial-stir-fry') {
+      _displayTitle = AppLocalizations.of(context)?.tutorial_recipeTitle ?? _displayTitle;
+      
+      if (_ingredients.length >= 5) {
+        _ingredients[0]['name'] = AppLocalizations.of(context)?.tutorial_ing_chicken ?? _ingredients[0]['name'];
+        _ingredients[1]['name'] = AppLocalizations.of(context)?.tutorial_ing_broccoli ?? _ingredients[1]['name'];
+        _ingredients[2]['name'] = AppLocalizations.of(context)?.tutorial_ing_soy_sauce ?? _ingredients[2]['name'];
+        _ingredients[3]['name'] = AppLocalizations.of(context)?.tutorial_ing_garlic ?? _ingredients[3]['name'];
+        _ingredients[4]['name'] = AppLocalizations.of(context)?.tutorial_ing_sesame_oil ?? _ingredients[4]['name'];
+      }
+      
+      if (_steps.length >= 5) {
+        _steps[0]['text'] = AppLocalizations.of(context)?.tutorial_step1 ?? _steps[0]['text'];
+        _steps[0]['beginner_text'] = AppLocalizations.of(context)?.tutorial_step1_beg ?? _steps[0]['beginner_text'];
+        _steps[1]['text'] = AppLocalizations.of(context)?.tutorial_step2 ?? _steps[1]['text'];
+        _steps[1]['beginner_text'] = AppLocalizations.of(context)?.tutorial_step2_beg ?? _steps[1]['beginner_text'];
+        _steps[2]['text'] = AppLocalizations.of(context)?.tutorial_step3 ?? _steps[2]['text'];
+        _steps[2]['beginner_text'] = AppLocalizations.of(context)?.tutorial_step3_beg ?? _steps[2]['beginner_text'];
+        _steps[3]['text'] = AppLocalizations.of(context)?.tutorial_step4 ?? _steps[3]['text'];
+        _steps[3]['beginner_text'] = AppLocalizations.of(context)?.tutorial_step4_beg ?? _steps[3]['beginner_text'];
+        _steps[4]['text'] = AppLocalizations.of(context)?.tutorial_step5 ?? _steps[4]['text'];
+        _steps[4]['beginner_text'] = AppLocalizations.of(context)?.tutorial_step5_beg ?? _steps[4]['beginner_text'];
+      }
+    }
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
@@ -1413,7 +1437,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   final unit = ing['unit'] ?? '';
                   final isOptional = ing['is_optional'] == true;
                   final prepNote = ing['prep_note'] ?? '';
-                  final isOwned = widget.ownedIngredientIds.contains(ingId);
+                  final isOwned = widget.recipeId == 'tutorial-stir-fry' || widget.ownedIngredientIds.contains(ingId);
 
                   return SlideInItem(
                     delay: index * 50,
@@ -1435,7 +1459,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             // ── Add Missing to Shopping List Button ────────────────
             if (_ingredients.any((ing) {
               final id = ing['ingredient_id'];
-              return !widget.ownedIngredientIds.contains(id) &&
+              return widget.recipeId != 'tutorial-stir-fry' && !widget.ownedIngredientIds.contains(id) &&
                   ing['is_optional'] != true;
             }))
               SliverToBoxAdapter(
@@ -1445,7 +1469,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                     onPressed: () async {
                       final missingItems = _ingredients.where((ing) {
                         final id = ing['ingredient_id'];
-                        return !widget.ownedIngredientIds.contains(id) &&
+                        return widget.recipeId != 'tutorial-stir-fry' && !widget.ownedIngredientIds.contains(id) &&
                             ing['is_optional'] != true;
                       }).toList();
 
@@ -1661,7 +1685,10 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                             ownedIngredientIds: widget.ownedIngredientIds,
                             matchPct: widget.matchPct,
                             tierColor: widget.tierColor,
-                            caloriesPerServing: widget.caloriesPerServing,
+                            caloriesPerServing: _dynamicCalories ?? widget.caloriesPerServing,
+                            proteinPerServing: _dynamicProtein,
+                            carbsPerServing: _dynamicCarbs,
+                            fatPerServing: _dynamicFat,
                           ),
                         ),
                       );

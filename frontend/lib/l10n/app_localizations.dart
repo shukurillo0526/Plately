@@ -2071,6 +2071,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tutorial will show on next app launch.'**
   String get tutorial_replayConfirm;
+
+  /// No description provided for @auth_enterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email address first.'**
+  String get auth_enterEmail;
+
+  /// No description provided for @tutorial_tourTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plately Interactive Tour'**
+  String get tutorial_tourTitle;
+
+  /// No description provided for @tutorial_tourDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome! Let\'s take a quick 1-minute interactive tour of Plately. We will show you how to manage your ingredients, discover matching recipes, and start cooking!'**
+  String get tutorial_tourDesc;
+
+  /// No description provided for @tutorial_startTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Tour 🚀'**
+  String get tutorial_startTour;
+
+  /// No description provided for @tutorial_skipTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tutorial_skipTour;
+
+  /// No description provided for @tutorial_shelfIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Digital Shelf'**
+  String get tutorial_shelfIntroTitle;
+
+  /// No description provided for @tutorial_shelfIntroDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your digital fridge, freezer, and pantry. Here you can track quantities and expiry dates — we\'ll warn you before food goes bad. Let\'s see how it works!'**
+  String get tutorial_shelfIntroDesc;
+
+  /// No description provided for @tutorial_nextArrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Next →'**
+  String get tutorial_nextArrow;
+
+  /// No description provided for @tutorial_addIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Ingredients'**
+  String get tutorial_addIntroTitle;
+
+  /// No description provided for @tutorial_addIntroDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'To add ingredients, tap the Scan tab (center camera icon) in the navigation bar. Go ahead, tap it!'**
+  String get tutorial_addIntroDesc;
+
+  /// No description provided for @tutorial_bypassScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Bypass (Go to Scan)'**
+  String get tutorial_bypassScan;
+
+  /// No description provided for @tutorial_scanIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & Manually Add'**
+  String get tutorial_scanIntroTitle;
+
+  /// No description provided for @tutorial_scanIntroDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you can scan receipts, barcodes, or snap a photo of ingredients. For this tutorial, we will automatically load 5 mock ingredients needed for a special stir-fry recipe.'**
+  String get tutorial_scanIntroDesc;
+
+  /// No description provided for @tutorial_loadMock.
+  ///
+  /// In en, this message translates to:
+  /// **'Load Mock Ingredients 🛒'**
+  String get tutorial_loadMock;
+
+  /// No description provided for @tutorial_shelfAddedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients Loaded!'**
+  String get tutorial_shelfAddedTitle;
+
+  /// No description provided for @tutorial_shelfAddedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Great! We\'ve loaded: Chicken Breast, Broccoli, Soy Sauce, Garlic, and Sesame Oil. Let\'s see what we can cook! Tap the Cook tab (left restaurant icon) to find matching recipes.'**
+  String get tutorial_shelfAddedDesc;
+
+  /// No description provided for @tutorial_bypassCook.
+  ///
+  /// In en, this message translates to:
+  /// **'Bypass (Go to Cook)'**
+  String get tutorial_bypassCook;
+
+  /// No description provided for @tutorial_roamCookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'5-Tier Recommendations'**
+  String get tutorial_roamCookTitle;
+
+  /// No description provided for @tutorial_roamCookDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you see the 5-tier recommendation tabs (Perfect, For You, Use It Up, Almost, Explore). Tap around to explore them! When you are ready, tap the \"Tutorial Chicken Stir-fry\" recipe card under the Perfect tab.'**
+  String get tutorial_roamCookDesc;
+
+  /// No description provided for @tutorial_recipeDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe Details'**
+  String get tutorial_recipeDetailTitle;
+
+  /// No description provided for @tutorial_recipeDetailDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you see the ingredients list and steps. Tap the \"Start Cooking\" button at the bottom of the page to begin!'**
+  String get tutorial_recipeDetailDesc;
+
+  /// No description provided for @tutorial_cookingPrepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prep & Ingredients'**
+  String get tutorial_cookingPrepTitle;
+
+  /// No description provided for @tutorial_cookingPrepDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Before turning on the heat, wash and chop your ingredients. Tap the \"Begin Step-by-Step\" button to start the cooking assistant!'**
+  String get tutorial_cookingPrepDesc;
+
+  /// No description provided for @tutorial_cookingRunTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooking Assistant'**
+  String get tutorial_cookingRunTitle;
+
+  /// No description provided for @tutorial_cookingRunDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant guides you step-by-step. You can also chat with the AI assistant at the bottom for substitutions or cooking questions! Step through the recipe and tap \"Finish\" on the final step.'**
+  String get tutorial_cookingRunDesc;
+
+  /// No description provided for @tutorial_finishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial Completed!'**
+  String get tutorial_finishTitle;
+
+  /// No description provided for @tutorial_finishDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! You\'ve completed the Plately cook tour.\n\nNote: All ingredients and data used in this tutorial will not be saved. This is just a small portion of the app. Tap \"Finish Tour\" to start your own cooking journey!'**
+  String get tutorial_finishDesc;
+
+  /// No description provided for @tutorial_finishTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Tour 🏁'**
+  String get tutorial_finishTour;
+
+  /// No description provided for @tutorial_recipeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial Chicken Stir-fry'**
+  String get tutorial_recipeTitle;
+
+  /// No description provided for @tutorial_ing_chicken.
+  ///
+  /// In en, this message translates to:
+  /// **'Chicken Breast'**
+  String get tutorial_ing_chicken;
+
+  /// No description provided for @tutorial_ing_broccoli.
+  ///
+  /// In en, this message translates to:
+  /// **'Broccoli'**
+  String get tutorial_ing_broccoli;
+
+  /// No description provided for @tutorial_ing_soy_sauce.
+  ///
+  /// In en, this message translates to:
+  /// **'Soy Sauce'**
+  String get tutorial_ing_soy_sauce;
+
+  /// No description provided for @tutorial_ing_garlic.
+  ///
+  /// In en, this message translates to:
+  /// **'Garlic'**
+  String get tutorial_ing_garlic;
+
+  /// No description provided for @tutorial_ing_sesame_oil.
+  ///
+  /// In en, this message translates to:
+  /// **'Sesame Oil'**
+  String get tutorial_ing_sesame_oil;
+
+  /// No description provided for @tutorial_step1.
+  ///
+  /// In en, this message translates to:
+  /// **'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.'**
+  String get tutorial_step1;
+
+  /// No description provided for @tutorial_step1_beg.
+  ///
+  /// In en, this message translates to:
+  /// **'Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.'**
+  String get tutorial_step1_beg;
+
+  /// No description provided for @tutorial_step2.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.'**
+  String get tutorial_step2;
+
+  /// No description provided for @tutorial_step2_beg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn\'t burn.'**
+  String get tutorial_step2_beg;
+
+  /// No description provided for @tutorial_step3.
+  ///
+  /// In en, this message translates to:
+  /// **'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.'**
+  String get tutorial_step3;
+
+  /// No description provided for @tutorial_step3_beg.
+  ///
+  /// In en, this message translates to:
+  /// **'Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.'**
+  String get tutorial_step3_beg;
+
+  /// No description provided for @tutorial_step4.
+  ///
+  /// In en, this message translates to:
+  /// **'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.'**
+  String get tutorial_step4;
+
+  /// No description provided for @tutorial_step4_beg.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.'**
+  String get tutorial_step4_beg;
+
+  /// No description provided for @tutorial_step5.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!'**
+  String get tutorial_step5;
+
+  /// No description provided for @tutorial_step5_beg.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!'**
+  String get tutorial_step5_beg;
+
+  /// No description provided for @reward_mealCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal Completed!'**
+  String get reward_mealCompleted;
+
+  /// No description provided for @reward_youCooked.
+  ///
+  /// In en, this message translates to:
+  /// **'You cooked \"{recipeTitle}\" · {servings} servings'**
+  String reward_youCooked(String recipeTitle, String servings);
+
+  /// No description provided for @reward_xpEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'XP Earned'**
+  String get reward_xpEarned;
+
+  /// No description provided for @reward_itemsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Items Used'**
+  String get reward_itemsUsed;
+
+  /// No description provided for @reward_deducted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted from shelf'**
+  String get reward_deducted;
+
+  /// No description provided for @reward_backToShelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Shelf'**
+  String get reward_backToShelf;
 }
 
 class _AppLocalizationsDelegate

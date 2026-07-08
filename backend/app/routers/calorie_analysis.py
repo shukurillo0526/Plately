@@ -13,6 +13,8 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional, List
 
+from app.core.auth import CurrentUser, require_user_id
+from app.core.security import raise_internal_error, validate_image_upload
 from app.db.supabase_client import get_supabase
 from app.services.ollama_service import get_ollama_service
 
@@ -22,93 +24,67 @@ router = APIRouter()
 
 
 @router.post("/api/v1/calories/analyze-image")
-async def analyze_image_calories(file: UploadFile = File(...)):
+async def analyze_image_calories(current: CurrentUser, file: UploadFile = File(...)):
     """
     Analyze a food photo for calorie content.
-    Uses vision model to identify food items, then looks up calories.
+    Estimates the total portion size, weight, calories, and macros for the entire meal shown in the photo.
     """
-    image_bytes = await file.read()
-    b64 = base64.b64encode(image_bytes).decode("utf-8")
+    image_bytes = await validate_image_upload(file)
 
     ollama = get_ollama_service()
-    if not await ollama.is_available():
-        raise HTTPException(status_code=503, detail="AI service unavailable")
 
-    # Step 1: Identify food items from image using vision model
-    vision_prompt = (
-        "List ALL food items visible in this image. "
-        "Return a JSON object with a single key 'items' containing an array of food item names. "
-        "Example: {\"items\": [\"grilled chicken breast\", \"white rice\", \"steamed broccoli\"]}. "
-        "Return ONLY the JSON, no other text."
+    prompt = (
+        "Analyze the food visible in this image as a single prepared meal plate.\n"
+        "1. Identify the main cooked dish/meal name.\n"
+        "2. Look at the physical portion size and volume of food on the plate/bowl (e.g., standard plate, double portion, small cup) and estimate the total serving weight in grams.\n"
+        "3. Estimate the total calories, protein (g), carbs (g), and fat (g) for the ENTIRE plate/serving visible in the photo.\n"
+        "4. List the individual components identified on the plate (e.g. chicken thigh, side rice, roasted veggies) with their name, estimated serving weight, and estimated calories.\n\n"
+        "Format the output strictly as a JSON object with these keys:\n"
+        "{\n"
+        "  \"status\": \"success\",\n"
+        "  \"meal_name\": \"Name of the meal\",\n"
+        "  \"estimated_weight_g\": 450,\n"
+        "  \"total_estimated_calories\": 720,\n"
+        "  \"protein_g\": 35,\n"
+        "  \"carbs_g\": 85,\n"
+        "  \"fat_g\": 26,\n"
+        "  \"items\": [\n"
+        "    {\n"
+        "      \"name\": \"Component name\",\n"
+        "      \"estimated_serving_g\": 400,\n"
+        "      \"estimated_calories\": 650,\n"
+        "      \"protein_g\": 32,\n"
+        "      \"carbs_g\": 78,\n"
+        "      \"fat_g\": 23\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "Return ONLY this JSON object. Do not include markdown formatting or backticks around the JSON."
     )
-    vision_result = await ollama.analyze_image(b64, vision_prompt)
-    
-    # Parse food items from vision result
-    food_items = []
-    if isinstance(vision_result, dict) and "items" in vision_result:
-        food_items = vision_result["items"]
-    elif isinstance(vision_result, str):
-        # Try to extract JSON from text
-        try:
-            import re
-            json_match = re.search(r'\{.*\}', vision_result, re.DOTALL)
-            if json_match:
-                parsed = json.loads(json_match.group())
-                food_items = parsed.get("items", [])
-        except Exception:
-            # Fallback: split by comma/newline
-            food_items = [s.strip().strip('-•') for s in vision_result.replace('\n', ',').split(',') if s.strip()]
 
-    if not food_items:
-        return {"status": "no_food_detected", "items": [], "total_estimated_calories": 0}
+    try:
+        result = await ollama.analyze_image_json(image_bytes, prompt)
+        if not result or "total_estimated_calories" not in result:
+            return {"status": "no_food_detected", "items": [], "total_estimated_calories": 0}
+        
+        result["status"] = "success"
+        # Ensure all required fields exist
+        result.setdefault("meal_name", "Scanned Meal")
+        result.setdefault("estimated_weight_g", 300)
+        result.setdefault("total_estimated_calories", 0)
+        result.setdefault("protein_g", 0)
+        result.setdefault("carbs_g", 0)
+        result.setdefault("fat_g", 0)
+        result.setdefault("items", [])
+        
+        # Add source tag to components
+        for item in result["items"]:
+            item["source"] = "ai_estimate"
 
-    # Step 2: Look up calories for each identified item
-    db = get_supabase()
-    results = []
-    unknown_items = []
-
-    for item_name in food_items:
-        match = (
-            db.table("ingredients")
-            .select("display_name_en, calories_per_100g, default_unit, category")
-            .ilike("display_name_en", f"%{item_name}%")
-            .limit(1)
-            .execute()
-        )
-        if match.data and len(match.data) > 0 and match.data[0].get("calories_per_100g"):
-            ing = match.data[0]
-            cal = ing["calories_per_100g"]
-            serving = _estimate_serving(ing.get("category", ""))
-            results.append({
-                "name": ing["display_name_en"],
-                "source": "database",
-                "calories_per_100g": cal,
-                "estimated_serving_g": serving,
-                "estimated_calories": round(cal * serving / 100),
-                "category": ing.get("category"),
-            })
-        else:
-            unknown_items.append(item_name)
-
-    # AI fallback for unknown items
-    if unknown_items:
-        prompt = f"""Estimate nutrition for: {', '.join(unknown_items)}.
-Return JSON: {{"items": [{{"name": "...", "serving_g": 150, "calories_per_100g": 200, "estimated_calories": 300, "protein_g": 10, "carbs_g": 30, "fat_g": 15}}]}}"""
-        system = "Certified nutritionist. Return ONLY valid JSON."
-        ai_result = await ollama.generate_text_json(prompt, system_prompt=system)
-        if "items" in ai_result:
-            for item in ai_result["items"]:
-                item["source"] = "ai_estimate"
-                results.append(item)
-
-    total_calories = sum(r.get("estimated_calories", 0) for r in results)
-    return {
-        "status": "success",
-        "detected_items": food_items,
-        "items": results,
-        "total_estimated_calories": total_calories,
-        "item_count": len(results),
-    }
+        return result
+    except Exception as e:
+        logger.error(f"[Calories] Plate vision analysis failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to analyze food plate.")
 
 
 
@@ -126,7 +102,7 @@ class NutritionLogRequest(BaseModel):
 
 
 @router.post("/api/v1/calories/analyze")
-async def analyze_calories(req: CalorieAnalyzeRequest):
+async def analyze_calories(req: CalorieAnalyzeRequest, current: CurrentUser):
     """
     Estimate calories and macros for a list of food items.
     First checks ingredient DB for calories_per_100g, then falls back to AI.
@@ -193,8 +169,9 @@ Return JSON only:
 
 
 @router.post("/api/v1/calories/log")
-async def log_nutrition(req: NutritionLogRequest):
+async def log_nutrition(req: NutritionLogRequest, current: CurrentUser):
     """Log a meal to the user's daily nutrition tracker."""
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -218,13 +195,13 @@ async def log_nutrition(req: NutritionLogRequest):
         return {"status": "success", "total_calories": total_cal}
 
     except Exception as e:
-        logger.error(f"[Calories] Log failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Calories] Log failed", e)
 
 
 @router.get("/api/v1/calories/daily/{user_id}")
-async def get_daily_nutrition(user_id: str, date: Optional[str] = None):
+async def get_daily_nutrition(user_id: str, current: CurrentUser, date: Optional[str] = None):
     """Get a user's nutrition summary for a specific date."""
+    require_user_id(current, user_id)
     db = get_supabase()
 
     target_date = date or datetime.now().strftime("%Y-%m-%d")

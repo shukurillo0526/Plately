@@ -55,13 +55,58 @@ class InventoryItemCard extends StatelessWidget {
             child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface, size: 30),
           ),
           confirmDismiss: (direction) async {
+            final isTutorial = item.id.startsWith('tutorial');
+
             if (direction == DismissDirection.startToEnd) {
-              // Quick Use 1 Unit via RPC
+              final selectedQty = await _showConsumeDialog(context);
+              if (selectedQty == null || selectedQty <= 0) return false;
+
+              if (isTutorial) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Logged ${selectedQty.round()} portion(s) for tutorial item: ${item.name}'),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+                return false; // snap back
+              }
+
+              // Use selectedQty / Eat Leftover portions via RPC
               try {
-                await Supabase.instance.client.rpc('consume_inventory_item', params: {
-                  'p_inventory_id': item.id,
-                  'p_qty_to_consume': 1.0,
-                });
+                if (item.isCookedLeftover) {
+                  for (int i = 0; i < selectedQty.round(); i++) {
+                    await Supabase.instance.client.rpc('eat_leftover_portion', params: {
+                      'p_user_id': Supabase.instance.client.auth.currentUser?.id,
+                      'p_inventory_id': item.id,
+                    });
+                  }
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Logged ${selectedQty.round()} leftover portion(s) for: ${item.name}'),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } else {
+                  await Supabase.instance.client.rpc('consume_inventory_item', params: {
+                    'p_inventory_id': item.id,
+                    'p_qty_to_consume': selectedQty,
+                  });
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Logged consumption of ${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit} ${item.name}'),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
                 return false; // Snap back, UI updates from realtime stream
               } catch (e) {
                 if (context.mounted) {
@@ -72,14 +117,53 @@ class InventoryItemCard extends StatelessWidget {
                 return false;
               }
             } else {
-              // Delete Item
+              // Discard Dialog
+              final selectedQty = await _showDiscardDialog(context);
+              if (selectedQty == null || selectedQty <= 0) return false;
+
+              if (isTutorial) {
+                final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
+                return selectedQty >= maxQty; // slide away if fully discarded, else snap back
+              }
+
               try {
-                await Supabase.instance.client
-                    .from('inventory_items')
-                    .delete()
-                    .eq('id', item.id);
-                return true;
-              } catch (_) {
+                if (item.isCookedLeftover) {
+                  final newPortions = item.portionsCount - selectedQty.round();
+                  if (newPortions <= 0) {
+                    await Supabase.instance.client
+                        .from('inventory_items')
+                        .delete()
+                        .eq('id', item.id);
+                    return true; // slide away
+                  } else {
+                    await Supabase.instance.client
+                        .from('inventory_items')
+                        .update({'portions_count': newPortions})
+                        .eq('id', item.id);
+                    return false; // snap back and update quantity
+                  }
+                } else {
+                  final newQty = item.quantity - selectedQty;
+                  if (newQty <= 0) {
+                    await Supabase.instance.client
+                        .from('inventory_items')
+                        .delete()
+                        .eq('id', item.id);
+                    return true; // slide away
+                  } else {
+                    await Supabase.instance.client
+                        .from('inventory_items')
+                        .update({'quantity': newQty})
+                        .eq('id', item.id);
+                    return false; // snap back and update quantity
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error discarding item: $e')),
+                  );
+                }
                 return false;
               }
             }
@@ -111,10 +195,12 @@ class InventoryItemCard extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            IngredientIcons.getEmoji(
-                              item.name,
-                              category: item.category,
-                            ),
+                            item.isCookedLeftover
+                                ? '🍽️'
+                                : IngredientIcons.getEmoji(
+                                    item.name,
+                                    category: item.category,
+                                  ),
                             style: TextStyle(
                               fontSize: 44,
                               color: isExpired
@@ -175,7 +261,7 @@ class InventoryItemCard extends StatelessWidget {
               ),
 
               // --- Quantity Badge ---
-              if (item.quantity > 0) // Changed to show even if 1 to indicate it is interactable
+              if (item.quantity > 0) 
                 Positioned(
                   top: 6,
                   left: 6,
@@ -187,7 +273,9 @@ class InventoryItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      '${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 1)} ${item.unit}',
+                      item.isCookedLeftover
+                          ? '${item.portionsCount} portion${item.portionsCount > 1 ? 's' : ''}'
+                          : '${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 1)} ${item.unit}',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 10,
@@ -197,8 +285,8 @@ class InventoryItemCard extends StatelessWidget {
                   ),
                 ),
 
-              // --- State Badge (opened / frozen) ---
-              if (item.itemState != 'sealed')
+              // --- State Badge (opened / frozen / leftover) ---
+              if (item.isCookedLeftover || item.itemState != 'sealed')
                 Positioned(
                   top: 6,
                   right: 6,
@@ -206,13 +294,18 @@ class InventoryItemCard extends StatelessWidget {
                     padding:
                         EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _stateBadgeColor(context).withValues(alpha: 0.9),
+                      color: (item.isCookedLeftover
+                              ? (item.daysUntilExpiry < 0 ? Colors.red : Colors.green)
+                              : _stateBadgeColor(context))
+                          .withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      _stateBadgeLabel(context),
+                      item.isCookedLeftover
+                          ? (item.daysUntilExpiry < 0 ? 'SPOILED' : 'LEFTOVER')
+                          : _stateBadgeLabel(context),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: Colors.white,
                         fontSize: 8,
                         fontWeight: FontWeight.w700,
                       ),
@@ -280,5 +373,165 @@ class InventoryItemCard extends StatelessWidget {
     }
   }
 
+  Future<double?> _showConsumeDialog(BuildContext context) async {
+    double selectedQty = item.isCookedLeftover ? 1.0 : 1.0;
+    if (!item.isCookedLeftover && item.quantity < 1.0) {
+      selectedQty = item.quantity;
+    }
+    final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
+    final step = item.isCookedLeftover ? 1.0 : (item.unit == 'pcs' ? 1.0 : 0.1);
+
+    return showDialog<double>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                item.isCookedLeftover ? 'Eat Leftover Portions' : 'Consume ${item.name}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'How much are you consuming? (Max: ${item.isCookedLeftover ? "${item.portionsCount} portions" : "${item.quantity.toStringAsFixed(1)} ${item.unit}"})',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selectedQty <= step
+                            ? null
+                            : () => setDialogState(() => selectedQty -= step),
+                        icon: const Icon(Icons.remove_circle_outline, size: 36),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item.isCookedLeftover
+                              ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
+                              : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: selectedQty + step > maxQty
+                            ? null
+                            : () => setDialogState(() => selectedQty += step),
+                        icon: const Icon(Icons.add_circle_outline, size: 36),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, selectedQty),
+                  child: const Text('Confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<double?> _showDiscardDialog(BuildContext context) async {
+    double selectedQty = item.isCookedLeftover ? 1.0 : 1.0;
+    if (!item.isCookedLeftover && item.quantity < 1.0) {
+      selectedQty = item.quantity;
+    }
+    final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
+    final step = item.isCookedLeftover ? 1.0 : (item.unit == 'pcs' ? 1.0 : 0.1);
+
+    return showDialog<double>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                  SizedBox(width: 8),
+                  Text(
+                    'Discard Ingredient',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Are you sure you want to throw away this item? How much are you throwing away?',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selectedQty <= step
+                            ? null
+                            : () => setDialogState(() => selectedQty -= step),
+                        icon: const Icon(Icons.remove_circle_outline, size: 36),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item.isCookedLeftover
+                              ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
+                              : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: selectedQty + step > maxQty
+                            ? null
+                            : () => setDialogState(() => selectedQty += step),
+                        icon: const Icon(Icons.add_circle_outline, size: 36),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, selectedQty),
+                  style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+                  child: const Text('Discard'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
 }

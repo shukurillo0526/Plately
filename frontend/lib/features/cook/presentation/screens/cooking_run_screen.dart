@@ -12,6 +12,7 @@ import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/features/cook/presentation/screens/cooking_reward_screen.dart';
 import 'package:plately_app/features/cook/providers/cooking_session_provider.dart';
 import 'package:plately_app/features/cook/presentation/widgets/step_timer_widget.dart';
+import 'package:plately_app/features/cook/presentation/widgets/cook_portions_sheet.dart';
 
 class CookingRunScreen extends StatefulWidget {
   final String recipeId;
@@ -293,24 +294,64 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
       container.read(cookingSessionProvider.notifier).endSession();
     } catch (_) {}
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CookingRewardScreen(
-          recipeId: widget.recipeId,
-          title: widget.title,
-          matchedIngredientsCount: widget.matchedIngredientsCount,
-          matchPct: widget.matchPct,
-          servingsCooked: widget.servingsCooked,
-          originalServings: widget.originalServings,
-          skippedIngredientIds: skippedIds,
-          ingredients: widget.ingredients,
-          calories: widget.calories,
-          proteinG: widget.proteinG,
-          carbsG: widget.carbsG,
-          fatG: widget.fatG,
-        ),
-      ),
+    // Filter ingredients to exclude skipped ones
+    final skippedIdsSet = Set<String>.from(skippedIds);
+    final rawIngredients = widget.ingredients ?? [];
+    
+    // Scale ingredients per portion (recipe servings vs servingsCooked)
+    final scale = 1.0 / (widget.originalServings > 0 ? widget.originalServings : 2);
+    final List<Map<String, dynamic>> portionIngredients = rawIngredients
+        .where((ing) {
+          final id = ing['ingredient_id'] ?? ing['id'];
+          return id != null && !skippedIdsSet.contains(id);
+        })
+        .map((ing) {
+          return {
+            'ingredient_id': ing['ingredient_id'] ?? ing['id'],
+            'quantity_per_portion': ((ing['quantity'] as num?) ?? 1.0).toDouble() * scale,
+            'unit': ing['unit'] ?? 'pcs',
+          };
+        })
+        .toList();
+
+    final calPerPortion = (widget.calories ?? 0).toDouble() / (widget.servingsCooked > 0 ? widget.servingsCooked : 1);
+    final proteinPerPortion = (widget.proteinG ?? 0).toDouble() / (widget.servingsCooked > 0 ? widget.servingsCooked : 1);
+    final carbsPerPortion = (widget.carbsG ?? 0).toDouble() / (widget.servingsCooked > 0 ? widget.servingsCooked : 1);
+    final fatPerPortion = (widget.fatG ?? 0).toDouble() / (widget.servingsCooked > 0 ? widget.servingsCooked : 1);
+
+    // Show portions sheet
+    CookPortionsSheet.show(
+      context: context,
+      recipeId: widget.recipeId,
+      recipeTitle: widget.title,
+      initialServings: widget.servingsCooked,
+      ingredients: portionIngredients,
+      caloriesPerPortion: calPerPortion,
+      proteinPerPortion: proteinPerPortion,
+      carbsPerPortion: carbsPerPortion,
+      fatPerPortion: fatPerPortion,
+      onComplete: (prepResult) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CookingRewardScreen(
+              recipeId: widget.recipeId,
+              title: widget.title,
+              matchedIngredientsCount: widget.matchedIngredientsCount,
+              matchPct: widget.matchPct,
+              servingsCooked: widget.servingsCooked,
+              originalServings: widget.originalServings,
+              skippedIngredientIds: skippedIds,
+              ingredients: widget.ingredients,
+              calories: widget.calories,
+              proteinG: widget.proteinG,
+              carbsG: widget.carbsG,
+              fatG: widget.fatG,
+              prepResult: prepResult,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -755,13 +796,13 @@ Keep your answer short and easy to read while cooking.
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 16, 24, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Cooking Illustration Area
-          Expanded(
-            flex: 2,
-            child: Container(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cooking Illustration Area
+            Container(
+              height: 180,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
@@ -802,8 +843,7 @@ Keep your answer short and easy to read while cooking.
                 ),
               ),
             ),
-          ),
-          SizedBox(height: 20),
+            SizedBox(height: 20),
 
           // Core Instruction with Edit Button
           Row(
@@ -902,10 +942,9 @@ Keep your answer short and easy to read while cooking.
               ],
             ),
           ),
-
-          Spacer(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

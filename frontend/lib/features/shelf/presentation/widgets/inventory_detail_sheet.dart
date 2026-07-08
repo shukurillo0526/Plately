@@ -31,6 +31,7 @@ class InventoryDetailSheet extends StatefulWidget {
 
 class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
   late double _quantity;
+  late int _portionsCount;
   late String _itemState;
   late String _location;
   bool _updating = false;
@@ -41,6 +42,7 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
   void initState() {
     super.initState();
     _quantity = item.quantity;
+    _portionsCount = item.portionsCount;
     _itemState = item.itemState;
     _location = item.location;
   }
@@ -66,11 +68,30 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
   Future<void> _consumeOne() async {
     setState(() => _updating = true);
     try {
-      await Supabase.instance.client.rpc('consume_inventory_item', params: {
-        'p_inventory_id': item.id,
-        'p_qty_to_consume': 1.0,
-      });
-      setState(() => _quantity = (_quantity - 1).clamp(0, double.infinity));
+      if (item.isCookedLeftover) {
+        await Supabase.instance.client.rpc('eat_leftover_portion', params: {
+          'p_user_id': Supabase.instance.client.auth.currentUser?.id,
+          'p_inventory_id': item.id,
+        });
+        setState(() {
+          _portionsCount = (_portionsCount - 1).clamp(0, 99);
+          _quantity = _portionsCount.toDouble();
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Logged leftover portion for: ${item.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        await Supabase.instance.client.rpc('consume_inventory_item', params: {
+          'p_inventory_id': item.id,
+          'p_qty_to_consume': 1.0,
+        });
+        setState(() => _quantity = (_quantity - 1).clamp(0, double.infinity));
+      }
       if (_quantity <= 0 && mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -143,6 +164,7 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
                 _freshnessBar(),
                 SizedBox(height: 24),
                 _infoGrid(),
+                _macroRow(),
                 SizedBox(height: 24),
                 _quantityControls(),
                 SizedBox(height: 20),
@@ -280,10 +302,13 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
           ),
           child: Column(children: [
             Row(children: [
-          _infoCell('📦', AppLocalizations.of(context)?.inv_quantity ?? 'Quantity',
-                  '${_fmtQty(_quantity)} ${item.unit}'),
+              _infoCell('📦', item.isCookedLeftover ? 'Portions' : (AppLocalizations.of(context)?.inv_quantity ?? 'Quantity'),
+                  item.isCookedLeftover
+                      ? '$_portionsCount portion${_portionsCount > 1 ? "s" : ""}'
+                      : '${_fmtQty(_quantity)} ${item.unit}'),
               _vDiv(),
-              _infoCell('📅', AppLocalizations.of(context)?.inv_purchased ?? 'Purchased', _fmtDate(item.purchaseDate)),
+              _infoCell('📅', item.isCookedLeftover ? 'Cooked On' : (AppLocalizations.of(context)?.inv_purchased ?? 'Purchased'),
+                  item.isCookedLeftover ? _fmtDate(item.dateCooked) : _fmtDate(item.purchaseDate)),
             ]),
             Divider(height: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
             Row(children: [
@@ -466,7 +491,9 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
             child: FilledButton.icon(
               onPressed: _updating ? null : _consumeOne,
               icon: Icon(Icons.restaurant, size: 18),
-              label: Text(AppLocalizations.of(context)?.auto_use1Unit ?? 'Use 1 Unit'),
+              label: Text(item.isCookedLeftover
+                  ? 'Eat 1 Portion'
+                  : (AppLocalizations.of(context)?.auto_use1Unit ?? 'Use 1 Unit')),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -495,6 +522,75 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
           ),
         ]),
       );
+
+  Widget _macroRow() {
+    if (!item.isCookedLeftover) return const SizedBox.shrink();
+    
+    final calories = item.caloriesPerPortion?.round() ?? 0;
+    final protein = item.proteinPerPortion?.toStringAsFixed(1) ?? '0';
+    final carbs = item.carbsPerPortion?.toStringAsFixed(1) ?? '0';
+    final fat = item.fatPerPortion?.toStringAsFixed(1) ?? '0';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nutritional Info (Per Portion):',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _macroCell('🔥', '$calories kcal', 'Calories'),
+              _macroCell('🥩', '${protein}g', 'Protein'),
+              _macroCell('🌾', '${carbs}g', 'Carbs'),
+              _macroCell('🥑', '${fat}g', 'Fat'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _macroCell(String emoji, String value, String label) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // ── Helpers ───────────────────────────────────────────────────
 

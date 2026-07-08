@@ -7,11 +7,17 @@ Uses the service role key to bypass RLS restrictions.
 
 import logging
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
+from app.core.auth import CurrentUser, require_user_id, verify_inventory_ownership
+from app.core.security import raise_internal_error, sanitize_search_query, validate_image_upload
 from app.db.supabase_client import get_supabase
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 logger = logging.getLogger("plately.inventory")
 
@@ -30,13 +36,14 @@ class AddItemRequest(BaseModel):
 
 
 @router.post("/api/v1/inventory/add-item")
-async def add_inventory_item(req: AddItemRequest):
+async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
     """
     Upsert an ingredient and add it to inventory.
     If the same ingredient already exists in the same location,
     increments quantity instead of creating a duplicate.
     Uses the service role key, so RLS is bypassed.
     """
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -92,7 +99,7 @@ async def add_inventory_item(req: AddItemRequest):
                             "default_unit": req.unit,
                             "source": "user_contributed",
                             "verified": False,
-                            "created_by": req.user_id,
+                            "created_by": req.user_id or current.id,
                         })
                         .execute()
                     )
@@ -174,12 +181,11 @@ async def add_inventory_item(req: AddItemRequest):
             }
 
     except Exception as e:
-        logger.error(f"[Inventory] Failed to add item: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Inventory] Failed to add item", e)
 
 
 @router.get("/api/v1/ingredients/search")
-async def search_ingredients(q: str, limit: int = 8):
+async def search_ingredients(q: str, current: CurrentUser, limit: int = 8):
     """
     Search ingredients by name across all supported languages.
     Searches: EN, KO, UZ (Latin), UZ (Cyrillic), RU, and canonical_name.
@@ -187,29 +193,31 @@ async def search_ingredients(q: str, limit: int = 8):
     """
     db = get_supabase()
     try:
+        safe_q = sanitize_search_query(q)
+        if not safe_q:
+            return {"ingredients": []}
         # Search across all language name fields
         results = (
             db.table("ingredients")
             .select("*")
             .or_(
-                f"display_name_en.ilike.%{q}%,"
-                f"display_name_ko.ilike.%{q}%,"
-                f"display_name_uz.ilike.%{q}%,"
-                f"display_name_uz_cyrl.ilike.%{q}%,"
-                f"display_name_ru.ilike.%{q}%,"
-                f"canonical_name.ilike.%{q}%"
+                f"display_name_en.ilike.%{safe_q}%,"
+                f"display_name_ko.ilike.%{safe_q}%,"
+                f"display_name_uz.ilike.%{safe_q}%,"
+                f"display_name_uz_cyrl.ilike.%{safe_q}%,"
+                f"display_name_ru.ilike.%{safe_q}%,"
+                f"canonical_name.ilike.%{safe_q}%"
             )
             .limit(limit)
             .execute()
         )
         return {"ingredients": results.data}
     except Exception as e:
-        logger.error(f"[Ingredients] Search failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Ingredients] Search failed", e)
 
 
 @router.get("/api/v1/ingredients/fuzzy")
-async def fuzzy_search_ingredients(q: str, limit: int = 5):
+async def fuzzy_search_ingredients(q: str, current: CurrentUser, limit: int = 5):
     """
     Fuzzy search ingredients using PostgreSQL pg_trgm similarity.
     Returns results ranked by best match across all language columns.
@@ -217,11 +225,14 @@ async def fuzzy_search_ingredients(q: str, limit: int = 5):
     """
     db = get_supabase()
     try:
+        safe_q = sanitize_search_query(q)
+        if not safe_q:
+            return {"ingredients": [], "exact_match": False}
         # Use the existing fuzzy_match_ingredient RPC for English,
         # then also do a multilingual ILIKE fallback
         fuzzy_results = db.rpc(
             "fuzzy_match_ingredient",
-            {"search_name": q, "min_similarity": 0.15, "max_results": limit}
+            {"search_name": safe_q, "min_similarity": 0.15, "max_results": limit}
         ).execute()
 
         if fuzzy_results.data and len(fuzzy_results.data) > 0:
@@ -246,20 +257,22 @@ async def fuzzy_search_ingredients(q: str, limit: int = 5):
         logger.error(f"[Ingredients] Fuzzy search failed: {e}")
         # Fallback to basic ILIKE search
         try:
+            safe_q = sanitize_search_query(q)
+            if not safe_q:
+                return {"ingredients": [], "exact_match": False}
             results = (
                 db.table("ingredients")
                 .select("*")
                 .or_(
-                    f"display_name_en.ilike.%{q}%,"
-                    f"canonical_name.ilike.%{q}%"
+                    f"display_name_en.ilike.%{safe_q}%,"
+                    f"canonical_name.ilike.%{safe_q}%"
                 )
                 .limit(limit)
                 .execute()
             )
             return {"ingredients": results.data, "exact_match": False}
         except Exception as e2:
-            logger.error(f"[Ingredients] Fallback search also failed: {e2}")
-            raise HTTPException(status_code=500, detail=str(e2))
+            raise_internal_error(logger, "[Ingredients] Fallback search failed", e2)
 
 
 class ResolveIngredientRequest(BaseModel):
@@ -269,7 +282,7 @@ class ResolveIngredientRequest(BaseModel):
 
 
 @router.post("/api/v1/ingredients/resolve")
-async def resolve_ingredient(req: ResolveIngredientRequest):
+async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser):
     """
     Smart ingredient resolver: fuzzy-match first, auto-create if no match.
 
@@ -282,6 +295,8 @@ async def resolve_ingredient(req: ResolveIngredientRequest):
     Returns: ingredient data + resolution method (exact/fuzzy/created)
     """
     db = get_supabase()
+    if req.user_id:
+        require_user_id(current, req.user_id)
     name = req.name.strip()
     canonical = name.lower().replace(" ", "_")
 
@@ -338,7 +353,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest):
                 "default_unit": "piece",
                 "source": "user_contributed",
                 "verified": False,
-                "created_by": req.user_id,
+                "created_by": req.user_id or current.id,
             })
             .execute()
         )
@@ -348,8 +363,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[Ingredients] Resolve failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Ingredients] Resolve failed", e)
 
 
 class UpdateItemRequest(BaseModel):
@@ -361,9 +375,10 @@ class UpdateItemRequest(BaseModel):
 
 
 @router.patch("/api/v1/inventory/{item_id}")
-async def update_inventory_item(item_id: str, req: UpdateItemRequest):
+async def update_inventory_item(item_id: str, req: UpdateItemRequest, current: CurrentUser):
     """Update an inventory item's properties."""
     db = get_supabase()
+    verify_inventory_ownership(db, item_id, current.id)
 
     try:
         update_data = {}
@@ -381,29 +396,28 @@ async def update_inventory_item(item_id: str, req: UpdateItemRequest):
         if not update_data:
             return {"status": "no_changes"}
 
-        db.table("inventory_items").update(update_data).eq("id", item_id).execute()
+        db.table("inventory_items").update(update_data).eq("id", item_id).eq("user_id", current.id).execute()
 
         logger.info(f"[Inventory] Updated item {item_id}")
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[Inventory] Update failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Inventory] Update failed", e)
 
 
 @router.delete("/api/v1/inventory/{item_id}")
-async def delete_inventory_item(item_id: str):
+async def delete_inventory_item(item_id: str, current: CurrentUser):
     """Delete an inventory item."""
     db = get_supabase()
+    verify_inventory_ownership(db, item_id, current.id)
 
     try:
-        db.table("inventory_items").delete().eq("id", item_id).execute()
+        db.table("inventory_items").delete().eq("id", item_id).eq("user_id", current.id).execute()
         logger.info(f"[Inventory] Deleted item {item_id}")
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[Inventory] Delete failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Inventory] Delete failed", e)
 
 
 class ConsumeItemRequest(BaseModel):
@@ -412,12 +426,13 @@ class ConsumeItemRequest(BaseModel):
 
 
 @router.post("/api/v1/inventory/consume")
-async def consume_inventory_item(req: ConsumeItemRequest):
+async def consume_inventory_item(req: ConsumeItemRequest, current: CurrentUser):
     """
     Consume (decrement) an inventory item's quantity.
     Uses the consume_inventory_item RPC which auto-deletes at 0.
     """
     db = get_supabase()
+    verify_inventory_ownership(db, req.inventory_id, current.id)
 
     try:
         db.rpc(
@@ -425,6 +440,7 @@ async def consume_inventory_item(req: ConsumeItemRequest):
             {
                 "p_inventory_id": req.inventory_id,
                 "p_qty_to_consume": req.quantity_to_consume,
+                "p_user_id": current.id,
             },
         ).execute()
 
@@ -434,8 +450,7 @@ async def consume_inventory_item(req: ConsumeItemRequest):
         return {"status": "success"}
 
     except Exception as e:
-        logger.error(f"[Inventory] Consume failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Inventory] Consume failed", e)
 
 
 # ── Batch Consume for Cooking ────────────────────────────────────
@@ -447,12 +462,13 @@ class ConsumeRecipeRequest(BaseModel):
     skipped_ingredient_ids: list[str] = []  # ingredients user unchecked
 
 @router.post("/api/v1/inventory/consume-recipe")
-async def consume_recipe_ingredients(req: ConsumeRecipeRequest):
+async def consume_recipe_ingredients(req: ConsumeRecipeRequest, current: CurrentUser):
     """
     Batch-deduct recipe ingredients from inventory after cooking.
     Scales quantities by (servings_cooked / recipe_default_servings).
     Skips ingredients not in user's inventory or explicitly unchecked.
     """
+    require_user_id(current, req.user_id)
     db = get_supabase()
 
     try:
@@ -544,8 +560,7 @@ async def consume_recipe_ingredients(req: ConsumeRecipeRequest):
         }
 
     except Exception as e:
-        logger.error(f"[Inventory] Consume recipe failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Inventory] Consume recipe failed", e)
 
 
 # ── Smart Expiry Prediction ──────────────────────────────────────
@@ -559,7 +574,7 @@ class PredictExpiryRequest(BaseModel):
 
 
 @router.post("/api/v1/inventory/predict-expiry")
-async def predict_expiry_endpoint(req: PredictExpiryRequest):
+async def predict_expiry_endpoint(req: PredictExpiryRequest, current: CurrentUser):
     """
     Predict expiry date using category, storage location, and packaging.
     
@@ -590,6 +605,7 @@ from fastapi import File, UploadFile, Form
 
 @router.post("/api/v1/inventory/assess-freshness")
 async def assess_freshness(
+    current: CurrentUser,
     image: UploadFile = File(...),
     ingredient_name: str = Form(...),
     category: str = Form("other"),
@@ -607,9 +623,7 @@ async def assess_freshness(
     """
     from app.services.expiry_prediction import assess_freshness_from_photo
 
-    image_bytes = await image.read()
-    if len(image_bytes) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Image too large (max 10MB)")
+    image_bytes = await validate_image_upload(image)
 
     result = await assess_freshness_from_photo(
         image_bytes=image_bytes,

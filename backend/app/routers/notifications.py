@@ -16,6 +16,8 @@ import logging
 from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException
 
+from app.core.auth import CurrentUser, require_user_id
+from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("plately.notifications")
@@ -24,7 +26,7 @@ router = APIRouter(tags=["Notifications"])
 
 
 @router.get("/api/v1/notifications/expiring/{user_id}")
-async def get_expiring_items(user_id: str, days: int = 2):
+async def get_expiring_items(user_id: str, current: CurrentUser, days: int = 2):
     """
     Get items expiring within N days for a user.
     
@@ -33,6 +35,7 @@ async def get_expiring_items(user_id: str, days: int = 2):
     - 🟡 warning: expires tomorrow
     - 🟢 upcoming: expires in 2+ days
     """
+    require_user_id(current, user_id)
     try:
         supabase = get_supabase()
         today = date.today()
@@ -122,5 +125,4 @@ async def get_expiring_items(user_id: str, days: int = 2):
         }
 
     except Exception as e:
-        logger.error(f"[Notifications] Failed to check expiring items: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "[Notifications] Failed to check expiring items", e)

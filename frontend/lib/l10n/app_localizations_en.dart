@@ -1090,4 +1090,176 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorial_replayConfirm => 'Tutorial will show on next app launch.';
+
+  @override
+  String get auth_enterEmail => 'Please enter your email address first.';
+
+  @override
+  String get tutorial_tourTitle => 'Plately Interactive Tour';
+
+  @override
+  String get tutorial_tourDesc =>
+      'Welcome! Let\'s take a quick 1-minute interactive tour of Plately. We will show you how to manage your ingredients, discover matching recipes, and start cooking!';
+
+  @override
+  String get tutorial_startTour => 'Start Tour 🚀';
+
+  @override
+  String get tutorial_skipTour => 'Skip';
+
+  @override
+  String get tutorial_shelfIntroTitle => 'Your Digital Shelf';
+
+  @override
+  String get tutorial_shelfIntroDesc =>
+      'This is your digital fridge, freezer, and pantry. Here you can track quantities and expiry dates — we\'ll warn you before food goes bad. Let\'s see how it works!';
+
+  @override
+  String get tutorial_nextArrow => 'Next →';
+
+  @override
+  String get tutorial_addIntroTitle => 'Add Ingredients';
+
+  @override
+  String get tutorial_addIntroDesc =>
+      'To add ingredients, tap the Scan tab (center camera icon) in the navigation bar. Go ahead, tap it!';
+
+  @override
+  String get tutorial_bypassScan => 'Bypass (Go to Scan)';
+
+  @override
+  String get tutorial_scanIntroTitle => 'Scan & Manually Add';
+
+  @override
+  String get tutorial_scanIntroDesc =>
+      'Here you can scan receipts, barcodes, or snap a photo of ingredients. For this tutorial, we will automatically load 5 mock ingredients needed for a special stir-fry recipe.';
+
+  @override
+  String get tutorial_loadMock => 'Load Mock Ingredients 🛒';
+
+  @override
+  String get tutorial_shelfAddedTitle => 'Ingredients Loaded!';
+
+  @override
+  String get tutorial_shelfAddedDesc =>
+      'Great! We\'ve loaded: Chicken Breast, Broccoli, Soy Sauce, Garlic, and Sesame Oil. Let\'s see what we can cook! Tap the Cook tab (left restaurant icon) to find matching recipes.';
+
+  @override
+  String get tutorial_bypassCook => 'Bypass (Go to Cook)';
+
+  @override
+  String get tutorial_roamCookTitle => '5-Tier Recommendations';
+
+  @override
+  String get tutorial_roamCookDesc =>
+      'Here you see the 5-tier recommendation tabs (Perfect, For You, Use It Up, Almost, Explore). Tap around to explore them! When you are ready, tap the \"Tutorial Chicken Stir-fry\" recipe card under the Perfect tab.';
+
+  @override
+  String get tutorial_recipeDetailTitle => 'Recipe Details';
+
+  @override
+  String get tutorial_recipeDetailDesc =>
+      'Here you see the ingredients list and steps. Tap the \"Start Cooking\" button at the bottom of the page to begin!';
+
+  @override
+  String get tutorial_cookingPrepTitle => 'Prep & Ingredients';
+
+  @override
+  String get tutorial_cookingPrepDesc =>
+      'Before turning on the heat, wash and chop your ingredients. Tap the \"Begin Step-by-Step\" button to start the cooking assistant!';
+
+  @override
+  String get tutorial_cookingRunTitle => 'Cooking Assistant';
+
+  @override
+  String get tutorial_cookingRunDesc =>
+      'The assistant guides you step-by-step. You can also chat with the AI assistant at the bottom for substitutions or cooking questions! Step through the recipe and tap \"Finish\" on the final step.';
+
+  @override
+  String get tutorial_finishTitle => 'Tutorial Completed!';
+
+  @override
+  String get tutorial_finishDesc =>
+      'Congratulations! You\'ve completed the Plately cook tour.\n\nNote: All ingredients and data used in this tutorial will not be saved. This is just a small portion of the app. Tap \"Finish Tour\" to start your own cooking journey!';
+
+  @override
+  String get tutorial_finishTour => 'Finish Tour 🏁';
+
+  @override
+  String get tutorial_recipeTitle => 'Tutorial Chicken Stir-fry';
+
+  @override
+  String get tutorial_ing_chicken => 'Chicken Breast';
+
+  @override
+  String get tutorial_ing_broccoli => 'Broccoli';
+
+  @override
+  String get tutorial_ing_soy_sauce => 'Soy Sauce';
+
+  @override
+  String get tutorial_ing_garlic => 'Garlic';
+
+  @override
+  String get tutorial_ing_sesame_oil => 'Sesame Oil';
+
+  @override
+  String get tutorial_step1 =>
+      'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.';
+
+  @override
+  String get tutorial_step1_beg =>
+      'Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.';
+
+  @override
+  String get tutorial_step2 =>
+      'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.';
+
+  @override
+  String get tutorial_step2_beg =>
+      'Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn\'t burn.';
+
+  @override
+  String get tutorial_step3 =>
+      'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.';
+
+  @override
+  String get tutorial_step3_beg =>
+      'Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.';
+
+  @override
+  String get tutorial_step4 =>
+      'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.';
+
+  @override
+  String get tutorial_step4_beg =>
+      'Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.';
+
+  @override
+  String get tutorial_step5 =>
+      'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!';
+
+  @override
+  String get tutorial_step5_beg =>
+      'Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!';
+
+  @override
+  String get reward_mealCompleted => 'Meal Completed!';
+
+  @override
+  String reward_youCooked(String recipeTitle, String servings) {
+    return 'You cooked \"$recipeTitle\" · $servings servings';
+  }
+
+  @override
+  String get reward_xpEarned => 'XP Earned';
+
+  @override
+  String get reward_itemsUsed => 'Items Used';
+
+  @override
+  String get reward_deducted => 'Deducted from shelf';
+
+  @override
+  String get reward_backToShelf => 'Back to Shelf';
 }

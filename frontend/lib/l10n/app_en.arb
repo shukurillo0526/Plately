@@ -1,632 +1,659 @@
 {
-    "@@locale": "en",
-    "appTitle": "Plately",
-    "@appTitle": {
-        "description": "The title of the application"
-    },
-    "tabShelf": "Shelf",
-    "tabCook": "Cook",
-    "tabScan": "Scan",
-    "tabProfile": "Profile",
-    "profileTitle": "Profile",
-    "profileGamificationLevel": "Level {level}",
-    "@profileGamificationLevel": {
-        "placeholders": {
-            "level": {
-                "type": "int"
-            }
-        }
-    },
-    "profileMealsCooked": "Meals Cooked",
-    "profileItemsSaved": "Items Saved",
-    "profileDayStreak": "Day Streak",
-    "profileFlavorProfile": "Flavor Profile",
-    "profileBadges": "Badges & Achievements",
-    "profileShoppingList": "Shopping List",
-    "profileMealPlanner": "Meal Planner",
-    "actionAdd": "Add",
-    "actionCancel": "Cancel",
-    "actionSave": "Save",
-    "actionDelete": "Delete",
-    "profileLoadError": "Couldn't load profile",
-    "retry": "Retry",
-    "refresh": "Refresh",
-    "signOut": "Sign Out",
-    "profileLevelProgress": "Level Progress",
-    "profileLevel": "Level {level}",
-    "@profileLevel": {
-        "placeholders": {
-            "level": {
-                "type": "int"
-            }
-        }
-    },
-    "profileYourImpact": "Your Impact",
-    "addShoppingItem": "Add Item",
-    "shoppingListEmpty": "Your shopping list is empty",
-    "mealPlannerEmpty": "No meals planned",
-    "planToday": "Plan Today",
-    "today": "Today",
-    "planMeal": "Plan meal...",
-    "tabExplore": "Explore",
-    "scanFood": "Scan Food",
-    "scanCalories": "Scan Calories",
-    "takePhoto": "Take Photo",
-    "chooseFromGallery": "Choose from Gallery",
-    "analyzeCalories": "Analyze Calories",
-    "caloriesPerServing": "cal/serving",
-    "totalCalories": "cal total",
-    "creatorProfile": "Creator Profile",
-    "follow": "Follow",
-    "following": "Following",
-    "nutritionTracker": "Nutrition Tracker",
-    "reels": "Reels",
-    "community": "Community",
-    "hasRecipe": "Has Recipe",
-    "noReelsYet": "No reels yet",
-    "settings": "Settings",
-    "settingsLanguage": "Language",
-    "settingsTheme": "Theme",
-    "aboutApp": "About Plately",
-    "myFridge": "🧊 My Fridge",
-    "expiryAlerts": "Expiry alerts",
-    "errorLoadInventory": "Couldn't load inventory",
-    "errorCheckConnection": "Check your connection and try again.",
-    "total": "Total",
-    "fresh": "Fresh",
-    "expiring": "Expiring",
-    "expired": "Expired",
-    "searchIngredients": "Search ingredients...",
-    "all": "All",
-    "itemsCount": "{count} items",
-    "@itemsCount": {
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
-    "zoneEmptyTitle": "Your {zone} is Empty",
-    "@zoneEmptyTitle": {
-        "placeholders": {
-            "zone": {
-                "type": "String"
-            }
-        }
-    },
-    "zoneEmptyDesc": "Ready to fill up your digital kitchen.\nAdd items manually or tap scan.",
-    "addIngredient": "Add Ingredient",
-    "urgentCook": "Cook Now",
-    "urgentUse": "Use {ingredient}",
-    "@urgentUse": {
-        "placeholders": {
-            "ingredient": {
-                "type": "String"
-            }
-        }
-    },
-    "noItemsMatch": "No items match your filters",
-    "clearFilters": "Clear filters",
-    "expiryAlertsTitle": "🔔 Expiry Alerts",
-    "allFresh": "All items are fresh! 🎉",
-    "expiredCount": "❌ Expired ({count})",
-    "@expiredCount": {
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
-    "expiringSoonCount": "⚠️ Expiring Soon ({count})",
-    "@expiringSoonCount": {
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
-    "auto_scanCaloriesIsComingSoon": "Scan Calories is coming soon!",
-    "auto_scan": "Scan",
-    "auto_addAll": "Add All",
-    "auto_allAdded": "All Added",
-    "auto_scanAnother": "Scan Another",
-    "auto_startVisualAudit": "Start Visual Audit",
-    "auto_enterBarcode": "Enter Barcode",
-    "auto_cancel": "Cancel",
-    "auto_lookUp": "Look Up",
-    "auto_fridge": "Fridge",
-    "auto_freezer": "Freezer",
-    "auto_pantry": "Pantry",
-    "auto_addToShelf": "Add to Shelf",
-    "auto_mealLogged": "✅ Meal logged!",
-    "auto_snapYourMeal": "Snap Your Meal",
-    "auto_takeAPhotoAndAiWillEstimateCalories": "Take a photo and AI will estimate calories",
-    "auto_analyzingFood": "Analyzing food...",
-    "auto_camera": "Camera",
-    "auto_gallery": "Gallery",
-    "auto_estimatedCalories": "estimated calories",
-    "auto_cal": "cal",
-    "auto_logMeal": "Log Meal",
-    "auto_addSomeIngredientsToYourShelfFirst": "Add some ingredients to your shelf first!",
-    "auto_aiRecipeGenerator": "AI Recipe Generator",
-    "auto_any": "Any",
-    "auto_shelfOnly": "Shelf Only",
-    "auto_generateRecipe": "Generate Recipe",
-    "auto_ingredients": "🧂 Ingredients",
-    "auto_steps": "👨‍🍳 Steps",
-    "auto_importRecipe": "Import Recipe",
-    "auto_retry": "Retry",
-    "auto_addItemsToYourShelfToGetRecommendations": "Add items to your shelf to get recommendations",
-    "auto_noRecipesMatchThisCuisine": "No recipes match this cuisine",
-    "auto_clearFilter": "Clear filter",
-    "auto_deleteItem": "Delete item?",
-    "auto_delete": "Delete",
-    "auto_freshness": "Freshness",
-    "auto_use1Unit": "Use 1 Unit",
-    "auto_removeFromInventory": "Remove from Inventory",
-    "auto_following": "Following",
-    "auto_follow": "Follow",
-    "auto_posts": "Posts",
-    "auto_noPostsYet": "No posts yet",
-    "auto_explore": "Explore",
-    "auto_noReelsYet": "No reels yet",
-    "auto_cookThisRecipe": "Cook This Recipe",
-    "auto_recipeNotFound": "Recipe not found",
-    "auto_hasRecipe": "Has Recipe",
-    "auto_noCommunityPostsYet": "No community posts yet",
-    "auto_beTheFirstToShare": "Be the first to share!",
-    "auto_createPost": "Create Post",
-    "auto_savedPosts": "Saved Posts",
-    "auto_noSavedPostsYet": "No saved posts yet",
-    "auto_you": "You",
-    "auto_checkout": "Checkout",
-    "auto_yourCartIsEmpty": "Your cart is empty",
-    "auto_yourOrder": "Your Order",
-    "auto_total": "Total",
-    "auto_orderConfirmed": "Order Confirmed!",
-    "auto_yourPickupCode": "Your Pickup Code",
-    "auto_showThisCodeAtTheCounter": "Show this code at the counter",
-    "auto_deliveryOnTheWay": "Delivery on the way",
-    "auto_aDriverWillBeAssignedShortly": "A driver will be assigned shortly",
-    "auto_backToHome": "Back to Home",
-    "auto_incomingOrders": "Incoming Orders",
-    "auto_noFoodVideosYet": "No food videos yet",
-    "auto_foodFeed": "Food Feed",
-    "auto_myOrders": "My Orders",
-    "auto_noOrdersYet": "No orders yet",
-    "auto_yourOrderHistoryWillAppearHere": "Your order history will appear here",
-    "auto_cancelOrder": "Cancel Order?",
-    "auto_keepOrder": "Keep Order",
-    "auto_orderCancelled": "Order cancelled",
-    "auto_pickupCode": "Pickup Code:",
-    "auto_closed": "Closed",
-    "auto_menu": "Menu",
-    "auto_menuComingSoon": "Menu coming soon",
-    "auto_best": "🔥 Best",
-    "auto_popularDishes": "🍽️ Popular Dishes",
-    "auto_fromVideo": "From video",
-    "auto_bookATable": "Book a Table",
-    "auto_confirmReservation": "Confirm Reservation",
-    "auto_locationDirections": "Location & Directions",
-    "auto_mapView": "Map View",
-    "auto_openInGoogleMaps": "Open in Google Maps",
-    "auto_writeAReview": "Write a Review",
-    "auto_viewCart": "View Cart",
-    "auto_signOut": "Sign Out?",
-    "auto_youWillNeedToSignInAgain": "You will need to sign in again.",
-    "auto_deleteAccount": "Delete Account?",
-    "auto_deleteForever": "Delete Forever",
-    "auto_accountDeletionRequestedContactSupportToFinalize": "Account deletion requested. Contact support to finalize.",
-    "auto_plately": "Plately",
-    "auto_platelyIsYourAipoweredKitchenEcosystemItAutomaticallyTracksYourIngredientsPredictsExpirationsGeneratesPersonalizedRecipesAndLetsYouOrderFromLocalRestaurants": "Plately is your AI-powered kitchen ecosystem. It automatically tracks your ingredients, predicts expirations, generates personalized recipes, and lets you order from local restaurants.",
-    "auto_gotIt": "Got it",
-    "auto_editDisplayName": "Edit Display Name",
-    "auto_save": "Save",
-    "auto_addShoppingItem": "Add Shopping Item",
-    "auto_add": "Add",
-    "auto_selectRecipeForMeal": "Select Recipe for Meal",
-    "auto_failedToLoadRecipes": "Failed to load recipes",
-    "auto_noRecipesFound": "No recipes found",
-    "auto_mealCleared": "Meal cleared",
-    "auto_theme": "🎨 Theme",
-    "whatToCook": "What to Cook?",
-    "tierPerfect": "Perfect",
-    "tierForYou": "For You",
-    "tierUseItUp": "Use It Up",
-    "tierAlmost": "Almost",
-    "tierExplore": "Explore",
-    "noTierRecipesYet": "No {tier} recipes yet",
-    "@noTierRecipesYet": {
-        "placeholders": {
-            "tier": {
-                "type": "String"
-            }
-        }
-    },
-    "addItemsForRecommendations": "Add items to your shelf to get recommendations",
-    "scanCaloriesTab": "Scan Calories",
-    "scanYourIngredients": "Scan Your Ingredients",
-    "takePhotoToAdd": "Take a photo of food items to add them to your shelf automatically",
-    "scanReceipt": "Receipt",
-    "scanPhoto": "Photo",
-    "scanBarcode": "Scan Barcode",
-    "takePhotoBtn": "Take Photo",
-    "adjustPortions": "Adjust Portions",
-    "currentRecipeMakesNServings": "Current recipe makes {servings} servings.",
-    "@currentRecipeMakesNServings": {
-        "placeholders": {
-            "servings": {
-                "type": "String"
-            }
-        }
-    },
-    "scaleToNServings": "Scale to {newServings} Servings",
-    "@scaleToNServings": {
-        "placeholders": {
-            "newServings": {
-                "type": "String"
-            }
-        }
-    },
-    "scaledToNServings": "Scaled to {newServings} servings 🍳",
-    "@scaledToNServings": {
-        "placeholders": {
-            "newServings": {
-                "type": "String"
-            }
-        }
-    },
-    "findingSubstitutesForX": "Finding substitutes for {ingredientName}...",
-    "@findingSubstitutesForX": {
-        "placeholders": {
-            "ingredientName": {
-                "type": "String"
-            }
-        }
-    },
-    "couldNotFindSubstitutes": "Could not find substitutes",
-    "substitutesForX": "Substitutes for \"{ingredientName}\"",
-    "@substitutesForX": {
-        "placeholders": {
-            "ingredientName": {
-                "type": "String"
-            }
-        }
-    },
-    "noSubstitutesFoundForThisRecipeContext": "No substitutes found for this recipe context.",
-    "nMatch": "{match}% Match",
-    "@nMatch": {
-        "placeholders": {
-            "match": {
-                "type": "String"
-            }
-        }
-    },
-    "ingredientsWithCount": "Ingredients ({count})",
-    "@ingredientsWithCount": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "scale": "Scale",
-    "addedMissingItemsToShoppingList": "Added missing items to Shopping List!",
-    "failedToAddItemsX": "Failed to add items: {e}",
-    "@failedToAddItemsX": {
-        "placeholders": {
-            "e": {
-                "type": "String"
-            }
-        }
-    },
-    "addMissingToShoppingList": "Add missing to Shopping List",
-    "cookingStepsWithCount": "Cooking Steps ({count})",
-    "@cookingStepsWithCount": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "noStepsAvailableYet": "No steps available yet",
-    "recordedTasteProfileEvolving": "Recorded! Your taste profile is evolving 🧠",
-    "failedToRecordX": "Failed to record: {e}",
-    "@failedToRecordX": {
-        "placeholders": {
-            "e": {
-                "type": "String"
-            }
-        }
-    },
-    "iCookedThis": "I Cooked This!",
-    "startCooking": "Start Cooking",
-    "optional_tag": "optional",
-    "servings_tag": "servings",
-    "min_tag": "min",
-    "difficulty_tag": "Difficulty",
-    "expiringSoon": "Expiring Soon",
-    "nItemsNeedAttention": "{count} item(s) need attention",
-    "@nItemsNeedAttention": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "takeAPhotoOfFoodItems": "Take a photo of food items to add them\nto your shelf automatically",
-    "addManually": "Add Manually",
-    "recognitionFailed": "Recognition failed. Try again.",
-    "analyzingYourFood": "Analyzing your food...",
-    "aiIsIdentifying": "AI is identifying ingredients",
-    "nItemsDetected": "{count} Items Detected",
-    "@nItemsDetected": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "photoAnalysisSelected": "Photo Analysis Selected",
-    "nIngredientsDetected": "{count} Ingredients Detected",
-    "@nIngredientsDetected": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "nOfNAdded": "{added} / {total} added",
-    "@nOfNAdded": {
-        "placeholders": {
-            "added": {
-                "type": "String"
-            },
-            "total": {
-                "type": "String"
-            }
-        }
-    },
-    "addedItem": "Added {item}!",
-    "@addedItem": {
-        "placeholders": {
-            "item": {
-                "type": "String"
-            }
-        }
-    },
-    "failedToAddItem": "Failed to add {item}",
-    "@failedToAddItem": {
-        "placeholders": {
-            "item": {
-                "type": "String"
-            }
-        }
-    },
-    "addedNItemsToShelf": "Added {count} items to shelf!",
-    "@addedNItemsToShelf": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "noProductFoundForBarcode": "No product found for barcode {barcode}",
-    "@noProductFoundForBarcode": {
-        "placeholders": {
-            "barcode": {
-                "type": "String"
-            }
-        }
-    },
-    "addedItemToShelf": "Added {item} to shelf!",
-    "@addedItemToShelf": {
-        "placeholders": {
-            "item": {
-                "type": "String"
-            }
-        }
-    },
-    "errorX": "Error: {e}",
-    "@errorX": {
-        "placeholders": {
-            "e": {
-                "type": "String"
-            }
-        }
-    },
-    "analysisFailedX": "Analysis failed: {e}",
-    "@analysisFailedX": {
-        "placeholders": {
-            "e": {
-                "type": "String"
-            }
-        }
-    },
-    "failedToLogX": "Failed to log: {e}",
-    "@failedToLogX": {
-        "placeholders": {
-            "e": {
-                "type": "String"
-            }
-        }
-    },
-    "scanBarcodeShort": "Barcode",
-    "profileAccount": "Account",
-    "deleteAccount": "Delete Account",
-    "tierBadge1": "✅ Everything you need!",
-    "tierBadge2": "🔥 Recommended for you",
-    "tierBadge3": "⏰ Use expiring items",
-    "tierBadge4": "🛒 Just a few items away",
-    "tierBadge5": "🌍 Discover something new",
-    "needLabel": "Need: {items}",
-    "@needLabel": {
-        "placeholders": {
-            "items": {
-                "type": "String"
-            }
-        }
-    },
-    "nOfNIngredients": "{matched}/{total} ingredients",
-    "@nOfNIngredients": {
-        "placeholders": {
-            "matched": {
-                "type": "String"
-            },
-            "total": {
-                "type": "String"
-            }
-        }
-    },
-    "servingsLabel": "Servings",
-    "nHave": "{count} have",
-    "@nHave": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "nMissing": "{count} missing",
-    "@nMissing": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "ingredientsHeader": "Ingredients",
-    "swapButton": "Swap →",
-    "aiAssistant": "🤖 AI Assistant",
-    "aiHint": "e.g. \"I don't have lamb, suggest alternatives\"",
-    "editIngredient": "Edit Ingredient",
-    "nameLabel": "Name",
-    "qtyLabel": "Qty",
-    "unitLabel": "Unit",
-    "handsOn": "Hands-on",
-    "automatic": "Automatic",
-    "min_tag": "min",
-    "difficulty_tag": "Difficulty",
-    "servings_tag": "servings",
-    "optional_tag": "optional",
-    "addMissingToShoppingList": "Add missing to Shopping List",
-    "startCooking": "Start Cooking",
-    "iCookedThis": "I Cooked This!",
-    "scale": "Scale",
-    "recordedTasteProfileEvolving": "Recorded! Your taste profile is evolving 🧠",
-    "addedMissingItemsToShoppingList": "Added missing items to Shopping List!",
-    "ingredientsWithCount": "Ingredients ({count})",
-    "@ingredientsWithCount": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "cookingStepsWithCount": "Cooking Steps ({count})",
-    "@cookingStepsWithCount": {
-        "placeholders": {
-            "count": {
-                "type": "String"
-            }
-        }
-    },
-    "inv_quantity": "Quantity",
-    "inv_purchased": "Purchased",
-    "inv_expires": "Expires",
-    "inv_source": "Source",
-    "inv_storageLocation": "Storage Location",
-    "inv_itemState": "Item State",
-    "inv_freshLabel": "🟢 Fresh",
-    "inv_agingLabel": "🟡 Aging",
-    "inv_urgentLabel": "🟠 Urgent",
-    "inv_criticalLabel": "🔴 Critical",
-    "inv_expiredLabel": "⚫ Expired",
-    "inv_expiredDaysAgo": "Expired {days}d ago",
-    "@inv_expiredDaysAgo": {
-        "placeholders": {
-            "days": {
-                "type": "String"
-            }
-        }
-    },
-    "inv_expiresToday": "Expires today!",
-    "inv_expiresTomorrow": "Expires tomorrow",
-    "inv_daysRemaining": "{days} days remaining",
-    "@inv_daysRemaining": {
-        "placeholders": {
-            "days": {
-                "type": "String"
-            }
-        }
-    },
-    "inv_stateOpened": "OPENED",
-    "inv_stateFrozen": "FROZEN",
-    "inv_stateThawed": "THAWED",
-    "inv_statePartial": "PARTIAL",
-    "inv_sortExpiry": "Expiry ↑",
-    "inv_sortName": "Name A-Z",
-    "inv_sortCategory": "Category",
-    "inv_sortNewest": "Newest first",
-    "inv_removeConfirm": "Remove \"{name}\" from your inventory?",
-    "@inv_removeConfirm": {
-        "placeholders": {
-            "name": {
-                "type": "String"
-            }
-        }
-    },
-    "manual_addIngredient": "Add Ingredient",
-    "manual_ingredientName": "Ingredient Name",
-    "manual_ingredientHint": "e.g. Apples, Bread, Milk",
-    "manual_category": "Category",
-    "manual_qty": "Qty",
-    "manual_metricType": "Metric Type",
-    "manual_estimatedExpiry": "Estimated Expiry",
-    "manual_required": "Required",
-
-    "auth_tagline": "Zero‑Waste, Maximum Taste.",
-    "auth_subtitle": "Your kitchen, intelligently managed.",
-    "auth_email": "Email",
-    "auth_password": "Password",
-    "auth_continue": "Continue",
-    "auth_or": "OR",
-    "auth_continueGoogle": "Continue with Google",
-    "auth_continueGuest": "Continue as Guest",
-    "auth_autoDetectHint": "New here? We'll create your account automatically.",
-    "auth_checkEmail": "Please check your email to verify your account.",
-    "auth_enterBoth": "Please enter both email and password.",
-    "auth_unexpectedError": "An unexpected error occurred. Please try again.",
-    "auth_googleFailed": "Google sign‑in failed. Please try again.",
-    "auth_guestFailed": "Guest sign‑in failed. Please try email or Google instead.",
-    "auth_resetSent": "Password reset email sent. Check your inbox.",
-    "auth_forgotPassword": "Forgot Password?",
-
-
-    "import_recipe": "Import Recipe",
-    "import_pasteRaw": "Paste Raw Recipe",
-    "import_description": "Copy and paste instructions from a website, book, or notes app. Our AI will magically convert it into a step-by-step smart recipe.",
-    "import_hint": "e.g. Grandma's Cookies\nMix 2 cups flour with 1 cup sugar... bake at 350 for 10 mins.",
-    "import_analyzing": "Analyzing Recipe...",
-    "import_parseWithAi": "Parse with AI",
-    "import_parsedRecipe": "Parsed Recipe",
-    "import_steps": "Steps",
-    "import_saveButton": "Looks Good — Save to My Recipes",
-    "import_savedLocally": "Recipe saved to My Recipes!",
-
-    "auto_total": "total",
-
-    "tutorial_next": "Next →",
-    "tutorial_gotIt": "Got it! 🎉",
-    "tutorial_cookTitle": "Your Recipes",
-    "tutorial_cookDesc": "Browse AI-matched recipes based on what's in your fridge. The higher the match %, the more ingredients you already have!",
-    "tutorial_scanTitle": "Scan Ingredients",
-    "tutorial_scanDesc": "Use your camera to scan receipts, barcodes, or snap a photo of ingredients. Our AI will identify them instantly.",
-    "tutorial_shelfTitle": "Your Living Shelf",
-    "tutorial_shelfDesc": "Your digital fridge, freezer, and pantry. Track expiry dates and quantities — we'll warn you before food goes bad.",
-    "tutorial_profileTitle": "Profile & Settings",
-    "tutorial_profileDesc": "Tap the profile icon to change language, theme, manage your flavor profile, and track cooking streaks!",
-
-    "tutorial_replay": "Replay Tutorial",
-    "tutorial_replayConfirm": "Tutorial will show on next app launch."
+  "@@locale": "en",
+  "appTitle": "Plately",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "tabShelf": "Shelf",
+  "tabCook": "Cook",
+  "tabScan": "Scan",
+  "tabProfile": "Profile",
+  "profileTitle": "Profile",
+  "profileGamificationLevel": "Level {level}",
+  "@profileGamificationLevel": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "profileMealsCooked": "Meals Cooked",
+  "profileItemsSaved": "Items Saved",
+  "profileDayStreak": "Day Streak",
+  "profileFlavorProfile": "Flavor Profile",
+  "profileBadges": "Badges & Achievements",
+  "profileShoppingList": "Shopping List",
+  "profileMealPlanner": "Meal Planner",
+  "actionAdd": "Add",
+  "actionCancel": "Cancel",
+  "actionSave": "Save",
+  "actionDelete": "Delete",
+  "profileLoadError": "Couldn't load profile",
+  "retry": "Retry",
+  "refresh": "Refresh",
+  "signOut": "Sign Out",
+  "profileLevelProgress": "Level Progress",
+  "profileLevel": "Level {level}",
+  "@profileLevel": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "profileYourImpact": "Your Impact",
+  "addShoppingItem": "Add Item",
+  "shoppingListEmpty": "Your shopping list is empty",
+  "mealPlannerEmpty": "No meals planned",
+  "planToday": "Plan Today",
+  "today": "Today",
+  "planMeal": "Plan meal...",
+  "tabExplore": "Explore",
+  "scanFood": "Scan Food",
+  "scanCalories": "Scan Calories",
+  "takePhoto": "Take Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "analyzeCalories": "Analyze Calories",
+  "caloriesPerServing": "cal/serving",
+  "totalCalories": "cal total",
+  "creatorProfile": "Creator Profile",
+  "follow": "Follow",
+  "following": "Following",
+  "nutritionTracker": "Nutrition Tracker",
+  "reels": "Reels",
+  "community": "Community",
+  "hasRecipe": "Has Recipe",
+  "noReelsYet": "No reels yet",
+  "settings": "Settings",
+  "settingsLanguage": "Language",
+  "settingsTheme": "Theme",
+  "aboutApp": "About Plately",
+  "myFridge": "🧊 My Fridge",
+  "expiryAlerts": "Expiry alerts",
+  "errorLoadInventory": "Couldn't load inventory",
+  "errorCheckConnection": "Check your connection and try again.",
+  "total": "Total",
+  "fresh": "Fresh",
+  "expiring": "Expiring",
+  "expired": "Expired",
+  "searchIngredients": "Search ingredients...",
+  "all": "All",
+  "itemsCount": "{count} items",
+  "@itemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "zoneEmptyTitle": "Your {zone} is Empty",
+  "@zoneEmptyTitle": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "zoneEmptyDesc": "Ready to fill up your digital kitchen.\nAdd items manually or tap scan.",
+  "addIngredient": "Add Ingredient",
+  "urgentCook": "Cook Now",
+  "urgentUse": "Use {ingredient}",
+  "@urgentUse": {
+    "placeholders": {
+      "ingredient": {
+        "type": "String"
+      }
+    }
+  },
+  "noItemsMatch": "No items match your filters",
+  "clearFilters": "Clear filters",
+  "expiryAlertsTitle": "🔔 Expiry Alerts",
+  "allFresh": "All items are fresh! 🎉",
+  "expiredCount": "❌ Expired ({count})",
+  "@expiredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiringSoonCount": "⚠️ Expiring Soon ({count})",
+  "@expiringSoonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "auto_scanCaloriesIsComingSoon": "Scan Calories is coming soon!",
+  "auto_scan": "Scan",
+  "auto_addAll": "Add All",
+  "auto_allAdded": "All Added",
+  "auto_scanAnother": "Scan Another",
+  "auto_startVisualAudit": "Start Visual Audit",
+  "auto_enterBarcode": "Enter Barcode",
+  "auto_cancel": "Cancel",
+  "auto_lookUp": "Look Up",
+  "auto_fridge": "Fridge",
+  "auto_freezer": "Freezer",
+  "auto_pantry": "Pantry",
+  "auto_addToShelf": "Add to Shelf",
+  "auto_mealLogged": "✅ Meal logged!",
+  "auto_snapYourMeal": "Snap Your Meal",
+  "auto_takeAPhotoAndAiWillEstimateCalories": "Take a photo and AI will estimate calories",
+  "auto_analyzingFood": "Analyzing food...",
+  "auto_camera": "Camera",
+  "auto_gallery": "Gallery",
+  "auto_estimatedCalories": "estimated calories",
+  "auto_cal": "cal",
+  "auto_logMeal": "Log Meal",
+  "auto_addSomeIngredientsToYourShelfFirst": "Add some ingredients to your shelf first!",
+  "auto_aiRecipeGenerator": "AI Recipe Generator",
+  "auto_any": "Any",
+  "auto_shelfOnly": "Shelf Only",
+  "auto_generateRecipe": "Generate Recipe",
+  "auto_ingredients": "🧂 Ingredients",
+  "auto_steps": "👨‍🍳 Steps",
+  "auto_importRecipe": "Import Recipe",
+  "auto_retry": "Retry",
+  "auto_addItemsToYourShelfToGetRecommendations": "Add items to your shelf to get recommendations",
+  "auto_noRecipesMatchThisCuisine": "No recipes match this cuisine",
+  "auto_clearFilter": "Clear filter",
+  "auto_deleteItem": "Delete item?",
+  "auto_delete": "Delete",
+  "auto_freshness": "Freshness",
+  "auto_use1Unit": "Use 1 Unit",
+  "auto_removeFromInventory": "Remove from Inventory",
+  "auto_following": "Following",
+  "auto_follow": "Follow",
+  "auto_posts": "Posts",
+  "auto_noPostsYet": "No posts yet",
+  "auto_explore": "Explore",
+  "auto_noReelsYet": "No reels yet",
+  "auto_cookThisRecipe": "Cook This Recipe",
+  "auto_recipeNotFound": "Recipe not found",
+  "auto_hasRecipe": "Has Recipe",
+  "auto_noCommunityPostsYet": "No community posts yet",
+  "auto_beTheFirstToShare": "Be the first to share!",
+  "auto_createPost": "Create Post",
+  "auto_savedPosts": "Saved Posts",
+  "auto_noSavedPostsYet": "No saved posts yet",
+  "auto_you": "You",
+  "auto_checkout": "Checkout",
+  "auto_yourCartIsEmpty": "Your cart is empty",
+  "auto_yourOrder": "Your Order",
+  "auto_total": "total",
+  "auto_orderConfirmed": "Order Confirmed!",
+  "auto_yourPickupCode": "Your Pickup Code",
+  "auto_showThisCodeAtTheCounter": "Show this code at the counter",
+  "auto_deliveryOnTheWay": "Delivery on the way",
+  "auto_aDriverWillBeAssignedShortly": "A driver will be assigned shortly",
+  "auto_backToHome": "Back to Home",
+  "auto_incomingOrders": "Incoming Orders",
+  "auto_noFoodVideosYet": "No food videos yet",
+  "auto_foodFeed": "Food Feed",
+  "auto_myOrders": "My Orders",
+  "auto_noOrdersYet": "No orders yet",
+  "auto_yourOrderHistoryWillAppearHere": "Your order history will appear here",
+  "auto_cancelOrder": "Cancel Order?",
+  "auto_keepOrder": "Keep Order",
+  "auto_orderCancelled": "Order cancelled",
+  "auto_pickupCode": "Pickup Code:",
+  "auto_closed": "Closed",
+  "auto_menu": "Menu",
+  "auto_menuComingSoon": "Menu coming soon",
+  "auto_best": "🔥 Best",
+  "auto_popularDishes": "🍽️ Popular Dishes",
+  "auto_fromVideo": "From video",
+  "auto_bookATable": "Book a Table",
+  "auto_confirmReservation": "Confirm Reservation",
+  "auto_locationDirections": "Location & Directions",
+  "auto_mapView": "Map View",
+  "auto_openInGoogleMaps": "Open in Google Maps",
+  "auto_writeAReview": "Write a Review",
+  "auto_viewCart": "View Cart",
+  "auto_signOut": "Sign Out?",
+  "auto_youWillNeedToSignInAgain": "You will need to sign in again.",
+  "auto_deleteAccount": "Delete Account?",
+  "auto_deleteForever": "Delete Forever",
+  "auto_accountDeletionRequestedContactSupportToFinalize": "Account deletion requested. Contact support to finalize.",
+  "auto_plately": "Plately",
+  "auto_platelyIsYourAipoweredKitchenEcosystemItAutomaticallyTracksYourIngredientsPredictsExpirationsGeneratesPersonalizedRecipesAndLetsYouOrderFromLocalRestaurants": "Plately is your AI-powered kitchen ecosystem. It automatically tracks your ingredients, predicts expirations, generates personalized recipes, and lets you order from local restaurants.",
+  "auto_gotIt": "Got it",
+  "auto_editDisplayName": "Edit Display Name",
+  "auto_save": "Save",
+  "auto_addShoppingItem": "Add Shopping Item",
+  "auto_add": "Add",
+  "auto_selectRecipeForMeal": "Select Recipe for Meal",
+  "auto_failedToLoadRecipes": "Failed to load recipes",
+  "auto_noRecipesFound": "No recipes found",
+  "auto_mealCleared": "Meal cleared",
+  "auto_theme": "🎨 Theme",
+  "whatToCook": "What to Cook?",
+  "tierPerfect": "Perfect",
+  "tierForYou": "For You",
+  "tierUseItUp": "Use It Up",
+  "tierAlmost": "Almost",
+  "tierExplore": "Explore",
+  "noTierRecipesYet": "No {tier} recipes yet",
+  "@noTierRecipesYet": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "addItemsForRecommendations": "Add items to your shelf to get recommendations",
+  "scanCaloriesTab": "Scan Calories",
+  "scanYourIngredients": "Scan Your Ingredients",
+  "takePhotoToAdd": "Take a photo of food items to add them to your shelf automatically",
+  "scanReceipt": "Receipt",
+  "scanPhoto": "Photo",
+  "scanBarcode": "Scan Barcode",
+  "takePhotoBtn": "Take Photo",
+  "adjustPortions": "Adjust Portions",
+  "currentRecipeMakesNServings": "Current recipe makes {servings} servings.",
+  "@currentRecipeMakesNServings": {
+    "placeholders": {
+      "servings": {
+        "type": "String"
+      }
+    }
+  },
+  "scaleToNServings": "Scale to {newServings} Servings",
+  "@scaleToNServings": {
+    "placeholders": {
+      "newServings": {
+        "type": "String"
+      }
+    }
+  },
+  "scaledToNServings": "Scaled to {newServings} servings 🍳",
+  "@scaledToNServings": {
+    "placeholders": {
+      "newServings": {
+        "type": "String"
+      }
+    }
+  },
+  "findingSubstitutesForX": "Finding substitutes for {ingredientName}...",
+  "@findingSubstitutesForX": {
+    "placeholders": {
+      "ingredientName": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotFindSubstitutes": "Could not find substitutes",
+  "substitutesForX": "Substitutes for \"{ingredientName}\"",
+  "@substitutesForX": {
+    "placeholders": {
+      "ingredientName": {
+        "type": "String"
+      }
+    }
+  },
+  "noSubstitutesFoundForThisRecipeContext": "No substitutes found for this recipe context.",
+  "nMatch": "{match}% Match",
+  "@nMatch": {
+    "placeholders": {
+      "match": {
+        "type": "String"
+      }
+    }
+  },
+  "ingredientsWithCount": "Ingredients ({count})",
+  "@ingredientsWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "scale": "Scale",
+  "addedMissingItemsToShoppingList": "Added missing items to Shopping List!",
+  "failedToAddItemsX": "Failed to add items: {e}",
+  "@failedToAddItemsX": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "addMissingToShoppingList": "Add missing to Shopping List",
+  "cookingStepsWithCount": "Cooking Steps ({count})",
+  "@cookingStepsWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "noStepsAvailableYet": "No steps available yet",
+  "recordedTasteProfileEvolving": "Recorded! Your taste profile is evolving 🧠",
+  "failedToRecordX": "Failed to record: {e}",
+  "@failedToRecordX": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "iCookedThis": "I Cooked This!",
+  "startCooking": "Start Cooking",
+  "optional_tag": "optional",
+  "servings_tag": "servings",
+  "min_tag": "min",
+  "difficulty_tag": "Difficulty",
+  "expiringSoon": "Expiring Soon",
+  "nItemsNeedAttention": "{count} item(s) need attention",
+  "@nItemsNeedAttention": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "takeAPhotoOfFoodItems": "Take a photo of food items to add them\nto your shelf automatically",
+  "addManually": "Add Manually",
+  "recognitionFailed": "Recognition failed. Try again.",
+  "analyzingYourFood": "Analyzing your food...",
+  "aiIsIdentifying": "AI is identifying ingredients",
+  "nItemsDetected": "{count} Items Detected",
+  "@nItemsDetected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "photoAnalysisSelected": "Photo Analysis Selected",
+  "nIngredientsDetected": "{count} Ingredients Detected",
+  "@nIngredientsDetected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "nOfNAdded": "{added} / {total} added",
+  "@nOfNAdded": {
+    "placeholders": {
+      "added": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "addedItem": "Added {item}!",
+  "@addedItem": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToAddItem": "Failed to add {item}",
+  "@failedToAddItem": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "addedNItemsToShelf": "Added {count} items to shelf!",
+  "@addedNItemsToShelf": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "noProductFoundForBarcode": "No product found for barcode {barcode}",
+  "@noProductFoundForBarcode": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  },
+  "addedItemToShelf": "Added {item} to shelf!",
+  "@addedItemToShelf": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "errorX": "Error: {e}",
+  "@errorX": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "analysisFailedX": "Analysis failed: {e}",
+  "@analysisFailedX": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToLogX": "Failed to log: {e}",
+  "@failedToLogX": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "scanBarcodeShort": "Barcode",
+  "profileAccount": "Account",
+  "deleteAccount": "Delete Account",
+  "tierBadge1": "✅ Everything you need!",
+  "tierBadge2": "🔥 Recommended for you",
+  "tierBadge3": "⏰ Use expiring items",
+  "tierBadge4": "🛒 Just a few items away",
+  "tierBadge5": "🌍 Discover something new",
+  "needLabel": "Need: {items}",
+  "@needLabel": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "nOfNIngredients": "{matched}/{total} ingredients",
+  "@nOfNIngredients": {
+    "placeholders": {
+      "matched": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "servingsLabel": "Servings",
+  "nHave": "{count} have",
+  "@nHave": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "nMissing": "{count} missing",
+  "@nMissing": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "ingredientsHeader": "Ingredients",
+  "swapButton": "Swap →",
+  "aiAssistant": "🤖 AI Assistant",
+  "aiHint": "e.g. \"I don't have lamb, suggest alternatives\"",
+  "editIngredient": "Edit Ingredient",
+  "nameLabel": "Name",
+  "qtyLabel": "Qty",
+  "unitLabel": "Unit",
+  "handsOn": "Hands-on",
+  "automatic": "Automatic",
+  "inv_quantity": "Quantity",
+  "inv_purchased": "Purchased",
+  "inv_expires": "Expires",
+  "inv_source": "Source",
+  "inv_storageLocation": "Storage Location",
+  "inv_itemState": "Item State",
+  "inv_freshLabel": "🟢 Fresh",
+  "inv_agingLabel": "🟡 Aging",
+  "inv_urgentLabel": "🟠 Urgent",
+  "inv_criticalLabel": "🔴 Critical",
+  "inv_expiredLabel": "⚫ Expired",
+  "inv_expiredDaysAgo": "Expired {days}d ago",
+  "@inv_expiredDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "inv_expiresToday": "Expires today!",
+  "inv_expiresTomorrow": "Expires tomorrow",
+  "inv_daysRemaining": "{days} days remaining",
+  "@inv_daysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "inv_stateOpened": "OPENED",
+  "inv_stateFrozen": "FROZEN",
+  "inv_stateThawed": "THAWED",
+  "inv_statePartial": "PARTIAL",
+  "inv_sortExpiry": "Expiry ↑",
+  "inv_sortName": "Name A-Z",
+  "inv_sortCategory": "Category",
+  "inv_sortNewest": "Newest first",
+  "inv_removeConfirm": "Remove \"{name}\" from your inventory?",
+  "@inv_removeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "manual_addIngredient": "Add Ingredient",
+  "manual_ingredientName": "Ingredient Name",
+  "manual_ingredientHint": "e.g. Apples, Bread, Milk",
+  "manual_category": "Category",
+  "manual_qty": "Qty",
+  "manual_metricType": "Metric Type",
+  "manual_estimatedExpiry": "Estimated Expiry",
+  "manual_required": "Required",
+  "auth_tagline": "Zero‑Waste, Maximum Taste.",
+  "auth_subtitle": "Your kitchen, intelligently managed.",
+  "auth_email": "Email",
+  "auth_password": "Password",
+  "auth_continue": "Continue",
+  "auth_or": "OR",
+  "auth_continueGoogle": "Continue with Google",
+  "auth_continueGuest": "Continue as Guest",
+  "auth_autoDetectHint": "New here? We'll create your account automatically.",
+  "auth_checkEmail": "Please check your email to verify your account.",
+  "auth_enterBoth": "Please enter both email and password.",
+  "auth_unexpectedError": "An unexpected error occurred. Please try again.",
+  "auth_googleFailed": "Google sign‑in failed. Please try again.",
+  "auth_guestFailed": "Guest sign‑in failed. Please try email or Google instead.",
+  "auth_resetSent": "Password reset email sent. Check your inbox.",
+  "auth_forgotPassword": "Forgot Password?",
+  "import_recipe": "Import Recipe",
+  "import_pasteRaw": "Paste Raw Recipe",
+  "import_description": "Copy and paste instructions from a website, book, or notes app. Our AI will magically convert it into a step-by-step smart recipe.",
+  "import_hint": "e.g. Grandma's Cookies\nMix 2 cups flour with 1 cup sugar... bake at 350 for 10 mins.",
+  "import_analyzing": "Analyzing Recipe...",
+  "import_parseWithAi": "Parse with AI",
+  "import_parsedRecipe": "Parsed Recipe",
+  "import_steps": "Steps",
+  "import_saveButton": "Looks Good — Save to My Recipes",
+  "import_savedLocally": "Recipe saved to My Recipes!",
+  "tutorial_next": "Next →",
+  "tutorial_gotIt": "Got it! 🎉",
+  "tutorial_cookTitle": "Your Recipes",
+  "tutorial_cookDesc": "Browse AI-matched recipes based on what's in your fridge. The higher the match %, the more ingredients you already have!",
+  "tutorial_scanTitle": "Scan Ingredients",
+  "tutorial_scanDesc": "Use your camera to scan receipts, barcodes, or snap a photo of ingredients. Our AI will identify them instantly.",
+  "tutorial_shelfTitle": "Your Living Shelf",
+  "tutorial_shelfDesc": "Your digital fridge, freezer, and pantry. Track expiry dates and quantities — we'll warn you before food goes bad.",
+  "tutorial_profileTitle": "Profile & Settings",
+  "tutorial_profileDesc": "Tap the profile icon to change language, theme, manage your flavor profile, and track cooking streaks!",
+  "tutorial_replay": "Replay Tutorial",
+  "tutorial_replayConfirm": "Tutorial will show on next app launch.",
+  "auth_enterEmail": "Please enter your email address first.",
+  "tutorial_tourTitle": "Plately Interactive Tour",
+  "tutorial_tourDesc": "Welcome! Let's take a quick 1-minute interactive tour of Plately. We will show you how to manage your ingredients, discover matching recipes, and start cooking!",
+  "tutorial_startTour": "Start Tour 🚀",
+  "tutorial_skipTour": "Skip",
+  "tutorial_shelfIntroTitle": "Your Digital Shelf",
+  "tutorial_shelfIntroDesc": "This is your digital fridge, freezer, and pantry. Here you can track quantities and expiry dates — we'll warn you before food goes bad. Let's see how it works!",
+  "tutorial_nextArrow": "Next →",
+  "tutorial_addIntroTitle": "Add Ingredients",
+  "tutorial_addIntroDesc": "To add ingredients, tap the Scan tab (center camera icon) in the navigation bar. Go ahead, tap it!",
+  "tutorial_bypassScan": "Bypass (Go to Scan)",
+  "tutorial_scanIntroTitle": "Scan & Manually Add",
+  "tutorial_scanIntroDesc": "Here you can scan receipts, barcodes, or snap a photo of ingredients. For this tutorial, we will automatically load 5 mock ingredients needed for a special stir-fry recipe.",
+  "tutorial_loadMock": "Load Mock Ingredients 🛒",
+  "tutorial_shelfAddedTitle": "Ingredients Loaded!",
+  "tutorial_shelfAddedDesc": "Great! We've loaded: Chicken Breast, Broccoli, Soy Sauce, Garlic, and Sesame Oil. Let's see what we can cook! Tap the Cook tab (left restaurant icon) to find matching recipes.",
+  "tutorial_bypassCook": "Bypass (Go to Cook)",
+  "tutorial_roamCookTitle": "5-Tier Recommendations",
+  "tutorial_roamCookDesc": "Here you see the 5-tier recommendation tabs (Perfect, For You, Use It Up, Almost, Explore). Tap around to explore them! When you are ready, tap the \"Tutorial Chicken Stir-fry\" recipe card under the Perfect tab.",
+  "tutorial_recipeDetailTitle": "Recipe Details",
+  "tutorial_recipeDetailDesc": "Here you see the ingredients list and steps. Tap the \"Start Cooking\" button at the bottom of the page to begin!",
+  "tutorial_cookingPrepTitle": "Prep & Ingredients",
+  "tutorial_cookingPrepDesc": "Before turning on the heat, wash and chop your ingredients. Tap the \"Begin Step-by-Step\" button to start the cooking assistant!",
+  "tutorial_cookingRunTitle": "Cooking Assistant",
+  "tutorial_cookingRunDesc": "The assistant guides you step-by-step. You can also chat with the AI assistant at the bottom for substitutions or cooking questions! Step through the recipe and tap \"Finish\" on the final step.",
+  "tutorial_finishTitle": "Tutorial Completed!",
+  "tutorial_finishDesc": "Congratulations! You've completed the Plately cook tour.\n\nNote: All ingredients and data used in this tutorial will not be saved. This is just a small portion of the app. Tap \"Finish Tour\" to start your own cooking journey!",
+  "tutorial_finishTour": "Finish Tour 🏁",
+  "tutorial_recipeTitle": "Tutorial Chicken Stir-fry",
+  "tutorial_ing_chicken": "Chicken Breast",
+  "tutorial_ing_broccoli": "Broccoli",
+  "tutorial_ing_soy_sauce": "Soy Sauce",
+  "tutorial_ing_garlic": "Garlic",
+  "tutorial_ing_sesame_oil": "Sesame Oil",
+  "tutorial_step1": "Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.",
+  "tutorial_step1_beg": "Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.",
+  "tutorial_step2": "Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.",
+  "tutorial_step2_beg": "Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn't burn.",
+  "tutorial_step3": "Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.",
+  "tutorial_step3_beg": "Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.",
+  "tutorial_step4": "Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.",
+  "tutorial_step4_beg": "Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.",
+  "tutorial_step5": "Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!",
+  "tutorial_step5_beg": "Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!",
+  "reward_mealCompleted": "Meal Completed!",
+  "reward_youCooked": "You cooked \"{recipeTitle}\" · {servings} servings",
+  "@reward_youCooked": {
+    "placeholders": {
+      "recipeTitle": {
+        "type": "String"
+      },
+      "servings": {
+        "type": "String"
+      }
+    }
+  },
+  "reward_xpEarned": "XP Earned",
+  "reward_itemsUsed": "Items Used",
+  "reward_deducted": "Deducted from shelf",
+  "reward_backToShelf": "Back to Shelf"
 }

@@ -57,6 +57,7 @@ except ImportError:
 limiter = Limiter(key_func=get_remote_address)
 
 # ── FastAPI App ──────────────────────────────────────────────────
+_settings = get_settings()
 app = FastAPI(
     title="Plately AI Backend",
     description=(
@@ -71,9 +72,9 @@ app = FastAPI(
         "- 📈 **Nutrition**: Calorie analysis and daily tracking\n"
         "- 👤 **User**: Flavor profile auto-learning, engagement tracking\n"
     ),
-    version="3.4.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    version="0.1.7",
+    docs_url="/docs" if _settings.DEBUG else None,
+    redoc_url="/redoc" if _settings.DEBUG else None,
     openapi_tags=[
         {"name": "Health", "description": "System health checks and status"},
         {"name": "Vision", "description": "OCR, barcode, and food image recognition"},
@@ -92,13 +93,14 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── Middleware Stack (order matters — last added runs first) ─────
-# 1. CORS (outermost)
+# 1. CORS (outermost) — explicit origins only; never wildcard + credentials
+_cors_origins = _settings.cors_origins_list()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins or ["http://localhost"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
     expose_headers=["X-Request-ID", "X-Response-Time"],
 )
 
@@ -133,8 +135,8 @@ app.include_router(feedback.router)
 async def root():
     return {
         "name": "Plately Intelligence API",
-        "version": "3.4.0",
-        "docs": "/docs",
+        "version": "0.1.7",
+        "docs": "/docs" if _settings.DEBUG else None,
         "health": "/api/v1/health",
     }
 

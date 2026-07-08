@@ -18,7 +18,7 @@ from app.middleware.error_handlers import register_error_handlers
 @pytest.fixture
 def client():
     """Create a minimal test app with health routes only."""
-    app = FastAPI(title="Test", version="3.4.0")
+    app = FastAPI(title="Test", version="0.1.7")
     app.add_middleware(RequestIdMiddleware)
     register_error_handlers(app)
 
@@ -39,7 +39,7 @@ def client():
 
         @app.get("/")
         async def root():
-            return {"name": "Plately Intelligence API", "version": "3.4.0", "docs": "/docs"}
+            return {"name": "Plately Intelligence API", "version": "0.1.7", "docs": "/docs"}
 
         yield TestClient(app)
 
@@ -49,7 +49,7 @@ class TestRootEndpoint:
         resp = client.get("/")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["version"] == "3.4.0"
+        assert data["version"] == "0.1.7"
         assert "docs" in data
 
     def test_root_has_request_id(self, client):

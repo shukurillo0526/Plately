@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/api_service.dart';
+import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/features/gamification/data/gamification_repository.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
 
@@ -23,6 +24,7 @@ class CookingRewardScreen extends ConsumerStatefulWidget {
   final int? proteinG;
   final int? carbsG;
   final int? fatG;
+  final Map<String, dynamic>? prepResult;
 
   const CookingRewardScreen({
     super.key,
@@ -38,6 +40,7 @@ class CookingRewardScreen extends ConsumerStatefulWidget {
     this.proteinG,
     this.carbsG,
     this.fatG,
+    this.prepResult,
   });
 
   @override
@@ -122,80 +125,104 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
         debugPrint('[Reward] Flavor record failed (non-critical): $e');
       }
 
-      // 3. Deduct inventory via Supabase RPC
-      try {
+      if (widget.prepResult != null) {
+        // If prepResult is provided, database operations have already run atomically!
+        _caloriesLogged = widget.prepResult!['calories_logged'] as int?;
+        
         final skippedIds = Set<String>.from(widget.skippedIngredientIds);
-        final inventoryItems = await Supabase.instance.client
-            .from('inventory_items')
-            .select('id, ingredient_id, quantity, unit, ingredients(display_name_en)')
-            .eq('user_id', userId)
-            .gt('quantity', 0);
-            
-        final invMap = <String, Map<String, dynamic>>{};
-        for (final item in inventoryItems) {
-          invMap[item['ingredient_id']] = item;
-        }
-
         final consumedList = <Map<String, dynamic>>[];
-        final recipeIngredients = widget.ingredients ?? [];
         final scale = widget.servingsCooked / (widget.originalServings > 0 ? widget.originalServings : 2);
-
-        for (final ing in recipeIngredients) {
+        
+        for (final ing in widget.ingredients ?? []) {
           final iid = ing['ingredient_id'] ?? ing['id'];
           if (iid == null || skippedIds.contains(iid)) continue;
           
-          final invItem = invMap[iid];
-          if (invItem == null) continue;
-
           final qty = ((ing['quantity'] as num?) ?? 0) * scale;
           if (qty <= 0) continue;
-
-          final deduct = qty < invItem['quantity'] ? qty : invItem['quantity'];
-          await Supabase.instance.client.rpc('consume_inventory_item', params: {
-            'p_inventory_id': invItem['id'],
-            'p_qty_to_consume': deduct,
-          });
-
+          
           consumedList.add({
-            'name': invItem['ingredients']?['display_name_en'] ?? ing['name'] ?? '',
-            'deducted': deduct,
-            'unit': invItem['unit'] ?? ing['unit'] ?? '',
+            'name': ing['display_name_en'] ?? ing['name'] ?? 'Item',
+            'deducted': qty,
+            'unit': ing['unit'] ?? 'pcs',
           });
         }
-        
         _consumedItems = consumedList;
-        debugPrint('[Reward] Inventory deducted: ${_consumedItems.length} items');
-      } catch (e) {
-        debugPrint('[Reward] Inventory deduction failed (non-critical): $e');
-      }
+      } else {
+        // 3. Deduct inventory via Supabase RPC (fallback if no prepResult passed)
+        try {
+          final skippedIds = Set<String>.from(widget.skippedIngredientIds);
+          final inventoryItems = await Supabase.instance.client
+              .from('inventory_items')
+              .select('id, ingredient_id, quantity, unit, ingredients(display_name_en)')
+              .eq('user_id', userId)
+              .gt('quantity', 0);
+              
+          final invMap = <String, Map<String, dynamic>>{};
+          for (final item in inventoryItems) {
+            invMap[item['ingredient_id']] = item;
+          }
 
-      // 4. Log nutrition
-      try {
-        final cal = widget.calories ?? 0;
-        if (cal > 0) {
-          _caloriesLogged = cal;
-          await Supabase.instance.client.from('nutrition_logs').insert({
-            'user_id': userId,
-            'meal_type': 'cooked',
-            'calories': cal,
-            'protein_g': widget.proteinG ?? 0,
-            'carbs_g': widget.carbsG ?? 0,
-            'fat_g': widget.fatG ?? 0,
-            'food_items': [
-              {
-                'name': widget.title,
-                'calories': cal,
-                'protein_g': widget.proteinG ?? 0,
-                'carbs_g': widget.carbsG ?? 0,
-                'fat_g': widget.fatG ?? 0,
-              }
-            ],
-            'notes': 'Cooked ${widget.servingsCooked} servings',
-          });
-          debugPrint('[Reward] Nutrition logged: $cal kcal');
+          final consumedList = <Map<String, dynamic>>[];
+          final recipeIngredients = widget.ingredients ?? [];
+          final scale = widget.servingsCooked / (widget.originalServings > 0 ? widget.originalServings : 2);
+
+          for (final ing in recipeIngredients) {
+            final iid = ing['ingredient_id'] ?? ing['id'];
+            if (iid == null || skippedIds.contains(iid)) continue;
+            
+            final invItem = invMap[iid];
+            if (invItem == null) continue;
+
+            final qty = ((ing['quantity'] as num?) ?? 0) * scale;
+            if (qty <= 0) continue;
+
+            final deduct = qty < invItem['quantity'] ? qty : invItem['quantity'];
+            await Supabase.instance.client.rpc('consume_inventory_item', params: {
+              'p_inventory_id': invItem['id'],
+              'p_qty_to_consume': deduct,
+            });
+
+            consumedList.add({
+              'name': invItem['ingredients']?['display_name_en'] ?? ing['name'] ?? '',
+              'deducted': deduct,
+              'unit': invItem['unit'] ?? ing['unit'] ?? '',
+            });
+          }
+          
+          _consumedItems = consumedList;
+          debugPrint('[Reward] Inventory deducted: ${_consumedItems.length} items');
+        } catch (e) {
+          debugPrint('[Reward] Inventory deduction failed (non-critical): $e');
         }
-      } catch (e) {
-        debugPrint('[Reward] Nutrition logging failed (non-critical): $e');
+
+        // 4. Log nutrition (fallback if no prepResult passed)
+        try {
+          final cal = widget.calories ?? 0;
+          if (cal > 0) {
+            _caloriesLogged = cal;
+            await Supabase.instance.client.from('nutrition_logs').insert({
+              'user_id': userId,
+              'meal_type': 'cooked',
+              'calories': cal,
+              'protein_g': widget.proteinG ?? 0,
+              'carbs_g': widget.carbsG ?? 0,
+              'fat_g': widget.fatG ?? 0,
+              'food_items': [
+                {
+                  'name': widget.title,
+                  'calories': cal,
+                  'protein_g': widget.proteinG ?? 0,
+                  'carbs_g': widget.carbsG ?? 0,
+                  'fat_g': widget.fatG ?? 0,
+                }
+              ],
+              'notes': 'Cooked ${widget.servingsCooked} servings',
+            });
+            debugPrint('[Reward] Nutrition logged: $cal kcal');
+          }
+        } catch (e) {
+          debugPrint('[Reward] Nutrition logging failed (non-critical): $e');
+        }
       }
 
       if (mounted) {
@@ -298,7 +325,7 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
 
                             // ── Title ────────────────────────────────
                             Text(
-                              'Meal Completed!',
+                              AppLocalizations.of(context)?.reward_mealCompleted ?? 'Meal Completed!',
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 32,
@@ -310,7 +337,7 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 8),
                               child: Text(
-                                'You cooked "${widget.title}" · ${widget.servingsCooked} servings',
+                                AppLocalizations.of(context)?.reward_youCooked(widget.title, widget.servingsCooked.toString()) ?? 'You cooked "${widget.title}" · ${widget.servingsCooked} servings',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -328,14 +355,14 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                 _StatCard(
                                   icon: Icons.star,
                                   value: '+$_xpEarned',
-                                  label: 'XP Earned',
+                                  label: AppLocalizations.of(context)?.reward_xpEarned ?? 'XP Earned',
                                   color: Colors.amber,
                                 ),
                                 SizedBox(width: 12),
                                 _StatCard(
                                   icon: Icons.eco,
                                   value: '${_consumedItems.isNotEmpty ? _consumedItems.length : widget.matchedIngredientsCount}',
-                                  label: 'Items Used',
+                                  label: AppLocalizations.of(context)?.reward_itemsUsed ?? 'Items Used',
                                   color: Theme.of(context).colorScheme.tertiary,
                                 ),
                                 if (_caloriesLogged != null && _caloriesLogged! > 0) ...[
@@ -349,6 +376,51 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                 ],
                               ],
                             ),
+
+                             // ── Leftovers Stored Card ────────────────
+                             if (widget.prepResult != null && (widget.prepResult!['portions_stored'] as int? ?? 0) > 0) ...[
+                               SizedBox(height: 24),
+                               Container(
+                                 width: double.infinity,
+                                 padding: EdgeInsets.all(16),
+                                 decoration: BoxDecoration(
+                                   color: Theme.of(context).colorScheme.surface,
+                                   borderRadius: BorderRadius.circular(16),
+                                   border: Border.all(
+                                     color: Colors.green.withValues(alpha: 0.3),
+                                   ),
+                                 ),
+                                 child: Row(
+                                   children: [
+                                     Icon(Icons.inventory_2, color: Colors.green, size: 24),
+                                     SizedBox(width: 12),
+                                     Expanded(
+                                       child: Column(
+                                         crossAxisAlignment: CrossAxisAlignment.start,
+                                         children: [
+                                           Text(
+                                             'Leftovers Stored!',
+                                             style: TextStyle(
+                                               color: Colors.green,
+                                               fontWeight: FontWeight.bold,
+                                               fontSize: 14,
+                                             ),
+                                           ),
+                                           SizedBox(height: 2),
+                                           Text(
+                                             'Stored ${widget.prepResult!['portions_stored']} portion(s) of "${widget.title}" in your fridge.',
+                                             style: TextStyle(
+                                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                               fontSize: 13,
+                                             ),
+                                           ),
+                                         ],
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                             ],
 
                             // ── Consumed Items Summary ───────────────
                             if (_consumedItems.isNotEmpty) ...[
@@ -372,7 +444,8 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                           color: Theme.of(context).colorScheme.primary,
                                           size: 16),
                                         SizedBox(width: 8),
-                                        Text('Deducted from shelf',
+                                        Text(
+                                          AppLocalizations.of(context)?.reward_deducted ?? 'Deducted from shelf',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.primary,
                                             fontSize: 13,
@@ -426,7 +499,7 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                 ),
                               ),
                               child: Text(
-                                'Back to Shelf',
+                                AppLocalizations.of(context)?.reward_backToShelf ?? 'Back to Shelf',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

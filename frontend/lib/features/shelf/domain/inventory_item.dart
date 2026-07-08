@@ -20,6 +20,17 @@ class InventoryItem {
   final String category;        // fruit, dairy, protein, etc.
   final Map<String, String> localizedNames; // {en, ko, uz, uz_cyrl, ru}
 
+  // Leftover tracking fields
+  final bool isCookedLeftover;
+  final String? parentRecipeId;
+  final String? parentRecipeTitle;
+  final int portionsCount;
+  final double? caloriesPerPortion;
+  final double? proteinPerPortion;
+  final double? carbsPerPortion;
+  final double? fatPerPortion;
+  final DateTime? dateCooked;
+
   InventoryItem({
     required this.id,
     required this.ingredientId,
@@ -35,6 +46,15 @@ class InventoryItem {
     this.confidenceScore,
     this.category = 'other',
     this.localizedNames = const {},
+    this.isCookedLeftover = false,
+    this.parentRecipeId,
+    this.parentRecipeTitle,
+    this.portionsCount = 1,
+    this.caloriesPerPortion,
+    this.proteinPerPortion,
+    this.carbsPerPortion,
+    this.fatPerPortion,
+    this.dateCooked,
   });
 
   /// Days until this item expires. Negative = already expired.
@@ -82,6 +102,17 @@ class InventoryItem {
       confidenceScore: (json['confidence_score'] as num?)?.toDouble(),
       category: json['category'] as String? ?? 'other',
       localizedNames: _extractNames(json),
+      isCookedLeftover: json['is_cooked_leftover'] as bool? ?? false,
+      parentRecipeId: json['parent_recipe_id'] as String?,
+      parentRecipeTitle: json['parent_recipe_title'] as String?,
+      portionsCount: json['portions_count'] as int? ?? 1,
+      caloriesPerPortion: (json['calories_per_portion'] as num?)?.toDouble(),
+      proteinPerPortion: (json['protein_per_portion'] as num?)?.toDouble(),
+      carbsPerPortion: (json['carbs_per_portion'] as num?)?.toDouble(),
+      fatPerPortion: (json['fat_per_portion'] as num?)?.toDouble(),
+      dateCooked: json['date_cooked'] != null
+          ? DateTime.tryParse(json['date_cooked'])
+          : null,
     );
   }
 
@@ -92,7 +123,9 @@ class InventoryItem {
     return InventoryItem(
       id: row['id'] as String,
       ingredientId: row['ingredient_id'] as String,
-      name: ingredient?['display_name_en'] ?? 'Unknown',
+      name: row['is_cooked_leftover'] == true
+          ? (row['parent_recipe_title'] ?? 'Cooked Meal')
+          : (ingredient?['display_name_en'] ?? 'Unknown'),
       imageUrl: null,
       quantity: (row['quantity'] as num).toDouble(),
       unit: row['unit'] as String? ?? 'piece',
@@ -106,8 +139,21 @@ class InventoryItem {
       location: (row['location'] as String? ?? 'fridge').toLowerCase(),
       source: row['source'] as String? ?? 'manual',
       confidenceScore: (row['confidence_score'] as num?)?.toDouble(),
-      category: ingredient?['category'] as String? ?? 'other',
-      localizedNames: _extractNames(ingredient ?? {}),
+      category: row['is_cooked_leftover'] == true ? 'prepared' : (ingredient?['category'] as String? ?? 'other'),
+      localizedNames: row['is_cooked_leftover'] == true
+          ? {'en': row['parent_recipe_title'] ?? 'Cooked Meal'}
+          : _extractNames(ingredient ?? {}),
+      isCookedLeftover: row['is_cooked_leftover'] as bool? ?? false,
+      parentRecipeId: row['parent_recipe_id'] as String?,
+      parentRecipeTitle: row['parent_recipe_title'] as String?,
+      portionsCount: row['portions_count'] as int? ?? 1,
+      caloriesPerPortion: (row['calories_per_portion'] as num?)?.toDouble(),
+      proteinPerPortion: (row['protein_per_portion'] as num?)?.toDouble(),
+      carbsPerPortion: (row['carbs_per_portion'] as num?)?.toDouble(),
+      fatPerPortion: (row['fat_per_portion'] as num?)?.toDouble(),
+      dateCooked: row['date_cooked'] != null
+          ? DateTime.tryParse(row['date_cooked'].toString())
+          : null,
     );
   }
 

@@ -152,7 +152,7 @@
 - **UI Elements:**
   - **Progress Bar** — Linear progress showing current step / total steps
   - **Step Indicator** — "Step X of Y"
-  - **Cooking Step Card** (`_CookingStepCard`) — Shows:
+  - **Cooking Step Card** (`_CookingStepCard`) — Shows step info in a vertically scrollable card (`SingleChildScrollView`) to prevent clipping:
     - Step icon (context-aware: heat, mix, prep, etc.)
     - Step instruction text (uses `beginner_text` when beginner mode is ON)
     - Edit icon for notes
@@ -180,7 +180,7 @@
 
 ### 2.5 Cooking Reward Screen
 - **File:** `lib/features/cook/presentation/screens/cooking_reward_screen.dart` → `CookingRewardScreen`, `_CookingRewardScreenState`
-- **Purpose:** Post-cooking celebration. Shows stats, XP earned, and streak info.
+- **Purpose:** Post-cooking celebration. Shows stats, XP earned, streak info, and presents the portion logging and leftover storage sheet.
 - **UI Elements:**
   - 🎉 Celebration animation
   - **Recipe Completed** title
@@ -193,7 +193,7 @@
 - **Interactions:**
   - View stats
   - Share completion
-  - Return to home
+  - Return to home / Complete → triggers the **Cook Portions Sheet** (`CookPortionsSheet`) to specify immediate consumption vs leftovers storage before returning to the main dashboard.
 
 ### 2.6 Cook Feeds Screen (Video Recipes)
 - **File:** `lib/features/cook/presentation/screens/cook_feeds_screen.dart` → `CookFeedsScreen`, `_CookFeedsScreenState`
@@ -258,6 +258,19 @@
   - Tap Stop → resets
   - Auto-completes with notification alert
 
+### 2.11 Cook Portions Sheet
+- **File:** `lib/features/cook/presentation/widgets/cook_portions_sheet.dart` → `CookPortionsSheet`, `_CookPortionsSheetState`
+- **Purpose:** Bottom sheet presented upon recipe completion. Handles logging eaten meals and storing leftover portions in the fridge.
+- **UI Elements:**
+  - **Servings Cooked display** — static read-only text showing total portions cooked (from prep screen servings)
+  - **Servings Eaten slider** — interactive slider to select portions eaten immediately (0 to total cooked)
+  - **Store Leftovers switch** — toggles whether to save remaining portions to the Shelf
+  - **Nutritional Summary** — displays total calories, protein, carbs, and fat to be logged
+- **Interactions:**
+  - Slide "Eaten" slider → updates leftovers count (`Cooked - Eaten`) and macro summaries
+  - Toggle "Store Leftovers" → enables/disables fridge storage
+  - Tap "Finish & Log" → executes atomic database transaction (`process_meal_prep`) to deduct ingredients, log nutrition, and optionally create a leftover item on the Shelf
+
 ---
 
 ## 3. Scan Feature
@@ -273,7 +286,7 @@
     - ✏️ **Manual** — Manual text entry
   - **Camera Preview** — Live camera feed (using `mobile_scanner`)
   - **Mode Tabs** (`_ModeTab`) — Visual tab switcher
-  - **Calorie Scan Tab** (`_CalorieScanTab`) — Take photo → AI calorie analysis
+  - **Calorie Scan Tab** (`_CalorieScanTab`) — Visual Plate Calorie Scanner. Takes a photo of a prepared meal, estimates portion size and total plate calories/macros in a single optimized pass, lists plate components, and provides interactive **Consume** (logs to diary) and **Cancel** (resets scanner) options.
   - **Manual Entry Sheet** (`_ManualEntryBottomSheet`) — Text input for manual ingredient addition
   - **Results Overlay** — Shows detected items with checkmarks
 - **Interactions:**
@@ -327,15 +340,17 @@
   - **Add Button** — FAB to add items manually
 - **Interactions:**
   - Tap item → `InventoryDetailSheet` (bottom sheet with full details)
-  - Swipe to delete
+  - **Swipe Right (Green / Consume)** → triggers a confirmation dialog asking how much is being consumed, logging macros/calories in the diary and calling `consume_inventory_item` or `eat_leftover_portion` Supabase RPCs.
+  - **Swipe Left (Red / Discard)** → triggers a warning dialog asking how much is being thrown away, deleting the card or reducing quantity.
+  - **Tutorial Guard** → intercepts swipes on items with IDs starting with `'tutorial'` to prevent database API exceptions during onboarding.
   - Tap zone tabs to filter
   - Tap FAB → add ingredient flow
   - Pull to refresh (syncs with Supabase realtime)
 
 ### 4.2 Inventory Item Card
 - **File:** `lib/features/shelf/presentation/widgets/inventory_item_card.dart` → `InventoryItemCard`
-- **Purpose:** Card widget for each inventory item.
-- **Visual:** Rounded card with emoji, name, quantity, colored freshness strip on left edge
+- **Purpose:** Card widget for each inventory item. Integrates interactive swiping behaviors (via `Dismissible` with distinct green/red background states) and displays portions for cooked leftovers.
+- **Visual:** Rounded card with emoji, name, portions or weight quantity, colored freshness strip on left edge.
 
 ### 4.3 Inventory Detail Sheet
 - **File:** `lib/features/shelf/presentation/widgets/inventory_detail_sheet.dart` → `InventoryDetailSheet`, `_InventoryDetailSheetState`
@@ -886,8 +901,8 @@
 | `/api/v1/ai/cache-stats` | GET | AI cache statistics |
 
 ### 12.3 Inventory
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
+| Endpoint / RPC | Method | Purpose |
+|----------------|--------|---------|
 | `/api/v1/inventory/add-item` | POST | Add item to shelf |
 | `/api/v1/inventory/{item_id}` | PATCH | Update inventory item |
 | `/api/v1/inventory/{item_id}` | DELETE | Remove inventory item |
@@ -898,11 +913,14 @@
 | `/api/v1/ingredients/search` | GET | Search ingredient database |
 | `/api/v1/ingredients/fuzzy` | GET | Fuzzy search ingredients |
 | `/api/v1/ingredients/resolve` | POST | Resolve ingredient to canonical form |
+| RPC: `process_meal_prep` | DB Function | Atomic transaction to deduct ingredients, log cooked macros, and save leftovers |
+| RPC: `eat_leftover_portion` | DB Function | Consume cooked leftover portion, log macros, and decrement leftover count |
+| RPC: `consume_inventory_item` | DB Function | Consume raw ingredient, compute and log macros, and decrement/delete item |
 
 ### 12.4 Calories & Nutrition
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/v1/calories/analyze-image` | POST | Analyze food image for calories |
+| `/api/v1/calories/analyze-image` | POST | Single-pass visual plate portion calorie & macro estimation |
 | `/api/v1/calories/analyze` | POST | Analyze food items for nutrition |
 | `/api/v1/calories/log` | POST | Log daily nutrition |
 | `/api/v1/calories/daily/{user_id}` | GET | Get daily nutrition summary |

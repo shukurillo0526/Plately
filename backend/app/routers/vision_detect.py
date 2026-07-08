@@ -17,6 +17,8 @@ import json
 import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 
+from app.core.auth import CurrentUser
+from app.core.security import validate_image_upload
 from app.services.ollama_service import get_ollama_service
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -81,15 +83,12 @@ MOCK_RESPONSE = {
 
 @router.post("/api/v1/vision/detect-ingredients")
 @limiter.limit("10/minute")
-async def detect_ingredients(request: Request, file: UploadFile = File(...)):
+async def detect_ingredients(request: Request, current: CurrentUser, file: UploadFile = File(...)):
     """
     Receives a photo of loose food ingredients and identifies them.
     Single-stage pipeline: gemma3:12b (multimodal) → JSON directly.
     """
-    if not file.content_type or not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
-    image_bytes = await file.read()
+    image_bytes = await validate_image_upload(file)
     source = "mock"
     parsed_data = None
 

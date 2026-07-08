@@ -17,6 +17,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core.auth import CurrentUser, require_user_id
+from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("plately.feedback")
@@ -46,7 +48,7 @@ class FeedbackSubmission(BaseModel):
 
 # ── POST  /api/v1/feedback/submit ────────────────────────────────
 @router.post("/api/v1/feedback/submit")
-async def submit_feedback(body: FeedbackSubmission):
+async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
     """
     Submit recipe feedback.
 
@@ -54,6 +56,7 @@ async def submit_feedback(body: FeedbackSubmission):
     user on the same recipe is updated (upsert) instead of creating a
     duplicate row.  All other feedback types are inserted as new rows.
     """
+    require_user_id(current, body.user_id)
     # 1. Validate feedback_type
     if body.feedback_type not in ALLOWED_FEEDBACK_TYPES:
         raise HTTPException(

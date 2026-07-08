@@ -15,10 +15,16 @@ Fallback chain:
 
 import json
 import logging
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 
+from app.core.auth import CurrentUser
+from app.core.security import validate_image_upload
 from app.services.ocr_service import process_gemini_receipt_json
 from app.services.ollama_service import get_ollama_service
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 logger = logging.getLogger("plately.ocr")
 
@@ -33,14 +39,18 @@ LANG_MAP = {
 }
 
 @router.post("/api/v1/receipt/scan")
-async def scan_receipt(file: UploadFile = File(...), lang: str = "en"):
+@limiter.limit("10/minute")
+async def scan_receipt(
+    request: Request,
+    current: CurrentUser,
+    file: UploadFile = File(...),
+    lang: str = "en",
+):
     """
     Receives a receipt image and returns structured ingredient data.
     Single-stage pipeline: gemma3:12b reads receipt + structures JSON in one pass.
     """
-    if not file.content_type or not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
+    image_bytes = await validate_image_upload(file)
     language_name = LANG_MAP.get(lang.lower(), "English")
     
     # Construct prompts dynamically with target language
@@ -57,12 +67,18 @@ For each food item return:
 Also extract the store name and purchase date (YYYY-MM-DD format).
 Skip non-food items (bags, discounts, tax, totals, card info).
 
+CRITICAL: If the image is blurry, unreadable, not a receipt, or does not contain identifiable food items, do NOT hallucinate or output mock items. Return an empty items list:
+{{"store": "Unknown", "date": null, "items": []}}
+
 Return ONLY valid JSON:
 {{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{{"item_name": "Bread", "item_name_translated": "Non", "quantity": 1, "unit": "pcs", "category": "Bakery", "price": 2800}}]}}"""
 
     fallback_prompt = f"""Extract all food items from this grocery receipt image.
 Return store name, date (YYYY-MM-DD), and each food item with its English name, its translated name in {language_name} as 'item_name_translated', quantity, unit, category, and price.
 Skip non-food items.
+
+CRITICAL: If the image is blurry, unreadable, not a receipt, or does not contain identifiable food items, do NOT hallucinate. Return:
+{{"store": "Unknown", "date": null, "items": []}}
 
 Return ONLY valid JSON:
 {{"store": "...", "date": "YYYY-MM-DD", "items": [{{"item_name": "...", "item_name_translated": "...", "quantity": 1, "unit": "pcs", "category": "...", "price": 0}}]}}"""
@@ -80,11 +96,13 @@ For each food item return:
 Also extract store name and purchase date (YYYY-MM-DD).
 Skip non-food items (bags, discounts, tax, totals).
 
+CRITICAL: If the image is blurry, unreadable, not a receipt, or does not contain identifiable food items, do NOT hallucinate. Return:
+{{"store": "Unknown", "date": null, "items": []}}
+
 Return STRICT JSON ONLY, no markdown, no code fences:
 {{"store": "Store Name", "date": "YYYY-MM-DD", "items": [{{"item_name": "...", "item_name_translated": "...", "quantity": 1.0, "unit": "pcs", "category": "...", "price": 0}}]}}
 """
 
-    image_bytes = await file.read()
     source = "error"
     parsed_data = None
 
@@ -133,7 +151,6 @@ Return STRICT JSON ONLY, no markdown, no code fences:
             import os
             # Try env var directly first, then settings
             api_key = os.environ.get("GEMINI_API_KEY") or get_settings().GEMINI_API_KEY
-            logger.info(f"[OCR] Gemini key present: {bool(api_key)}, length: {len(api_key) if api_key else 0}")
             if api_key:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
@@ -178,39 +195,3 @@ Return STRICT JSON ONLY, no markdown, no code fences:
         "source": source,
         "data": processed,
     }
-
-
-@router.get("/api/v1/receipt/debug")
-async def scan_debug():
-    """Debug endpoint to check Gemini configuration on Railway."""
-    import os
-    from app.core.config import get_settings
-    settings = get_settings()
-    env_key = os.environ.get("GEMINI_API_KEY", "")
-    settings_key = settings.GEMINI_API_KEY
-
-    result = {
-        "env_key_present": bool(env_key),
-        "env_key_length": len(env_key),
-        "settings_key_present": bool(settings_key),
-        "settings_key_length": len(settings_key),
-    }
-
-    # Quick test if the key actually works
-    effective_key = env_key or settings_key
-    if effective_key:
-        try:
-            import google.generativeai as genai
-            genai.configure(api_key=effective_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content("Say hello in one word.")
-            result["gemini_test"] = "success"
-            result["gemini_response"] = response.text.strip()[:100]
-        except Exception as e:
-            result["gemini_test"] = "failed"
-            result["gemini_error"] = f"{type(e).__name__}: {str(e)[:200]}"
-    else:
-        result["gemini_test"] = "skipped_no_key"
-
-    return result
-

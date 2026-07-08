@@ -1079,4 +1079,176 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tutorial_replayConfirm => '다음 앱 실행 시 튜토리얼이 표시됩니다.';
+
+  @override
+  String get auth_enterEmail => '이메일 주소를 먼저 입력해주세요.';
+
+  @override
+  String get tutorial_tourTitle => 'Plately 인터랙티브 투어';
+
+  @override
+  String get tutorial_tourDesc =>
+      '환영합니다! Plately의 1분 인터랙티브 투어를 시작하겠습니다. 재료를 관리하고, 맞는 레시피를 찾고, 요리를 시작하는 방법을 보여드릴게요!';
+
+  @override
+  String get tutorial_startTour => '투어 시작 🚀';
+
+  @override
+  String get tutorial_skipTour => '건너뛰기';
+
+  @override
+  String get tutorial_shelfIntroTitle => '디지털 선반';
+
+  @override
+  String get tutorial_shelfIntroDesc =>
+      '이곳은 여러분의 디지털 냉장고이자 팬트리입니다. 수량과 유통기한을 추적할 수 있으며, 음식이 상하기 전에 알려드립니다. 어떻게 작동하는지 볼까요!';
+
+  @override
+  String get tutorial_nextArrow => '다음 →';
+
+  @override
+  String get tutorial_addIntroTitle => '재료 추가하기';
+
+  @override
+  String get tutorial_addIntroDesc =>
+      '재료를 추가하려면 하단의 스캔 탭(카메라 아이콘)을 누르세요. 어서 눌러보세요!';
+
+  @override
+  String get tutorial_bypassScan => '건너뛰기 (스캔으로 이동)';
+
+  @override
+  String get tutorial_scanIntroTitle => '스캔 및 수동 추가';
+
+  @override
+  String get tutorial_scanIntroDesc =>
+      '영수증, 바코드를 스캔하거나 재료 사진을 찍을 수 있습니다. 이 튜토리얼에서는 닭고기 볶음 레시피에 필요한 5가지 가상 재료를 자동으로 불러옵니다.';
+
+  @override
+  String get tutorial_loadMock => '가상 재료 불러오기 🛒';
+
+  @override
+  String get tutorial_shelfAddedTitle => '재료 불러오기 완료!';
+
+  @override
+  String get tutorial_shelfAddedDesc =>
+      '좋습니다! 닭가슴살, 브로콜리, 간장, 마늘, 참기름을 불러왔습니다. 무엇을 요리할 수 있을지 볼까요! 요리 탭(레스토랑 아이콘)을 눌러 레시피를 찾아보세요.';
+
+  @override
+  String get tutorial_bypassCook => '건너뛰기 (요리로 이동)';
+
+  @override
+  String get tutorial_roamCookTitle => '5단계 추천';
+
+  @override
+  String get tutorial_roamCookDesc =>
+      '5가지 추천 탭(완벽 일치, 추천, 활용, 아쉬움, 탐색)이 있습니다. 탭을 눌러 둘러보세요! 준비가 되면 완벽 일치 탭의 \"닭고기 볶음\" 레시피 카드를 누르세요.';
+
+  @override
+  String get tutorial_recipeDetailTitle => '레시피 상세 정보';
+
+  @override
+  String get tutorial_recipeDetailDesc =>
+      '여기서 재료 목록과 요리 단계를 볼 수 있습니다. 페이지 하단의 \"요리 시작\" 버튼을 눌러 시작하세요!';
+
+  @override
+  String get tutorial_cookingPrepTitle => '준비 및 재료';
+
+  @override
+  String get tutorial_cookingPrepDesc =>
+      '불을 켜기 전에 재료를 씻고 썰어주세요. \"단계별 시작\" 버튼을 눌러 요리 도우미를 실행하세요!';
+
+  @override
+  String get tutorial_cookingRunTitle => '요리 도우미';
+
+  @override
+  String get tutorial_cookingRunDesc =>
+      '도우미가 단계별로 안내합니다. 대체 재료나 질문이 있다면 하단의 AI 도우미와 채팅할 수도 있어요! 레시피 단계를 따라가고 마지막 단계에서 \"완료\"를 누르세요.';
+
+  @override
+  String get tutorial_finishTitle => '튜토리얼 완료!';
+
+  @override
+  String get tutorial_finishDesc =>
+      '축하합니다! Plately 요리 투어를 완료했습니다.\n\n참고: 이 튜토리얼에 사용된 모든 재료와 데이터는 저장되지 않습니다. 이것은 앱의 아주 작은 부분일 뿐입니다. \"투어 완료\"를 눌러 나만의 요리 여정을 시작하세요!';
+
+  @override
+  String get tutorial_finishTour => '투어 완료 🏁';
+
+  @override
+  String get tutorial_recipeTitle => 'Tutorial Chicken Stir-fry';
+
+  @override
+  String get tutorial_ing_chicken => 'Chicken Breast';
+
+  @override
+  String get tutorial_ing_broccoli => 'Broccoli';
+
+  @override
+  String get tutorial_ing_soy_sauce => 'Soy Sauce';
+
+  @override
+  String get tutorial_ing_garlic => 'Garlic';
+
+  @override
+  String get tutorial_ing_sesame_oil => 'Sesame Oil';
+
+  @override
+  String get tutorial_step1 =>
+      'Chop the chicken breast into bite-sized pieces and cut the broccoli into small florets. Mince the garlic cloves.';
+
+  @override
+  String get tutorial_step1_beg =>
+      'Carefully slice the chicken breast into small pieces. Cut the broccoli head into tiny florets. Peel and finely chop the garlic cloves.';
+
+  @override
+  String get tutorial_step2 =>
+      'Heat sesame oil in a large pan or wok over medium-high heat. Add minced garlic and sauté for 1 minute until fragrant.';
+
+  @override
+  String get tutorial_step2_beg =>
+      'Pour the sesame oil into a skillet. Turn the heat to medium. Add the garlic and stir it constantly for 1 minute so it doesn\'t burn.';
+
+  @override
+  String get tutorial_step3 =>
+      'Add chicken breast pieces to the pan. Sauté for 5-6 minutes until cooked through and lightly browned.';
+
+  @override
+  String get tutorial_step3_beg =>
+      'Carefully add the chopped chicken to the pan. Cook and stir occasionally for 5 to 6 minutes until the chicken is no longer pink inside.';
+
+  @override
+  String get tutorial_step4 =>
+      'Add broccoli florets and soy sauce. Stir fry for another 3-4 minutes until broccoli is tender-crisp.';
+
+  @override
+  String get tutorial_step4_beg =>
+      'Add the broccoli florets and pour in the soy sauce. Cook and stir everything together for 3 to 4 minutes until the broccoli is slightly soft but still bright green.';
+
+  @override
+  String get tutorial_step5 =>
+      'Remove from heat. Serve your delicious chicken stir-fry warm over rice or by itself!';
+
+  @override
+  String get tutorial_step5_beg =>
+      'Turn off the heat. Scoop the stir-fry onto a plate. Enjoy your freshly cooked meal!';
+
+  @override
+  String get reward_mealCompleted => 'Meal Completed!';
+
+  @override
+  String reward_youCooked(String recipeTitle, String servings) {
+    return 'You cooked \"$recipeTitle\" · $servings servings';
+  }
+
+  @override
+  String get reward_xpEarned => 'XP Earned';
+
+  @override
+  String get reward_itemsUsed => 'Items Used';
+
+  @override
+  String get reward_deducted => 'Deducted from shelf';
+
+  @override
+  String get reward_backToShelf => 'Back to Shelf';
 }

@@ -54,7 +54,7 @@ async def health_check():
         checks["supabase"] = {
             "status": "down",
             "latency_ms": db_ms,
-            "detail": str(e),
+            "detail": "Connection failed",
         }
         overall = "unhealthy"
 
@@ -98,11 +98,12 @@ async def health_check():
     status_code = 200 if overall != "unhealthy" else 503
 
     from starlette.responses import JSONResponse
+    from app.core.config import get_settings
     return JSONResponse(
         status_code=status_code,
         content={
             "status": overall,
-            "version": "3.4.0",
+            "version": get_settings().APP_VERSION,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "services": checks,
         },

@@ -11,6 +11,8 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 
+from app.core.auth import CurrentUser, require_user_id
+from app.core.security import raise_internal_error
 from app.services.recommendation_engine import RecommendationEngine
 
 logger = logging.getLogger("plately.recommendations")
@@ -21,6 +23,7 @@ router = APIRouter()
 @router.get("/api/v1/recommendations/{user_id}")
 async def get_recommendations(
     user_id: str,
+    current: CurrentUser,
     max_per_tier: int = Query(default=10, ge=1, le=50),
     include_tier5: bool = Query(default=True),
     cuisine_filter: Optional[str] = Query(default=None),
@@ -38,6 +41,7 @@ async def get_recommendations(
     Each recipe includes: relevance_score, match_percentage, missing_ingredients,
     expiry_urgency, flavor_affinity, and is_comfort flags.
     """
+    require_user_id(current, user_id)
     try:
         engine = RecommendationEngine()
         result = await engine.generate(
@@ -97,5 +101,4 @@ async def get_recommendations(
         }
         
     except Exception as e:
-        logger.error(f"[Recommendations] Failed for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, f"[Recommendations] Failed for user {user_id}", e)

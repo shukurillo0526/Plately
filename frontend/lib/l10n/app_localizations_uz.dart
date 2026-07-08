@@ -1100,6 +1100,179 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get tutorial_replayConfirm =>
       'Keyingi ishga tushirishda o\'quv qo\'llanma ko\'rsatiladi.';
+
+  @override
+  String get auth_enterEmail =>
+      'Iltimos, avval elektron pochta manzilingizni kiriting.';
+
+  @override
+  String get tutorial_tourTitle => 'Plately Interaktiv Qo\'llanmasi';
+
+  @override
+  String get tutorial_tourDesc =>
+      'Xush kelibsiz! Keling, Plately bo\'ylab 1 daqiqalik qisqacha sayohat qilamiz. Biz sizga ingredientlarni qanday boshqarishni, mos retseptlarni topishni va pishirishni qanday boshlashni ko\'rsatamiz!';
+
+  @override
+  String get tutorial_startTour => 'Boshlash 🚀';
+
+  @override
+  String get tutorial_skipTour => 'O\'tkazib yuborish';
+
+  @override
+  String get tutorial_shelfIntroTitle => 'Sizning Raqamli Javoningiz';
+
+  @override
+  String get tutorial_shelfIntroDesc =>
+      'Bu sizning raqamli muzlatgich va omborxonangiz. Bu yerda siz miqdorlarni va yaroqlilik muddatlarini kuzatishingiz mumkin — ovqat buzilishidan oldin sizni ogohlantiramiz. Keling, bu qanday ishlashini ko\'ramiz!';
+
+  @override
+  String get tutorial_nextArrow => 'Keyingi →';
+
+  @override
+  String get tutorial_addIntroTitle => 'Ingredientlarni Qo\'shish';
+
+  @override
+  String get tutorial_addIntroDesc =>
+      'Ingredientlarni qo\'shish uchun pastki menyudagi Skanerlash (kamera belgisi) tugmasini bosing. Qani, bosing!';
+
+  @override
+  String get tutorial_bypassScan => 'O\'tish (Skanerlashga borish)';
+
+  @override
+  String get tutorial_scanIntroTitle => 'Skanerlash va Qo\'lda Qo\'shish';
+
+  @override
+  String get tutorial_scanIntroDesc =>
+      'Bu yerda siz cheklarni, shtrix-kodlarni skanerlashingiz yoki ingredientlar suratini olishingiz mumkin. Ushbu qo\'llanma uchun biz tovuq qovurish retsepti uchun kerakli 5 ta qalbaki ingredientni avtomatik yuklaymiz.';
+
+  @override
+  String get tutorial_loadMock => 'Qalbaki Ingredientlarni Yuklash 🛒';
+
+  @override
+  String get tutorial_shelfAddedTitle => 'Ingredientlar Yuklandi!';
+
+  @override
+  String get tutorial_shelfAddedDesc =>
+      'Ajoyib! Biz bularni yukladik: Tovuq Go\'shti, Brokkoli, Soya Sousi, Sarimsoq va Kunjut Yog\'i. Keling, nima pishirish mumkinligini ko\'ramiz! Mos retseptlarni topish uchun Pishirish tugmasini (chapdagi restoran belgisi) bosing.';
+
+  @override
+  String get tutorial_bypassCook => 'O\'tish (Pishirishga borish)';
+
+  @override
+  String get tutorial_roamCookTitle => '5 Darajali Tavsiyalar';
+
+  @override
+  String get tutorial_roamCookDesc =>
+      'Bu yerda siz 5 xil tavsiya sahifalarini ko\'rasiz (Mukammal, Siz uchun, Ishlatib yuborish, Qisman, Kashf qilish). Ularni o\'rganish uchun bosib ko\'ring! Tayyor bo\'lganingizda, Mukammal bo\'limidagi \"Qovurilgan Tovuq\" retsepti kartasini bosing.';
+
+  @override
+  String get tutorial_recipeDetailTitle => 'Retsept Tafsilotlari';
+
+  @override
+  String get tutorial_recipeDetailDesc =>
+      'Bu yerda siz ingredientlar ro\'yxatini va qadamlarni ko\'rasiz. Boshlash uchun sahifa pastidagi \"Pishirishni Boshlash\" tugmasini bosing!';
+
+  @override
+  String get tutorial_cookingPrepTitle => 'Tayyorgarlik va Ingredientlar';
+
+  @override
+  String get tutorial_cookingPrepDesc =>
+      'Olovni yoqishdan oldin, ingredientlarni yuving va to\'g\'rang. Pishirish yordamchisini ishga tushirish uchun \"Qadam-ba-qadam Boshlash\" tugmasini bosing!';
+
+  @override
+  String get tutorial_cookingRunTitle => 'Pishirish Yordamchisi';
+
+  @override
+  String get tutorial_cookingRunDesc =>
+      'Yordamchi sizni qadam-ba-qadam boshqaradi. Siz shuningdek, o\'zgartirishlar yoki pishirish haqidagi savollar uchun pastdagi AI yordamchisi bilan gaplashishingiz mumkin! Retsept qadamlarini bajaring va oxirgi qadamda \"Tugatish\" ni bosing.';
+
+  @override
+  String get tutorial_finishTitle => 'Qo\'llanma Yakunlandi!';
+
+  @override
+  String get tutorial_finishDesc =>
+      'Tabriklaymiz! Siz Plately pishirish qo\'llanmasini yakunladingiz.\n\nEslatma: Ushbu qo\'llanmada ishlatilgan barcha ingredientlar va ma\'lumotlar saqlanmaydi. Bu ilovaning kichik bir qismi xolos. O\'z pishirish sayohatingizni boshlash uchun \"Qo\'llanmani Tugatish\" ni bosing!';
+
+  @override
+  String get tutorial_finishTour => 'Qo\'llanmani Tugatish 🏁';
+
+  @override
+  String get tutorial_recipeTitle => 'Qovurilgan Tovuq (Qo\'llanma)';
+
+  @override
+  String get tutorial_ing_chicken => 'Tovuq Go\'shti';
+
+  @override
+  String get tutorial_ing_broccoli => 'Brokkoli';
+
+  @override
+  String get tutorial_ing_soy_sauce => 'Soya Sousi';
+
+  @override
+  String get tutorial_ing_garlic => 'Sarimsoq';
+
+  @override
+  String get tutorial_ing_sesame_oil => 'Kunjut Yog\'i';
+
+  @override
+  String get tutorial_step1 =>
+      'Tovuq go\'shtini kichik bo\'laklarga va brokkolini kichik qismlarga bo\'ling. Sarimsoqni maydalang.';
+
+  @override
+  String get tutorial_step1_beg =>
+      'Tovuq go\'shtini ehtiyotkorlik bilan kichik bo\'laklarga kesing. Brokkolini ham kichik qismlarga ajrating. Sarimsoqni tozalang va maydalang.';
+
+  @override
+  String get tutorial_step2 =>
+      'Katta tovada o\'rta olovda kunjut yog\'ini qizdiring. Maydalangan sarimsoq qo\'shing va 1 daqiqa qovuring.';
+
+  @override
+  String get tutorial_step2_beg =>
+      'Tovaga kunjut yog\'ini quying. Olovni o\'rta darajaga qo\'ying. Sarimsoq qo\'shing va kuymasligi uchun 1 daqiqa davomida to\'xtovsiz aralashtiring.';
+
+  @override
+  String get tutorial_step3 =>
+      'Tovaga tovuq bo\'laklarini qo\'shing. 5-6 daqiqa davomida qovuring.';
+
+  @override
+  String get tutorial_step3_beg =>
+      'Tovuq go\'shtini ehtiyotkorlik bilan tovaga qo\'shing. Tovuq ichida pushti rang qolmaguncha 5-6 daqiqa davomida aralashtirib pishiring.';
+
+  @override
+  String get tutorial_step4 =>
+      'Brokkoli va soya sousini qo\'shing. Yana 3-4 daqiqa qovuring.';
+
+  @override
+  String get tutorial_step4_beg =>
+      'Brokkoli qo\'shing va soya sousini quying. Brokkoli biroz yumshaguncha, lekin hali ham yashil rangda qolgunicha hamma narsani 3-4 daqiqa pishiring.';
+
+  @override
+  String get tutorial_step5 =>
+      'Olovdan oling. Mazali tovuqni guruch bilan yoki o\'zini idishga solib dasturxonga torting!';
+
+  @override
+  String get tutorial_step5_beg =>
+      'Olovni o\'chiring. Qovurilgan taomni idishga soling. Yangi pishgan taomingizdan rohatlaning!';
+
+  @override
+  String get reward_mealCompleted => 'Ovqat Tayyor!';
+
+  @override
+  String reward_youCooked(String recipeTitle, String servings) {
+    return 'Siz \"$recipeTitle\" tayyorladingiz · $servings porsiya';
+  }
+
+  @override
+  String get reward_xpEarned => 'Ishlangan XP';
+
+  @override
+  String get reward_itemsUsed => 'Ishlatilgan Masalliqlar';
+
+  @override
+  String get reward_deducted => 'Javondan olingan';
+
+  @override
+  String get reward_backToShelf => 'Javonga qaytish';
 }
 
 /// The translations for Uzbek, using the Cyrillic script (`uz_Cyrl`).
@@ -2190,4 +2363,177 @@ class AppLocalizationsUzCyrl extends AppLocalizationsUz {
   @override
   String get tutorial_replayConfirm =>
       'Кейинги ишга туширишда ўқув қўлланма кўрсатилади.';
+
+  @override
+  String get auth_enterEmail =>
+      'Илтимос, аввал электрон почта манзилингизни киритинг.';
+
+  @override
+  String get tutorial_tourTitle => 'Plately Интерактив Қўлланмаси';
+
+  @override
+  String get tutorial_tourDesc =>
+      'Хуш келибсиз! Келинг, Plately бўйлаб 1 дақиқалик қисқача саёҳат қиламиз. Биз сизга ингредиентларни қандай бошқаришни, мос рецептларни топишни ва пиширишни қандай бошлашни кўрсатамиз!';
+
+  @override
+  String get tutorial_startTour => 'Бошлаш 🚀';
+
+  @override
+  String get tutorial_skipTour => 'Ўтказиб юбориш';
+
+  @override
+  String get tutorial_shelfIntroTitle => 'Сизнинг Рақамли Жавонингиз';
+
+  @override
+  String get tutorial_shelfIntroDesc =>
+      'Бу сизнинг рақамли музлатгич ва омборхонангиз. Бу ерда сиз миқдорларни ва яроқлилик муддатларини кузатишингиз мумкин — овқат бузилишидан олдин сизни огоҳлантирамиз. Келинг, бу қандай ишлашини кўрамиз!';
+
+  @override
+  String get tutorial_nextArrow => 'Кейинги →';
+
+  @override
+  String get tutorial_addIntroTitle => 'Ингредиентларни Қўшиш';
+
+  @override
+  String get tutorial_addIntroDesc =>
+      'Ингредиентларни қўшиш учун пастки менюдаги Сканерлаш (камера белгиси) тугмасини босинг. Қани, босинг!';
+
+  @override
+  String get tutorial_bypassScan => 'Ўтиш (Сканерлашга бориш)';
+
+  @override
+  String get tutorial_scanIntroTitle => 'Сканерлаш ва Қўлда Қўшиш';
+
+  @override
+  String get tutorial_scanIntroDesc =>
+      'Бу ерда сиз чекларни, штрих-кодларни сканерлашингиз ёки ингредиентлар суратини олишингиз мумкин. Ушбу қўлланма учун биз товуқ қовуриш рецепти учун керакли 5 та қалбаки ингредиентни автоматик юклаймиз.';
+
+  @override
+  String get tutorial_loadMock => 'Қалбаки Ингредиентларни Юклаш 🛒';
+
+  @override
+  String get tutorial_shelfAddedTitle => 'Ингредиентлар Юкланди!';
+
+  @override
+  String get tutorial_shelfAddedDesc =>
+      'Ажойиб! Биз буларни юкладик: Товуқ Гўшти, Брокколи, Соя Соуси, Саримсоқ ва Кунжут Ёғи. Келинг, нима пишириш мумкинлигини кўрамиз! Мос рецептларни топиш учун Пишириш тугмасини (чапдаги ресторан белгиси) босинг.';
+
+  @override
+  String get tutorial_bypassCook => 'Ўтиш (Пиширишга бориш)';
+
+  @override
+  String get tutorial_roamCookTitle => '5 Даражали Тавсиялар';
+
+  @override
+  String get tutorial_roamCookDesc =>
+      'Бу ерда сиз 5 хил тавсия саҳифаларини кўрасиз (Мукаммал, Сиз учун, Ишлатиб юбориш, Қисман, Кашф қилиш). Уларни ўрганиш учун босиб кўринг! Тайёр бўлганингизда, Мукаммал бўлимидаги \"Қовурилган Товуқ\" рецепти картасини босинг.';
+
+  @override
+  String get tutorial_recipeDetailTitle => 'Рецепт Тафсилотлари';
+
+  @override
+  String get tutorial_recipeDetailDesc =>
+      'Бу ерда сиз ингредиентлар рўйхатини ва қадамларни кўрасиз. Бошлаш учун саҳифа пастидаги \"Пиширишни Бошлаш\" тугмасини босинг!';
+
+  @override
+  String get tutorial_cookingPrepTitle => 'Тайёргарлик ва Ингредиентлар';
+
+  @override
+  String get tutorial_cookingPrepDesc =>
+      'Оловни ёқишдан олдин, ингредиентларни ювинг ва тўғранг. Пишириш ёрдамчисини ишга тушириш учун \"Қадам-ба-қадам Бошлаш\" тугмасини босинг!';
+
+  @override
+  String get tutorial_cookingRunTitle => 'Пишириш Ёрдамчиси';
+
+  @override
+  String get tutorial_cookingRunDesc =>
+      'Ёрдамчи сизни қадам-ба-қадам бошқаради. Сиз шунингдек, ўзгартиришлар ёки пишириш ҳақидаги саволлар учун пастдаги AI ёрдамчиси билан гаплашишингиз мумкин! Рецепт қадамларини бажаринг ва охирги қадамда \"Тугатиш\" ни босинг.';
+
+  @override
+  String get tutorial_finishTitle => 'Қўлланма Якунланди!';
+
+  @override
+  String get tutorial_finishDesc =>
+      'Табриклаймиз! Сиз Plately пишириш қўлланмасини якунладингиз.\n\nЭслатма: Ушбу қўлланмада ишлатилган барча ингредиентлар ва маълумотлар сақланмайди. Бу илованинг кичик бир қисми холос. Ўз пишириш саёҳатингизни бошлаш учун \"Қўлланмани Тугатиш\" ни босинг!';
+
+  @override
+  String get tutorial_finishTour => 'Қўлланмани Тугатиш 🏁';
+
+  @override
+  String get tutorial_recipeTitle => 'Qovurilgan Tovuq (Qo\'llanma)';
+
+  @override
+  String get tutorial_ing_chicken => 'Tovuq Go\'shti';
+
+  @override
+  String get tutorial_ing_broccoli => 'Brokkoli';
+
+  @override
+  String get tutorial_ing_soy_sauce => 'Soya Sousi';
+
+  @override
+  String get tutorial_ing_garlic => 'Sarimsoq';
+
+  @override
+  String get tutorial_ing_sesame_oil => 'Kunjut Yog\'i';
+
+  @override
+  String get tutorial_step1 =>
+      'Tovuq go\'shtini kichik bo\'laklarga va brokkolini kichik qismlarga bo\'ling. Sarimsoqni maydalang.';
+
+  @override
+  String get tutorial_step1_beg =>
+      'Tovuq go\'shtini ehtiyotkorlik bilan kichik bo\'laklarga kesing. Brokkolini ham kichik qismlarga ajrating. Sarimsoqni tozalang va maydalang.';
+
+  @override
+  String get tutorial_step2 =>
+      'Katta tovada o\'rta olovda kunjut yog\'ini qizdiring. Maydalangan sarimsoq qo\'shing va 1 daqiqa qovuring.';
+
+  @override
+  String get tutorial_step2_beg =>
+      'Tovaga kunjut yog\'ini quying. Olovni o\'rta darajaga qo\'ying. Sarimsoq qo\'shing va kuymasligi uchun 1 daqiqa davomida to\'xtovsiz aralashtiring.';
+
+  @override
+  String get tutorial_step3 =>
+      'Tovaga tovuq bo\'laklarini qo\'shing. 5-6 daqiqa davomida qovuring.';
+
+  @override
+  String get tutorial_step3_beg =>
+      'Tovuq go\'shtini ehtiyotkorlik bilan tovaga qo\'shing. Tovuq ichida pushti rang qolmaguncha 5-6 daqiqa davomida aralashtirib pishiring.';
+
+  @override
+  String get tutorial_step4 =>
+      'Brokkoli va soya sousini qo\'shing. Yana 3-4 daqiqa qovuring.';
+
+  @override
+  String get tutorial_step4_beg =>
+      'Brokkoli qo\'shing va soya sousini quying. Brokkoli biroz yumshaguncha, lekin hali ham yashil rangda qolgunicha hamma narsani 3-4 daqiqa pishiring.';
+
+  @override
+  String get tutorial_step5 =>
+      'Olovdan oling. Mazali tovuqni guruch bilan yoki o\'zini idishga solib dasturxonga torting!';
+
+  @override
+  String get tutorial_step5_beg =>
+      'Olovni o\'chiring. Qovurilgan taomni idishga soling. Yangi pishgan taomingizdan rohatlaning!';
+
+  @override
+  String get reward_mealCompleted => 'Ovqat Tayyor!';
+
+  @override
+  String reward_youCooked(String recipeTitle, String servings) {
+    return 'Siz \"$recipeTitle\" tayyorladingiz · $servings porsiya';
+  }
+
+  @override
+  String get reward_xpEarned => 'Ishlangan XP';
+
+  @override
+  String get reward_itemsUsed => 'Ishlatilgan Masalliqlar';
+
+  @override
+  String get reward_deducted => 'Javondan olingan';
+
+  @override
+  String get reward_backToShelf => 'Javonga qaytish';
 }

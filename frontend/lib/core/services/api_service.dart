@@ -9,6 +9,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiConfig {
   static const String _productionUrl =
@@ -58,8 +59,9 @@ class ApiService {
   Future<Map<String, dynamic>> parseReceipt({
     required Uint8List imageBytes,
     String filename = 'receipt.jpg',
+    String lang = 'en',
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/receipt/scan');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/receipt/scan?lang=$lang');
 
     final request = http.MultipartRequest('POST', uri)
       ..headers.addAll({'Accept': 'application/json'}) // No auth header needed for this MVP endpoint yet
@@ -362,6 +364,11 @@ class ApiService {
   Future<Map<String, dynamic>> analyzeCaloriesImage(List<int> imageBytes, String filename) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/calories/analyze-image');
     final request = http.MultipartRequest('POST', uri);
+    // Add auth header to multipart request
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      request.headers['Authorization'] = 'Bearer ${session.accessToken}';
+    }
     request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
@@ -441,9 +448,16 @@ class ApiService {
 
   // ── Internals ────────────────────────────────────────────────────
 
-  Map<String, String> get _headers => {
-        'Accept': 'application/json',
-      };
+  Map<String, String> get _headers {
+    final headers = <String, String>{
+      'Accept': 'application/json',
+    };
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      headers['Authorization'] = 'Bearer ${session.accessToken}';
+    }
+    return headers;
+  }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {

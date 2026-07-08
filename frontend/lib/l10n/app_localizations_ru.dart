@@ -1096,4 +1096,177 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get tutorial_replayConfirm =>
       'Обучение появится при следующем запуске.';
+
+  @override
+  String get auth_enterEmail =>
+      'Пожалуйста, сначала введите ваш адрес электронной почты.';
+
+  @override
+  String get tutorial_tourTitle => 'Интерактивный тур Plately';
+
+  @override
+  String get tutorial_tourDesc =>
+      'Добро пожаловать! Давайте совершим быструю 1-минутную экскурсию по Plately. Мы покажем вам, как управлять ингредиентами, находить подходящие рецепты и начать готовить!';
+
+  @override
+  String get tutorial_startTour => 'Начать тур 🚀';
+
+  @override
+  String get tutorial_skipTour => 'Пропустить';
+
+  @override
+  String get tutorial_shelfIntroTitle => 'Ваша цифровая полка';
+
+  @override
+  String get tutorial_shelfIntroDesc =>
+      'Это ваш цифровой холодильник и кладовая. Здесь вы можете отслеживать количество и сроки годности — мы предупредим вас до того, как продукты испортятся. Посмотрим, как это работает!';
+
+  @override
+  String get tutorial_nextArrow => 'Далее →';
+
+  @override
+  String get tutorial_addIntroTitle => 'Добавить ингредиенты';
+
+  @override
+  String get tutorial_addIntroDesc =>
+      'Чтобы добавить ингредиенты, нажмите на вкладку Сканировать (значок камеры) внизу. Давайте, нажмите!';
+
+  @override
+  String get tutorial_bypassScan => 'Пропустить (Перейти к сканированию)';
+
+  @override
+  String get tutorial_scanIntroTitle => 'Сканирование и добавление';
+
+  @override
+  String get tutorial_scanIntroDesc =>
+      'Здесь вы можете сканировать чеки, штрихкоды или сделать фото ингредиентов. Для этого руководства мы автоматически загрузим 5 тестовых ингредиентов для рецепта жареной курицы.';
+
+  @override
+  String get tutorial_loadMock => 'Загрузить тестовые ингредиенты 🛒';
+
+  @override
+  String get tutorial_shelfAddedTitle => 'Ингредиенты загружены!';
+
+  @override
+  String get tutorial_shelfAddedDesc =>
+      'Отлично! Мы загрузили: Куриная грудка, Брокколи, Соевый соус, Чеснок и Кунжутное масло. Давайте посмотрим, что мы можем приготовить! Нажмите на вкладку Готовить (значок ресторана), чтобы найти рецепты.';
+
+  @override
+  String get tutorial_bypassCook => 'Пропустить (Перейти к рецептам)';
+
+  @override
+  String get tutorial_roamCookTitle => '5 уровней рекомендаций';
+
+  @override
+  String get tutorial_roamCookDesc =>
+      'Здесь вы видите 5 вкладок с рекомендациями (Идеально, Для вас, Использовать, Почти, Изучить). Нажмите на них, чтобы изучить! Когда будете готовы, нажмите на карточку рецепта \"Жареная курица\" на вкладке Идеально.';
+
+  @override
+  String get tutorial_recipeDetailTitle => 'Детали рецепта';
+
+  @override
+  String get tutorial_recipeDetailDesc =>
+      'Здесь вы видите список ингредиентов и шаги. Нажмите кнопку \"Начать готовить\" внизу страницы, чтобы начать!';
+
+  @override
+  String get tutorial_cookingPrepTitle => 'Подготовка и ингредиенты';
+
+  @override
+  String get tutorial_cookingPrepDesc =>
+      'Перед тем как включить плиту, вымойте и нарежьте ингредиенты. Нажмите кнопку \"Пошаговое руководство\", чтобы запустить кулинарного помощника!';
+
+  @override
+  String get tutorial_cookingRunTitle => 'Кулинарный помощник';
+
+  @override
+  String get tutorial_cookingRunDesc =>
+      'Помощник шаг за шагом проведет вас по рецепту. Вы также можете пообщаться с ИИ внизу экрана для замены ингредиентов или вопросов! Пройдите шаги рецепта и нажмите \"Завершить\" на последнем.';
+
+  @override
+  String get tutorial_finishTitle => 'Тур завершен!';
+
+  @override
+  String get tutorial_finishDesc =>
+      'Поздравляем! Вы завершили кулинарный тур Plately.\n\nПримечание: Все ингредиенты и данные из этого тура не будут сохранены. Это лишь малая часть приложения. Нажмите \"Завершить тур\", чтобы начать свой собственный путь!';
+
+  @override
+  String get tutorial_finishTour => 'Завершить тур 🏁';
+
+  @override
+  String get tutorial_recipeTitle => 'Курица с овощами (Обучение)';
+
+  @override
+  String get tutorial_ing_chicken => 'Куриная грудка';
+
+  @override
+  String get tutorial_ing_broccoli => 'Брокколи';
+
+  @override
+  String get tutorial_ing_soy_sauce => 'Соевый соус';
+
+  @override
+  String get tutorial_ing_garlic => 'Чеснок';
+
+  @override
+  String get tutorial_ing_sesame_oil => 'Кунжутное масло';
+
+  @override
+  String get tutorial_step1 =>
+      'Нарежьте куриную грудку на небольшие кусочки, а брокколи - на соцветия. Измельчите чеснок.';
+
+  @override
+  String get tutorial_step1_beg =>
+      'Осторожно нарежьте куриную грудку на небольшие кусочки. Нарежьте брокколи. Очистите и мелко нарежьте чеснок.';
+
+  @override
+  String get tutorial_step2 =>
+      'Нагрейте кунжутное масло в большой сковороде на среднем огне. Добавьте измельченный чеснок и обжаривайте 1 минуту.';
+
+  @override
+  String get tutorial_step2_beg =>
+      'Налейте кунжутное масло в сковороду. Включите средний огонь. Добавьте чеснок и постоянно помешивайте 1 минуту.';
+
+  @override
+  String get tutorial_step3 =>
+      'Добавьте кусочки курицы. Обжаривайте 5-6 минут до готовности.';
+
+  @override
+  String get tutorial_step3_beg =>
+      'Осторожно добавьте курицу. Готовьте 5-6 минут, периодически помешивая, пока курица не перестанет быть розовой.';
+
+  @override
+  String get tutorial_step4 =>
+      'Добавьте брокколи и соевый соус. Жарьте еще 3-4 минуты.';
+
+  @override
+  String get tutorial_step4_beg =>
+      'Добавьте брокколи и влейте соевый соус. Готовьте еще 3-4 минуты.';
+
+  @override
+  String get tutorial_step5 =>
+      'Снимите с огня. Подавайте вкусную курицу горячей!';
+
+  @override
+  String get tutorial_step5_beg =>
+      'Выключите огонь. Выложите блюдо на тарелку. Приятного аппетита!';
+
+  @override
+  String get reward_mealCompleted => 'Блюдо готово!';
+
+  @override
+  String reward_youCooked(String recipeTitle, String servings) {
+    return 'Вы приготовили \"$recipeTitle\" · $servings порции';
+  }
+
+  @override
+  String get reward_xpEarned => 'Заработано XP';
+
+  @override
+  String get reward_itemsUsed => 'Использовано продуктов';
+
+  @override
+  String get reward_deducted => 'Списано с полки';
+
+  @override
+  String get reward_backToShelf => 'Вернуться к полке';
 }

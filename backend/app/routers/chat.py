@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.core.auth import CurrentUser
 from app.services.ollama_service import get_ollama_service
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -53,7 +54,7 @@ Rules:
 
 
 class ChatMessage(BaseModel):
-    role: str  # "user", "assistant", or "system"
+    role: str  # "user" or "assistant" only — system prompt is server-controlled
     content: str
 
 
@@ -65,7 +66,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/api/v1/ai/chat")
 @limiter.limit("30/minute")
-async def chat(request: Request, req: ChatRequest):
+async def chat(request: Request, req: ChatRequest, current: CurrentUser):
     """
     Multi-turn kitchen assistant chat.
     
@@ -84,6 +85,8 @@ async def chat(request: Request, req: ChatRequest):
 
     messages = [{"role": "system", "content": system_content}]
     for msg in req.messages:
+        if msg.role not in ("user", "assistant"):
+            raise HTTPException(status_code=400, detail="Invalid message role")
         messages.append({"role": msg.role, "content": msg.content})
 
     if req.stream:

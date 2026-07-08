@@ -48,7 +48,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
       return {
         '1': [{
           'id': 'tutorial-stir-fry',
-          'title': 'Tutorial Chicken Stir-fry',
+          'title': AppLocalizations.of(context)?.tutorial_recipeTitle ?? 'Tutorial Chicken Stir-fry',
           'description': 'A quick and healthy chicken stir-fry packed with broccoli and savory garlic sauce.',
           'cuisine': 'Asian',
           'difficulty': 1,

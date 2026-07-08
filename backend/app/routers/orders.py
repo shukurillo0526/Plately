@@ -22,6 +22,14 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core.auth import (
+    CurrentUser,
+    get_order_or_404,
+    require_user_id,
+    verify_order_customer,
+    verify_restaurant_owner,
+)
+from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 from app.models.api_response import api_success, api_error
 
@@ -82,12 +90,13 @@ def _generate_pickup_code() -> str:
 # ── Endpoints ─────────────────────────────────────────────────────
 
 @router.post("")
-async def create_order(req: CreateOrderRequest):
+async def create_order(req: CreateOrderRequest, current: CurrentUser):
     """Place a new order.
     
     Creates the order in Supabase with a generated pickup code.
     Returns the full order object with ID and pickup code.
     """
+    require_user_id(current, req.user_id)
     try:
         db = get_supabase()
 
@@ -166,32 +175,29 @@ async def create_order(req: CreateOrderRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Order creation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Order creation failed", e)
 
 
 @router.get("/{order_id}")
-async def get_order(order_id: str):
+async def get_order(order_id: str, current: CurrentUser):
     """Get a specific order by ID."""
     try:
         db = get_supabase()
-        result = db.table("orders").select("*").eq("id", order_id).single().execute()
-
-        if not result.data:
-            raise HTTPException(status_code=404, detail="Order not found")
-
-        return api_success(data=result.data)
+        order = get_order_or_404(db, order_id)
+        if str(order.get("user_id")) != current.id:
+            verify_restaurant_owner(db, current, str(order["restaurant_id"]))
+        return api_success(data=order)
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Get order failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Get order failed", e)
 
 
 @router.get("/user/{user_id}")
 async def get_user_orders(
     user_id: str,
+    current: CurrentUser,
     limit: int = 20,
     offset: int = 0,
 ):
@@ -200,6 +206,7 @@ async def get_user_orders(
     Includes restaurant name via the get_user_orders RPC function.
     Falls back to direct query if RPC is not available.
     """
+    require_user_id(current, user_id)
     try:
         db = get_supabase()
 
@@ -227,13 +234,13 @@ async def get_user_orders(
         return api_success(data=result.data or [])
 
     except Exception as e:
-        logger.error(f"Get user orders failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Get user orders failed", e)
 
 
 @router.get("/active/{user_id}")
-async def get_active_orders(user_id: str):
+async def get_active_orders(user_id: str, current: CurrentUser):
     """Get user's active (non-completed, non-cancelled) orders."""
+    require_user_id(current, user_id)
     try:
         db = get_supabase()
         result = (
@@ -248,12 +255,11 @@ async def get_active_orders(user_id: str):
         return api_success(data=result.data or [])
 
     except Exception as e:
-        logger.error(f"Get active orders failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Get active orders failed", e)
 
 
 @router.patch("/{order_id}/status")
-async def update_order_status(order_id: str, req: UpdateStatusRequest):
+async def update_order_status(order_id: str, req: UpdateStatusRequest, current: CurrentUser):
     """Update the status of an order.
     
     Used by restaurants (via Business dashboard) to advance order state:
@@ -263,6 +269,8 @@ async def update_order_status(order_id: str, req: UpdateStatusRequest):
     """
     try:
         db = get_supabase()
+        order = get_order_or_404(db, order_id)
+        verify_restaurant_owner(db, current, str(order["restaurant_id"]))
 
         # Build update data with timestamps
         update_data = {"status": req.status}
@@ -294,25 +302,20 @@ async def update_order_status(order_id: str, req: UpdateStatusRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Update order status failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Update order status failed", e)
 
 
 @router.post("/{order_id}/cancel")
-async def cancel_order(order_id: str, req: CancelOrderRequest):
+async def cancel_order(order_id: str, req: CancelOrderRequest, current: CurrentUser):
     """Cancel an order.
     
     Only allows cancellation if the order is in 'confirmed' or 'preparing' status.
     """
     try:
         db = get_supabase()
-
-        # Check current status
-        order = db.table("orders").select("status").eq("id", order_id).single().execute()
-        if not order.data:
-            raise HTTPException(status_code=404, detail="Order not found")
-
-        current_status = order.data["status"]
+        order = get_order_or_404(db, order_id)
+        verify_order_customer(current, order)
+        current_status = order["status"]
         if current_status not in ("confirmed", "preparing"):
             raise HTTPException(
                 status_code=400,
@@ -340,5 +343,4 @@ async def cancel_order(order_id: str, req: CancelOrderRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Cancel order failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(logger, "Cancel order failed", e)

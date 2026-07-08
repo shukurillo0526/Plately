@@ -28,6 +28,9 @@ class RecipePrepScreen extends ConsumerStatefulWidget {
   final double matchPct;
   final Color tierColor;
   final int? caloriesPerServing;
+  final double? proteinPerServing;
+  final double? carbsPerServing;
+  final double? fatPerServing;
 
   const RecipePrepScreen({
     super.key,
@@ -41,6 +44,9 @@ class RecipePrepScreen extends ConsumerStatefulWidget {
     required this.matchPct,
     required this.tierColor,
     this.caloriesPerServing,
+    this.proteinPerServing,
+    this.carbsPerServing,
+    this.fatPerServing,
   });
 
   @override
@@ -372,6 +378,9 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
           originalServings: widget.originalServings,
           ownedIngredientIds: widget.ownedIngredientIds,
           calories: widget.caloriesPerServing != null ? (widget.caloriesPerServing! * _servings) : null,
+          proteinG: widget.proteinPerServing != null ? (widget.proteinPerServing! * _servings).round() : null,
+          carbsG: widget.carbsPerServing != null ? (widget.carbsPerServing! * _servings).round() : null,
+          fatG: widget.fatPerServing != null ? (widget.fatPerServing! * _servings).round() : null,
         ),
       ),
     );
@@ -381,7 +390,7 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
   Widget build(BuildContext context) {
     final haveCount = widget.ingredients.where((ing) {
       final id = ing['ingredient_id'] ?? ing['id'] ?? ing['name'];
-      return widget.ownedIngredientIds.contains(id);
+      return widget.recipeId == 'tutorial-stir-fry' || widget.ownedIngredientIds.contains(id);
     }).length;
     final missingCount = widget.ingredients.length - haveCount;
 
@@ -541,7 +550,7 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
                     final rawQty = ing['quantity'];
                     final unit = ing['unit'] ?? '';
                     final translatedUnit = L10nHelper.translateUnit(unit, Localizations.localeOf(context).languageCode);
-                    final isOwned = widget.ownedIngredientIds.contains(ingId);
+                    final isOwned = widget.recipeId == 'tutorial-stir-fry' || widget.ownedIngredientIds.contains(ingId);
                     final scaledQty = _scaleQuantity(rawQty);
                     final emoji = IngredientIcons.getEmoji(name, category: ing['category']);
 

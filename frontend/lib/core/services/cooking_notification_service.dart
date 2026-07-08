@@ -177,25 +177,15 @@ class CookingNotificationService {
       presentAlert: false, presentBadge: false, presentSound: false,
     );
 
-    if (Platform.isAndroid) {
-      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.startForegroundService(
-        id: _kCookingProgressId,
-        title: '🍳 $recipeTitle',
-        body: bodyParts.join(' • '),
-        notificationDetails: androidDetails,
-      );
-    } else {
-      await _plugin!.show(
-        id: _kCookingProgressId,
-        title: '🍳 $recipeTitle',
-        body: bodyParts.join(' • '),
-        notificationDetails: NotificationDetails(
-          android: androidDetails, iOS: iosDetails,
-        ),
-      );
-    }
+    await _plugin!.show(
+      id: _kCookingProgressId,
+      title: '🍳 $recipeTitle',
+      body: bodyParts.join(' • '),
+      notificationDetails: NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      ),
+    );
   }
 
   /// Show timer completion alert
@@ -237,11 +227,6 @@ class CookingNotificationService {
   }) async {
     if (!_initialized || _plugin == null) return;
 
-    if (Platform.isAndroid) {
-      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.stopForegroundService();
-    }
     await _plugin!.cancel(id: _kCookingProgressId);
 
     final androidDetails = AndroidNotificationDetails(
@@ -274,11 +259,6 @@ class CookingNotificationService {
   /// Dismiss all cooking notifications
   Future<void> cancelAll() async {
     if (_plugin == null) return;
-    if (Platform.isAndroid) {
-      final androidPlugin = _plugin!.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.stopForegroundService();
-    }
     await _plugin!.cancel(id: _kCookingProgressId);
     await _plugin!.cancel(id: _kTimerCompleteId);
   }
