@@ -867,4 +867,21 @@ This release resolves 100% of the 14 security vulnerabilities, logical flaws, an
 - **Verification**:
   - All 52 backend automated regression tests pass cleanly.
 
+---
+
+# 🚀 v0.1.9 — AI Vision Scanner Anti-Hallucination & Empty State Hardening
+
+This release hardens all three AI Vision Scanners (`Scan Receipt`, `Scan Food`, `Scan Calories`) against unreadable images, cold starts, and hallucinated data responses.
+
+### Highlights
+- **Strict Anti-Hallucination Prompts**:
+  - Enforced zero-hallucination rules across `ocr_parser.py`, `vision_detect.py`, and `calorie_analysis.py`.
+  - Unreadable or non-receipt photos now cleanly return empty structured states (`{"store": "No items detected", "items": []}`) instead of repeating past store names or mock items.
+- **Frontend Empty State UX**:
+  - Added a dedicated warning card in `scan_screen.dart` when zero items are detected, guiding users to retake clearer photos or enter items manually.
+- **Cold Start & Error Handling**:
+  - Refactored frontend client handlers for Railway cold-start resilience.
+- **Verification**:
+  - Verified across 52 automated regression tests (`pytest tests/`).
+
 

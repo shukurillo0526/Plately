@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # --- App ---
     APP_NAME: str = "Plately API"
-    APP_VERSION: str = "0.1.8"
+    APP_VERSION: str = "0.1.9"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     STRUCTURED_LOGS: bool = False  # True for production JSON logs

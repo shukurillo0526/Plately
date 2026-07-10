@@ -1,7 +1,7 @@
 # 🍽️ Plately — Feature Registry
 
 > **Complete catalog of every feature, screen, widget, service, and interaction in the Plately app.**
-> Last updated: 2026-07-08 (v0.1.8)
+> Last updated: 2026-07-11 (v0.1.9)
 
 ---
 

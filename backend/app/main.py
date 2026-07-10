@@ -73,7 +73,7 @@ app = FastAPI(
         "- 📈 **Nutrition**: Calorie analysis and daily tracking\n"
         "- 👤 **User**: Flavor profile auto-learning, engagement tracking\n"
     ),
-    version="0.1.8",
+    version="0.1.9",
     docs_url="/docs" if _settings.DEBUG else None,
     redoc_url="/redoc" if _settings.DEBUG else None,
     openapi_tags=[
@@ -146,7 +146,7 @@ app.include_router(feedback.router)
 async def root():
     return {
         "name": "Plately Intelligence API",
-        "version": "0.1.7",
+        "version": _settings.APP_VERSION,
         "docs": "/docs" if _settings.DEBUG else None,
         "health": "/api/v1/health",
     }
