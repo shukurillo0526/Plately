@@ -1932,7 +1932,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                   TextButton.icon(
                     onPressed: _clearResults,
                     icon: Icon(Icons.refresh, size: 18, color: Colors.orange),
-                    label: Text('Try Again', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    label: Text(AppLocalizations.of(context)?.auto_retry ?? AppLocalizations.of(context)?.retry ?? 'Try Again', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
