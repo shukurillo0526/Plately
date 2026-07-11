@@ -15,30 +15,27 @@ class ApiConfig {
   static const String _productionUrl =
       'https://merry-motivation-production-3529.up.railway.app';
 
+  /// Set to true only when running local FastAPI server on port 8000.
+  static const bool useLocalBackend = false;
+
   /// Automatically picks the right backend URL based on where the app is running.
-  /// - Web: GitHub Pages (*.github.io) → Railway production backend
-  /// - Web: localhost → local backend (dev)
-  /// - Mobile release (Play Store) → Railway production backend
-  /// - Mobile debug (emulator) → localhost via 10.0.2.2
-  /// - Desktop → localhost
   static String get baseUrl {
+    if (!useLocalBackend) {
+      return _productionUrl;
+    }
     if (kIsWeb) {
       final host = Uri.base.host;
-      // Running on GitHub Pages or any non-localhost domain → production
       if (host != 'localhost' && host != '127.0.0.1') {
         return _productionUrl;
       }
       return 'http://localhost:8000';
     }
-    // Mobile: release builds (Play Store) always use production
     if (!kIsWeb && Platform.isAndroid) {
       return kReleaseMode ? _productionUrl : 'http://10.0.2.2:8000';
     }
-    // iOS release also uses production
     if (!kIsWeb && Platform.isIOS) {
       return kReleaseMode ? _productionUrl : 'http://localhost:8000';
     }
-    // Desktop (Windows/macOS/Linux) — local dev
     return 'http://localhost:8000';
   }
 
@@ -72,7 +69,10 @@ class ApiService {
         contentType: MediaType('image', 'jpeg'),
       ));
 
-    final streamedResponse = await _client.send(request);
+    final streamedResponse = await _client.send(request).timeout(
+      const Duration(seconds: 45),
+      onTimeout: () => throw Exception('Scanning timed out. Please check your connection and try again.'),
+    );
     final response = await http.Response.fromStream(streamedResponse);
     return _handleResponse(response);
   }
@@ -98,7 +98,10 @@ class ApiService {
         contentType: MediaType('image', 'jpeg'),
       ));
 
-    final streamedResponse = await _client.send(request);
+    final streamedResponse = await _client.send(request).timeout(
+      const Duration(seconds: 45),
+      onTimeout: () => throw Exception('Food scanning timed out. Please try again.'),
+    );
     final response = await http.Response.fromStream(streamedResponse);
     return _handleResponse(response);
   }
@@ -317,7 +320,10 @@ class ApiService {
       request.headers['Authorization'] = 'Bearer ${session.accessToken}';
     }
     request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(
+      const Duration(seconds: 45),
+      onTimeout: () => throw Exception('Calorie scanning timed out. Please try again.'),
+    );
     final response = await http.Response.fromStream(streamed);
     return _handleResponse(response);
   }

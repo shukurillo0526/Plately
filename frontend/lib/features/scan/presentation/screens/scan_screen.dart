@@ -124,6 +124,15 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       );
 
       final data = (result['data'] as Map<String, dynamic>?) ?? result;
+      final itemsList = (data['items'] as List?) ?? [];
+      if (itemsList.isEmpty) {
+        setState(() {
+          _error = AppLocalizations.of(context)?.recognitionFailed ??
+              'No items detected in receipt. Please try a clearer photo with good lighting.';
+          _scanning = false;
+        });
+        return;
+      }
       await _enrichItemsWithDb(data);
 
       setState(() {
@@ -134,10 +143,22 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = _cleanScanError(e);
         _scanning = false;
       });
     }
+  }
+
+  String _cleanScanError(dynamic e) {
+    final msg = e.toString();
+    final l10n = AppLocalizations.of(context);
+    if (msg.contains('timed out') || msg.contains('Timeout')) {
+      return l10n?.recognitionFailed ?? 'Scanning timed out. Please check your connection and try again.';
+    }
+    if (msg.contains('SocketException') || msg.contains('Connection refused') || msg.contains('Failed host lookup')) {
+      return l10n?.recognitionFailed ?? 'Cannot reach scanning server. Please check your internet connection.';
+    }
+    return l10n?.recognitionFailed ?? 'Recognition failed. Please try a clearer photo.';
   }
 
   /// Capture a photo for ingredient detection (not receipts)
@@ -166,6 +187,15 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       );
 
       final data = (result['data'] as Map<String, dynamic>?) ?? result;
+      final itemsList = (data['items'] as List?) ?? [];
+      if (itemsList.isEmpty) {
+        setState(() {
+          _error = AppLocalizations.of(context)?.recognitionFailed ??
+              'No food ingredients detected. Please try a clearer photo with food clearly visible.';
+          _scanning = false;
+        });
+        return;
+      }
       await _enrichItemsWithDb(data);
 
       setState(() {
@@ -176,7 +206,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = _cleanScanError(e);
         _scanning = false;
       });
     }
@@ -431,7 +461,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        AppLocalizations.of(context)?.recognitionFailed ?? 'Recognition failed. Try again.',
+                        _error!,
                         style: TextStyle(
                             color: Colors.red.withValues(alpha: 0.8),
                             fontSize: 13),
@@ -1695,7 +1725,8 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
           ((result['items'] as List?)?.isEmpty ?? true)) {
         setState(() {
           _analyzing = false;
-          _errorMessage = 'No food items detected. Try a clearer photo with food visible.';
+          _errorMessage = AppLocalizations.of(context)?.recognitionFailed ??
+              'No food items detected. Try a clearer photo with food visible.';
           _result = null;
         });
         return;
@@ -1704,9 +1735,10 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
       setState(() { _result = result; _analyzing = false; });
     } catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       final msg = e.toString().contains('warming up') || e.toString().contains('Timeout')
-          ? 'Server is warming up from sleep. Please tap Try Again in a few seconds!'
-          : 'Could not analyze photo. Please try a clearer photo with food visible.';
+          ? (l10n?.recognitionFailed ?? 'Server is warming up from sleep. Please try again in a few seconds!')
+          : (l10n?.recognitionFailed ?? 'Could not analyze photo. Please try a clearer photo with food visible.');
       setState(() {
         _analyzing = false;
         _errorMessage = msg;
@@ -1816,10 +1848,10 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                       children: [
                         Icon(Icons.local_fire_department, size: 56, color: Colors.orange),
                         SizedBox(height: 12),
-                        Text('Snap Your Meal',
+                        Text(AppLocalizations.of(context)?.auto_snapYourMeal ?? 'Snap Your Meal',
                           style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
                         SizedBox(height: 6),
-                        Text('Take a photo and AI will estimate calories',
+                        Text(AppLocalizations.of(context)?.auto_takeAPhotoAndAiWillEstimateCalories ?? 'Take a photo and AI will estimate calories',
                           style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 13)),
                       ],
                     )
@@ -1835,9 +1867,9 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                               children: [
                                 CircularProgressIndicator(color: Colors.orange),
                                 SizedBox(height: 12),
-                                Text('Analyzing food...', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                                Text(AppLocalizations.of(context)?.analyzingYourFood ?? 'Analyzing food...', style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
                                 SizedBox(height: 4),
-                                Text('Identifying items & estimating calories', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+                                Text(AppLocalizations.of(context)?.aiIsIdentifying ?? 'Identifying items & estimating calories', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
                               ],
                             ),
                           ),
@@ -1856,7 +1888,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                   child: FilledButton.icon(
                     onPressed: _analyzing ? null : () => _captureAndAnalyze(ImageSource.camera),
                     icon: Icon(Icons.camera_alt, size: 20),
-                    label: Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                    label: Text(AppLocalizations.of(context)?.auto_camera ?? 'Camera', style: TextStyle(fontWeight: FontWeight.w600)),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.orange,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
@@ -1870,7 +1902,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                   child: OutlinedButton.icon(
                     onPressed: _analyzing ? null : () => _captureAndAnalyze(ImageSource.gallery),
                     icon: Icon(Icons.photo_library, size: 20, color: Colors.orange),
-                    label: Text('Gallery', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    label: Text(AppLocalizations.of(context)?.auto_gallery ?? 'Gallery', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.orange),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
