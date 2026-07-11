@@ -157,8 +157,8 @@ class LocationService extends ChangeNotifier {
 
     notifyListeners();
 
-    // Request fresh location in background
-    refreshLocation();
+    // Request fresh location in background (fire-and-forget, never blocks startup)
+    unawaited(refreshLocation());
   }
 
   /// Request fresh GPS location and update region.
@@ -172,19 +172,8 @@ class LocationService extends ChangeNotifier {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // Try to open location settings on the device
-        final opened = await Geolocator.openLocationSettings();
-        if (!opened) {
-          // If settings couldn't open, fall back to default location
-          _applyDefaultLocation('Location services disabled — using default');
-          return;
-        }
-        // Re-check after user potentially enabled it
-        serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          _applyDefaultLocation('Location services still disabled — using default');
-          return;
-        }
+        _applyDefaultLocation('Location services disabled — using default');
+        return;
       }
 
       // Check / request permissions

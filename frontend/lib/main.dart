@@ -77,7 +77,11 @@ void main() async {
     ),
   );
   await AppSettings().init();
-  await LocationService().init();
+  try {
+    await LocationService().init();
+  } catch (e) {
+    debugPrint('[Main] Location init skipped: $e');
+  }
   // Initialize offline cache (Hive)
   try {
     final cacheService = CacheService();

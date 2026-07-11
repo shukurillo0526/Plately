@@ -85,6 +85,26 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) throw Exception("User session not found.");
 
+      // Tutorial recipes use non-UUID IDs — skip the database RPC and return mock result
+      final isTutorial = widget.recipeId == 'tutorial-stir-fry';
+
+      if (isTutorial) {
+        final leftovers = _portionsCooked - _portionsEaten;
+        final mockResult = <String, dynamic>{
+          'status': 'ok',
+          'portions_cooked': _portionsCooked,
+          'portions_eaten': _portionsEaten,
+          'leftovers_stored': leftovers,
+          'calories_logged': (widget.caloriesPerPortion * _portionsEaten).round(),
+          'deducted_count': 0,
+        };
+        if (mounted) {
+          Navigator.pop(context);
+          widget.onComplete(mockResult);
+        }
+        return;
+      }
+
       // Prepare ingredient scaling details (baseAmountPerPortion = quantity_per_serving)
       final ingredientPayload = widget.ingredients.map((ing) {
         return {

@@ -88,19 +88,28 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
 
   Future<void> _saveRewards() async {
     if (widget.recipeId == 'tutorial-stir-fry') {
-      _consumedItems = [
-        {'name': 'Chicken Breast', 'deducted': 125.0, 'unit': 'g'},
-        {'name': 'Broccoli', 'deducted': 0.25, 'unit': 'head'},
-        {'name': 'Soy Sauce', 'deducted': 15.0, 'unit': 'ml'},
-        {'name': 'Garlic', 'deducted': 1.0, 'unit': 'clove'},
-        {'name': 'Sesame Oil', 'deducted': 5.0, 'unit': 'ml'},
-      ];
-      _caloriesLogged = 380;
-      ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.finish);
-      setState(() {
-        _isSaving = false;
-      });
-      _animController.forward();
+      try {
+        _consumedItems = [
+          {'name': 'Chicken Breast', 'deducted': 125.0, 'unit': 'g'},
+          {'name': 'Broccoli', 'deducted': 0.25, 'unit': 'head'},
+          {'name': 'Soy Sauce', 'deducted': 15.0, 'unit': 'ml'},
+          {'name': 'Garlic', 'deducted': 1.0, 'unit': 'clove'},
+          {'name': 'Sesame Oil', 'deducted': 5.0, 'unit': 'ml'},
+        ];
+        _caloriesLogged = 380;
+        // Defer provider modification past the widget tree build phase
+        Future(() {
+          ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.finish);
+        });
+      } catch (e) {
+        debugPrint('[Reward] Tutorial finish error (non-critical): $e');
+      }
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+        _animController.forward();
+      }
       return;
     }
     try {
