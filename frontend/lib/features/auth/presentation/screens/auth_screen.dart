@@ -47,6 +47,53 @@ class _AuthScreenState extends State<AuthScreen>
     super.dispose();
   }
 
+  String _localizeError(String errorType) {
+    final locale = AppSettings().locale;
+    final lang = locale.languageCode;
+    final script = locale.scriptCode;
+
+    switch (errorType) {
+      case 'invalid_email':
+        if (lang == 'uz' && script == 'Cyrl') return 'Илтимос, тўғри электрон почта манзилини киритинг.';
+        if (lang == 'uz') return "Iltimos, to'g'ri elektron pochta manzilini kiriting.";
+        if (lang == 'ru') return 'Пожалуйста, введите корректный адрес электронной почты.';
+        if (lang == 'ko') return '올바른 이메일 주소를 입력하세요.';
+        return 'Please enter a valid email address.';
+
+      case 'short_password':
+        if (lang == 'uz' && script == 'Cyrl') return 'Парол камида 6 та белгидан иборат бўлиши керак.';
+        if (lang == 'uz') return "Parol kamida 6 ta belgidan iborat bo'lishi kerak.";
+        if (lang == 'ru') return 'Пароль должен содержать не менее 6 символов.';
+        if (lang == 'ko') return '비밀번호는 6자 이상이어야 합니다.';
+        return 'Password must be at least 6 characters long.';
+
+      case 'incorrect_password':
+        if (lang == 'uz' && script == 'Cyrl') return 'Парол нотўғри. Қайтадан уриниб кўринг ёки паролни тикланг.';
+        if (lang == 'uz') return "Parol noto'g'ri. Qaytadan urinib ko'ring yoki parolni tiklang.";
+        if (lang == 'ru') return 'Неверный пароль. Попробуйте снова или сбросьте пароль.';
+        if (lang == 'ko') return '비밀번호가 일치하지 않습니다. 다시 시도하거나 비밀번호를 재설정하세요.';
+        return 'Incorrect password. Please try again or reset your password.';
+
+      default:
+        final lower = errorType.toLowerCase();
+        if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+          if (lang == 'uz' && script == 'Cyrl') return 'Электрон почта ёки парол нотўғри.';
+          if (lang == 'uz') return "Elektron pochta yoki parol noto'g'ri.";
+          if (lang == 'ru') return 'Неверный email или пароль.';
+          if (lang == 'ko') return '이메일 또는 비밀번호가 올바르지 않습니다.';
+          return 'Invalid email or password.';
+        }
+        if (lower.contains('already registered') || lower.contains('already exists')) {
+          if (lang == 'uz' && script == 'Cyrl') return 'Бу электрон почта аллақачон рўйхатдан ўтган.';
+          if (lang == 'uz') return "Bu elektron pochta allaqachon ro'yxatdan o'tgan.";
+          if (lang == 'ru') return 'Этот email уже зарегистрирован.';
+          if (lang == 'ko') return '이미 등록된 이메일입니다.';
+          return 'This email is already registered.';
+        }
+        return errorType;
+    }
+  }
+
   /// Unified "Continue" flow: tries sign-in first, then sign-up if credentials are invalid.
   /// This eliminates the confusing Sign In / Sign Up toggle entirely.
   Future<void> _continueWithEmail() async {
@@ -56,6 +103,16 @@ class _AuthScreenState extends State<AuthScreen>
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => _error = l10n?.auth_enterBoth ?? 'Please enter both email and password.');
+      return;
+    }
+
+    if (!email.contains('@') || !email.contains('.')) {
+      setState(() => _error = _localizeError('invalid_email'));
+      return;
+    }
+
+    if (password.length < 6) {
+      setState(() => _error = _localizeError('short_password'));
       return;
     }
 
@@ -70,6 +127,7 @@ class _AuthScreenState extends State<AuthScreen>
         email: email,
         password: password,
       );
+      await ensureUserInitialized();
       // Success — AuthGate will handle navigation
       if (mounted) setState(() => _loading = false);
     } on AuthException catch (signInError) {
@@ -81,6 +139,9 @@ class _AuthScreenState extends State<AuthScreen>
             email: email,
             password: password,
           );
+          if (signUpResult.session != null) {
+            await ensureUserInitialized();
+          }
 
           if (mounted) {
             setState(() => _loading = false);
@@ -89,7 +150,7 @@ class _AuthScreenState extends State<AuthScreen>
             // NOT because the user doesn't exist.
             if (signUpResult.user?.identities?.isEmpty == true) {
               // Email exists but password was wrong — clear error message
-              setState(() => _error = 'Incorrect password. Please try again or reset your password.');
+              setState(() => _error = _localizeError('incorrect_password'));
             } else if (signUpResult.session == null) {
               // Genuine new sign-up — needs email verification
               ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +166,7 @@ class _AuthScreenState extends State<AuthScreen>
         } on AuthException catch (signUpError) {
           if (mounted) {
             setState(() {
-              _error = signUpError.message;
+              _error = _localizeError(signUpError.message);
               _loading = false;
             });
           }
@@ -114,7 +175,7 @@ class _AuthScreenState extends State<AuthScreen>
         // Other sign-in errors (network, etc.)
         if (mounted) {
           setState(() {
-            _error = signInError.message;
+            _error = _localizeError(signInError.message);
             _loading = false;
           });
         }
@@ -405,6 +466,7 @@ class _AuthScreenState extends State<AuthScreen>
                       hintText: l10n?.auth_email ?? 'Email',
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 16),
                     _TextField(
@@ -412,6 +474,8 @@ class _AuthScreenState extends State<AuthScreen>
                       hintText: l10n?.auth_password ?? 'Password',
                       icon: Icons.lock_outline,
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _continueWithEmail(),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -661,6 +725,8 @@ class _TextField extends StatelessWidget {
   final bool obscureText;
   final TextInputType keyboardType;
   final Widget? suffixIcon;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   const _TextField({
     required this.controller,
@@ -669,6 +735,8 @@ class _TextField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.suffixIcon,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   @override
@@ -683,6 +751,8 @@ class _TextField extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
         decoration: InputDecoration(
           hintText: hintText,
