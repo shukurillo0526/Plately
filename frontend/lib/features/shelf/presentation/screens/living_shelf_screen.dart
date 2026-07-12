@@ -352,29 +352,58 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
         border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _statChip('$total', AppLocalizations.of(context)?.total ?? 'Total', Theme.of(context).colorScheme.primary),
-          _statChip('$fresh', AppLocalizations.of(context)?.fresh ?? 'Fresh', Theme.of(context).colorScheme.tertiary),
-          _statChip('$expiring', AppLocalizations.of(context)?.expiring ?? 'Expiring', Theme.of(context).colorScheme.primary),
-          _statChip('$expired', AppLocalizations.of(context)?.expired ?? 'Expired', Theme.of(context).colorScheme.error),
+          Expanded(child: _statChip('$total', AppLocalizations.of(context)?.total ?? 'Total', Theme.of(context).colorScheme.primary)),
+          _buildVerticalDivider(),
+          Expanded(child: _statChip('$fresh', AppLocalizations.of(context)?.fresh ?? 'Fresh', Theme.of(context).colorScheme.tertiary)),
+          _buildVerticalDivider(),
+          Expanded(child: _statChip('$expiring', AppLocalizations.of(context)?.expiring ?? 'Expiring', Theme.of(context).colorScheme.primary)),
+          _buildVerticalDivider(),
+          Expanded(child: _statChip('$expired', AppLocalizations.of(context)?.expired ?? 'Expired', Theme.of(context).colorScheme.error)),
         ],
       ),
     );
   }
 
   Widget _statChip(String value, String label, Color color) {
-    return Column(children: [
-      Text(value,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          value,
           style: TextStyle(
-              color: color, fontSize: 20, fontWeight: FontWeight.w800)),
-      SizedBox(height: 2),
-      Text(label,
-          style: TextStyle(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: 11,
-              fontWeight: FontWeight.w500)),
-    ]);
+              fontWeight: FontWeight.w600,
+              height: 1.15,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      height: 32,
+      width: 1,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+    );
   }
 
   // ── Search Bar ────────────────────────────────────────────────
