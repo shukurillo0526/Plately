@@ -18,6 +18,7 @@ import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/scan/presentation/screens/audit_screen.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
 import 'package:plately_app/features/profile/presentation/screens/nutrition_tracker_page.dart';
+import 'package:plately_app/features/scan/presentation/widgets/live_barcode_scanner_modal.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
@@ -1002,44 +1003,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
   // ── Barcode Scanner ─────────────────────────────────────────────
 
   Future<void> _openBarcodeScanner() async {
-    final barcode = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          title: Text(AppLocalizations.of(context)?.auto_enterBarcode ?? 'Enter Barcode',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'e.g., 8801234567890',
-              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
-              filled: true,
-              fillColor: Theme.of(context).scaffoldBackgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context)?.auto_cancel ?? 'Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.secondary,
-              ),
-              child: Text(AppLocalizations.of(context)?.auto_lookUp ?? 'Look Up'),
-            ),
-          ],
-        );
-      },
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const LiveBarcodeScannerModal(),
+      ),
     );
 
     if (barcode == null || barcode.isEmpty) return;
