@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/shelf/domain/inventory_item.dart';
+import 'package:plately_app/features/shelf/domain/inventory_analytics_service.dart';
 
 class InventoryDetailSheet extends StatefulWidget {
   final InventoryItem item;
@@ -65,7 +66,152 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
     }
   }
 
-  Future<void> _consumeOne() async {
+  static const List<Map<String, String>> _expiredHumorQuotes = [
+    {
+      'uz': 'Tushlik qilmoqchimisiz yoki yangi pandemiya boshlamoqchimisiz? 🦠',
+      'en': 'Are you trying to eat lunch, or start a new pandemic? 🦠',
+    },
+    {
+      'uz': 'Bu mahsulot ba\'zi munosabatlaringizdan ham qadimiyroq. Yaxshisi tashlab yuboring! 🦖',
+      'en': 'That food is older than some of your relationships. Throw it out. 🦖',
+    },
+    {
+      'uz': 'Oddiy ovqat yeyapmizmi yoki biologik tajriba o\'tkazyapmizmi? 🧪',
+      'en': 'Are we eating leftovers, or are we conducting a biology experiment? 🧪',
+    },
+    {
+      'uz': 'Buni yegan odamga temir oshqozon kerak. Oshqozoningizga rahmingiz kelsin! ☣️',
+      'en': 'You need a stomach of steel for this. Pity your poor tummy! ☣️',
+    },
+  ];
+
+  String _getRandomExpiredQuote(BuildContext context) {
+    final uz = Localizations.localeOf(context).languageCode == 'uz';
+    final idx = DateTime.now().millisecondsSinceEpoch % _expiredHumorQuotes.length;
+    return _expiredHumorQuotes[idx][uz ? 'uz' : 'en']!;
+  }
+
+  Future<void> _handleConsumePressed() async {
+    final isExpired = item.daysUntilExpiry < 0;
+
+    if (isExpired) {
+      final quote = _getRandomExpiredQuote(context);
+      final uz = Localizations.localeOf(context).languageCode == 'uz';
+      final action = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Text('🧪', style: TextStyle(fontSize: 26)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  uz ? 'Biologik tajriba?' : 'Expired Food Alert!',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                quote,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_outlined, color: Theme.of(context).colorScheme.error, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        uz
+                            ? 'Ushbu qaror "Oshqozon og\'rig\'i xavfi" (Tummy Hurt) yoki "Oziq-ovqat isrofi" analitikasiga yoziladi.'
+                            : 'Logged to "Tummy Hurt Risk" or "Food Waste" metrics.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'throw_out'),
+              icon: const Icon(Icons.delete_outline, color: Colors.green),
+              label: Text(
+                uz ? 'Tashlab yuborish (Oqilona!)' : 'Throw Out (Wise Choice)',
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'eat_anyway'),
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              icon: const Icon(Icons.warning_amber_rounded, size: 18),
+              label: Text(
+                uz ? 'Bari bir yeyman (Tavakkal!)' : 'Eat Anyway (Risk it!)',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (action == 'throw_out') {
+        await InventoryAnalyticsService.logEvent(
+          itemId: item.id,
+          itemName: item.name,
+          quantity: _quantity,
+          unit: item.unit,
+          isExpired: true,
+          thrownOut: true,
+        );
+        await _deleteItemSilently();
+        return;
+      } else if (action == 'eat_anyway') {
+        await InventoryAnalyticsService.logEvent(
+          itemId: item.id,
+          itemName: item.name,
+          quantity: _quantity,
+          unit: item.unit,
+          isExpired: true,
+          thrownOut: false,
+        );
+        await _consumeQuantity(_quantity);
+      }
+    } else {
+      await InventoryAnalyticsService.logEvent(
+        itemId: item.id,
+        itemName: item.name,
+        quantity: _quantity,
+        unit: item.unit,
+        isExpired: false,
+        thrownOut: false,
+      );
+      await _consumeQuantity(_quantity);
+    }
+  }
+
+  Future<void> _consumeQuantity(double qtyToConsume) async {
     setState(() => _updating = true);
     try {
       if (item.isCookedLeftover) {
@@ -77,26 +223,45 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
           _portionsCount = (_portionsCount - 1).clamp(0, 99);
           _quantity = _portionsCount.toDouble();
         });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Logged leftover portion for: ${item.name}'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
       } else {
         await Supabase.instance.client.rpc('consume_inventory_item', params: {
           'p_inventory_id': item.id,
-          'p_qty_to_consume': 1.0,
+          'p_qty_to_consume': qtyToConsume,
         });
-        setState(() => _quantity = (_quantity - 1).clamp(0, double.infinity));
+        setState(() => _quantity = (_quantity - qtyToConsume).clamp(0, double.infinity));
       }
       if (_quantity <= 0 && mounted) Navigator.pop(context);
     } catch (e) {
+      try {
+        final newQty = (_quantity - qtyToConsume).clamp(0, double.infinity);
+        await Supabase.instance.client
+            .from('inventory_items')
+            .update({'quantity': newQty})
+            .eq('id', item.id);
+        setState(() => _quantity = newQty.toDouble());
+        if (_quantity <= 0 && mounted) Navigator.pop(context);
+      } catch (e2) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
+
+  Future<void> _deleteItemSilently() async {
+    setState(() => _updating = true);
+    try {
+      await Supabase.instance.client
+          .from('inventory_items')
+          .delete()
+          .eq('id', item.id);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text('Delete failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _updating = false);
@@ -124,6 +289,14 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
     );
     if (confirm != true) return;
     try {
+      await InventoryAnalyticsService.logEvent(
+        itemId: item.id,
+        itemName: item.name,
+        quantity: _quantity,
+        unit: item.unit,
+        isExpired: item.daysUntilExpiry < 0,
+        thrownOut: true,
+      );
       await Supabase.instance.client
           .from('inventory_items')
           .delete()
@@ -342,41 +515,173 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
   Widget _vDiv() =>
       Container(width: 1, height: 50, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06));
 
-  Widget _quantityControls() => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+  double get _stepSize {
+    final u = item.unit.toLowerCase();
+    if (u == 'g' || u == 'ml') return 10.0;
+    if (u == 'kg' || u == 'l') return 0.1;
+    return 1.0;
+  }
+
+  void _showQuantityEditDialog() {
+    final ctrl = TextEditingController(text: _fmtQty(_quantity));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          Localizations.localeOf(context).languageCode == 'uz'
+              ? 'Miqdorni kiritish'
+              : 'Enter Quantity',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          autofocus: true,
+          decoration: InputDecoration(
+            suffixText: item.unit,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _circleBtn(Icons.remove, () {
-              if (_quantity > 1) {
-                setState(() => _quantity -= 1);
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)?.auto_cancel ?? 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final val = double.tryParse(ctrl.text.replaceAll(',', '.'));
+              if (val != null && val > 0) {
+                setState(() => _quantity = val);
                 _updateField('quantity', _quantity);
               }
-            }),
-            SizedBox(width: 24),
-            Column(children: [
-              Text(_fmtQty(_quantity),
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700)),
-              Text(item.unit,
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13)),
-            ]),
-            SizedBox(width: 24),
-            _circleBtn(Icons.add, () {
-              setState(() => _quantity += 1);
-              _updateField('quantity', _quantity);
-            }),
-          ]),
+              Navigator.pop(ctx);
+            },
+            child: Text(
+              Localizations.localeOf(context).languageCode == 'uz' ? 'Saqlash' : 'Save',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quantityControls() => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _circleBtn(Icons.remove, () {
+                    final step = _stepSize;
+                    if (_quantity > step) {
+                      setState(() => _quantity = (_quantity - step).clamp(0, double.infinity));
+                      _updateField('quantity', _quantity);
+                    }
+                  }),
+                  const SizedBox(width: 20),
+                  GestureDetector(
+                    onTap: _showQuantityEditDialog,
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _fmtQty(_quantity),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          item.unit,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  _circleBtn(Icons.add, () {
+                    final step = _stepSize;
+                    setState(() => _quantity += step);
+                    _updateField('quantity', _quantity);
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _portionChip('25%', item.quantity * 0.25),
+                const SizedBox(width: 8),
+                _portionChip('50%', item.quantity * 0.50),
+                const SizedBox(width: 8),
+                _portionChip('75%', item.quantity * 0.75),
+                const SizedBox(width: 8),
+                _portionChip(
+                  Localizations.localeOf(context).languageCode == 'uz' ? '100% (Barchasi)' : '100% (All)',
+                  item.quantity,
+                ),
+              ],
+            ),
+          ],
         ),
       );
+
+  Widget _portionChip(String label, double qtyValue) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          final rounded = qtyValue < 1 ? double.parse(qtyValue.toStringAsFixed(1)) : qtyValue.roundToDouble();
+          setState(() => _quantity = rounded.clamp(0.1, double.infinity));
+          _updateField('quantity', _quantity);
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _circleBtn(IconData icon, VoidCallback onTap) => Material(
         color: Theme.of(context).colorScheme.surface,
@@ -467,7 +772,7 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
                         color: active ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         size: 20),
                     SizedBox(height: 4),
-                    Text(displayLabels != null ? displayLabels![i] : _cap(options[i]),
+                    Text(displayLabels != null ? displayLabels[i] : _cap(options[i]),
                         style: TextStyle(
                             color: active ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                             fontSize: 12,
@@ -483,45 +788,58 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
     );
   }
 
-  Widget _actionButtons() => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24),
-        child: Column(children: [
+  Widget _actionButtons() {
+    final uz = Localizations.localeOf(context).languageCode == 'uz';
+    final consumeLabel = item.isCookedLeftover
+        ? (uz ? '1 Porsiya iste\'mol qilish' : 'Eat 1 Portion')
+        : (uz ? 'Ishlatish (${_fmtQty(_quantity)} ${item.unit})' : 'Use ${_fmtQty(_quantity)} ${item.unit}');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _updating ? null : _consumeOne,
-              icon: Icon(Icons.restaurant, size: 18),
-              label: Text(item.isCookedLeftover
-                  ? 'Eat 1 Portion'
-                  : (AppLocalizations.of(context)?.auto_use1Unit ?? 'Use 1 Unit')),
+              onPressed: _updating ? null : _handleConsumePressed,
+              icon: const Icon(Icons.restaurant, size: 18),
+              label: Text(
+                consumeLabel,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                padding: EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _updating ? null : _deleteItem,
-              icon: Icon(Icons.delete_outline, size: 18),
-              label: Text(AppLocalizations.of(context)?.auto_removeFromInventory ?? 'Remove from Inventory'),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(
+                uz ? 'Ombordan olib tashlash (Tashlab yuborish)' : (AppLocalizations.of(context)?.auto_removeFromInventory ?? 'Remove from Inventory'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
                 side: BorderSide(
                     color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3)),
-                padding: EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
-        ]),
-      );
+        ],
+      ),
+    );
+  }
 
   Widget _macroRow() {
     if (!item.isCookedLeftover) return const SizedBox.shrink();
