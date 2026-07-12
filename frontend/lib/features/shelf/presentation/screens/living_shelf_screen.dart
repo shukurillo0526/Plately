@@ -525,7 +525,7 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 12),
               items: _SortMode.values
                   .map((m) => DropdownMenuItem(
-                      value: m, child: Text(m.label)))
+                      value: m, child: Text(_getSortModeLabel(context, m))))
                   .toList(),
               onChanged: (m) {
                 if (m != null) setState(() => _sortMode = m);
@@ -629,7 +629,7 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13)),
                           Text(
-                              '${urgentItems.length} item(s) need attention',
+                              AppLocalizations.of(context)?.nItemsNeedAttention('${urgentItems.length}') ?? '${urgentItems.length} item(s) need attention',
                               style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: 11)),
@@ -853,7 +853,19 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
     );
   }
 
-  String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+  String _getSortModeLabel(BuildContext context, _SortMode mode) {
+    final l10n = AppLocalizations.of(context);
+    switch (mode) {
+      case _SortMode.expiry:
+        return l10n?.sortByExpiry ?? 'Expiry ↑';
+      case _SortMode.name:
+        return l10n?.sortByName ?? 'Name A-Z';
+      case _SortMode.category:
+        return l10n?.sortByCategory ?? 'Category';
+      case _SortMode.newest:
+        return l10n?.sortByNewest ?? 'Newest first';
+    }
+  }
 }
 
 // ── Sort Mode Enum ──────────────────────────────────────────────

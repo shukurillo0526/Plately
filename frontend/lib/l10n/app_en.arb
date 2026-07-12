@@ -655,5 +655,9 @@
   "reward_xpEarned": "XP Earned",
   "reward_itemsUsed": "Items Used",
   "reward_deducted": "Deducted from shelf",
-  "reward_backToShelf": "Back to Shelf"
+  "reward_backToShelf": "Back to Shelf",
+  "sortByExpiry": "Expiry ↑",
+  "sortByName": "Name A-Z",
+  "sortByCategory": "Category",
+  "sortByNewest": "Newest first"
 }

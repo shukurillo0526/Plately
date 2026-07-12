@@ -75,7 +75,7 @@
   "expired": "Muddati tugagan",
   "searchIngredients": "Ingredientlarni qidirish...",
   "all": "Hammasi",
-  "itemsCount": "{count} elementlari",
+  "itemsCount": "{count} ta mahsulot",
   "@itemsCount": {
     "placeholders": {
       "count": {
@@ -275,7 +275,7 @@
   "min_tag": "daq",
   "difficulty_tag": "Qiyinchilik",
   "expiringSoon": "Tez orada tugaydi",
-  "nItemsNeedAttention": "{count} element(lar)iga e'tibor kerak",
+  "nItemsNeedAttention": "{count} ta mahsulot e'tibor talab qiladi",
   "takeAPhotoOfFoodItems": "Oziq-ovqat mahsulotlarini qo'shish uchun ularni suratga oling\njavoningizga avtomatik ravishda",
   "addManually": "Qo'lda qo'shish",
   "recognitionFailed": "Tanib bo‘lmadi. Qayta urinib ko'ring.",
@@ -476,5 +476,9 @@
   "reward_xpEarned": "Ishlangan XP",
   "reward_itemsUsed": "Ishlatilgan Masalliqlar",
   "reward_deducted": "Javondan olingan",
-  "reward_backToShelf": "Javonga qaytish"
+  "reward_backToShelf": "Javonga qaytish",
+  "sortByExpiry": "Muddati ↑",
+  "sortByName": "Nomi A-Z",
+  "sortByCategory": "Toifa",
+  "sortByNewest": "Eng yangilari"
 }
