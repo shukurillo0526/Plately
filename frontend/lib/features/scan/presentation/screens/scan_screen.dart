@@ -1736,9 +1736,15 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      final msg = e.toString().contains('warming up') || e.toString().contains('Timeout')
-          ? (l10n?.recognitionFailed ?? 'Server is warming up from sleep. Please try again in a few seconds!')
-          : (l10n?.recognitionFailed ?? 'Could not analyze photo. Please try a clearer photo with food visible.');
+      final errStr = e.toString();
+      final String msg;
+      if (errStr.contains('warming up') || errStr.contains('Timeout') || errStr.contains('timed out')) {
+        msg = 'Server is warming up or timed out. Please try again in a few seconds!';
+      } else if (errStr.contains('File must be an image')) {
+        msg = 'Invalid image format. Please select a valid photo.';
+      } else {
+        msg = l10n?.recognitionFailed ?? 'Could not analyze photo. Please try a clearer photo with food visible.';
+      }
       setState(() {
         _analyzing = false;
         _errorMessage = msg;

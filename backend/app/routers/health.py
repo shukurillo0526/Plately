@@ -15,7 +15,7 @@ import time
 from datetime import datetime, timezone
 from fastapi import APIRouter
 
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("plately.health")

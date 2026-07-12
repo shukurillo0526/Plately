@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 from app.services.youtube_intelligence import extract_recipe_from_youtube
 from app.services.static_substitutes import get_static_substitute
 from app.services.ai_cache import get_ai_cache

@@ -16,7 +16,7 @@ from typing import Optional, List
 from app.core.auth import CurrentUser, require_user_id
 from app.core.security import raise_internal_error, validate_image_upload, sanitize_search_query
 from app.db.supabase_client import get_supabase
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 
 logger = logging.getLogger("plately.calories")
 
@@ -84,9 +84,10 @@ async def analyze_image_calories(current: CurrentUser, file: UploadFile = File(.
             item["source"] = "ai_estimate"
 
         return result
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[Calories] Plate vision analysis failed: {e}")
-        return {"status": "no_food_detected", "items": [], "total_estimated_calories": 0}
+        raise_internal_error(logger, "[Calories] Plate vision analysis failed", e)
 
 
 

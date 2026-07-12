@@ -16,7 +16,7 @@ The service is called when:
 import logging
 from datetime import date, timedelta
 from typing import Optional
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 
 logger = logging.getLogger("plately.expiry")
 

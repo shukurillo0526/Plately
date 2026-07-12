@@ -12,7 +12,7 @@ from typing import List
 
 from app.core.auth import CurrentUser
 from app.core.security import raise_internal_error
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 

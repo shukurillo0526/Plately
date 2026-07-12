@@ -20,7 +20,7 @@ from app.routers import (
     recommendations, health, chat, notifications, orders,
     feedback,
 )
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 from app.core.auth import CurrentUser
 from app.middleware.request_middleware import RequestIdMiddleware, InputValidationMiddleware
 from app.middleware.error_handlers import register_error_handlers

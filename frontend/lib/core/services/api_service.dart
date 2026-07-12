@@ -314,14 +314,20 @@ class ApiService {
   Future<Map<String, dynamic>> analyzeCaloriesImage(List<int> imageBytes, String filename) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/calories/analyze-image');
     final request = http.MultipartRequest('POST', uri);
-    // Add auth header to multipart request
+    // Add auth and accept headers to multipart request
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
       request.headers['Authorization'] = 'Bearer ${session.accessToken}';
     }
-    request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
+    request.headers['Accept'] = 'application/json';
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      imageBytes,
+      filename: filename,
+      contentType: MediaType('image', 'jpeg'),
+    ));
     final streamed = await request.send().timeout(
-      const Duration(seconds: 45),
+      const Duration(seconds: 90),
       onTimeout: () => throw Exception('Calorie scanning timed out. Please try again.'),
     );
     final response = await http.Response.fromStream(streamed);
