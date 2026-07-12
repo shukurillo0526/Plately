@@ -58,9 +58,7 @@ class AIService:
 
         try:
             result = json.loads(text)
-            if isinstance(result, list):
-                return {"items": result}
-            return result
+            return self._normalize_parsed_dict(result)
         except json.JSONDecodeError:
             pass
 
@@ -69,7 +67,7 @@ class AIService:
         if start >= 0 and end > start:
             candidate = text[start:end]
             try:
-                return json.loads(candidate)
+                return self._normalize_parsed_dict(json.loads(candidate))
             except json.JSONDecodeError:
                 pass
 
@@ -86,6 +84,26 @@ class AIService:
 
         logger.warning(f"[AIService] Failed to parse JSON ({len(text)} chars): {text[:200]}")
         return {"error": "Failed to parse JSON", "raw_response": text[:500]}
+
+    def _normalize_parsed_dict(self, result: Any) -> Dict[str, Any]:
+        """Normalize JSON output so that any returned list of items under any key is mapped to 'items'."""
+        if isinstance(result, list):
+            return {"items": result}
+        if not isinstance(result, dict):
+            return {"items": []}
+        if "items" not in result or not result["items"]:
+            for key in ["ingredients", "receipt_items", "food_items", "products", "components", "list"]:
+                if key in result and isinstance(result[key], list) and len(result[key]) > 0:
+                    result["items"] = result[key]
+                    break
+            if "items" not in result or not result["items"]:
+                for val in result.values():
+                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], dict):
+                        result["items"] = val
+                        break
+        if "items" not in result:
+            result["items"] = []
+        return result
 
     # ── Text & Vision Generation ─────────────────────────────────
 
