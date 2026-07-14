@@ -2,7 +2,7 @@
 import asyncio, json
 import httpx
 
-async def test():
+async def main():
     client = httpx.AsyncClient(timeout=120.0)
     
     payload = {
@@ -21,4 +21,5 @@ async def test():
     
     await client.aclose()
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(main())

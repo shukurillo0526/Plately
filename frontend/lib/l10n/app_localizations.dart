@@ -2371,6 +2371,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to Shelf'**
   String get reward_backToShelf;
+
+  /// No description provided for @sortByExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry ↑'**
+  String get sortByExpiry;
+
+  /// No description provided for @sortByName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name A-Z'**
+  String get sortByName;
+
+  /// No description provided for @sortByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get sortByCategory;
+
+  /// No description provided for @sortByNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortByNewest;
 }
 
 class _AppLocalizationsDelegate

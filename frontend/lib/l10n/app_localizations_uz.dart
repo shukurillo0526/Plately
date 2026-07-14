@@ -198,7 +198,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String itemsCount(int count) {
-    return '$count elementlari';
+    return '$count ta mahsulot';
   }
 
   @override
@@ -717,7 +717,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String nItemsNeedAttention(String count) {
-    return '$count element(lar)iga e\'tibor kerak';
+    return '$count ta mahsulot e\'tibor talab qiladi';
   }
 
   @override
@@ -1273,6 +1273,18 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get reward_backToShelf => 'Javonga qaytish';
+
+  @override
+  String get sortByExpiry => 'Muddati ↑';
+
+  @override
+  String get sortByName => 'Nomi A-Z';
+
+  @override
+  String get sortByCategory => 'Toifa';
+
+  @override
+  String get sortByNewest => 'Eng yangilari';
 }
 
 /// The translations for Uzbek, using the Cyrillic script (`uz_Cyrl`).

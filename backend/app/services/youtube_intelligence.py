@@ -9,7 +9,7 @@ by parsing the video page metadata directly.
 import logging
 import re
 from typing import Optional
-from app.services.ollama_service import get_ollama_service
+from app.services.ai_service import get_ai_service as get_ollama_service
 
 logger = logging.getLogger("plately.youtube_intelligence")
 

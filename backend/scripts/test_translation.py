@@ -5,7 +5,7 @@ from app.db.supabase_client import get_supabase
 from app.services.translation_service import translate_recipe
 
 
-async def test():
+async def main():
     db = get_supabase()
 
     # Get one recipe
@@ -61,4 +61,4 @@ async def test():
 
 
 if __name__ == "__main__":
-    asyncio.run(test())
+    asyncio.run(main())

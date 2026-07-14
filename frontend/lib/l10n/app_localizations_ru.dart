@@ -1269,4 +1269,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reward_backToShelf => 'Вернуться к полке';
+
+  @override
+  String get sortByExpiry => 'Expiry ↑';
+
+  @override
+  String get sortByName => 'Name A-Z';
+
+  @override
+  String get sortByCategory => 'Category';
+
+  @override
+  String get sortByNewest => 'Newest first';
 }

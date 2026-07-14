@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:plately_app/core/utils/ingredient_icons.dart';
 import 'package:plately_app/features/shelf/domain/inventory_item.dart';
 import 'package:plately_app/features/shelf/presentation/widgets/freshness_overlay.dart';
+import 'package:plately_app/features/shelf/domain/inventory_analytics_service.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,10 +72,36 @@ class InventoryItemCard extends StatelessWidget {
                     ),
                   );
                 }
-                return false; // snap back
+                return false;
               }
 
-              // Use selectedQty / Eat Leftover portions via RPC
+              if (item.daysUntilExpiry < 0) {
+                final action = await _showExpiredHumorDialog(context);
+                if (action == 'throw_out') {
+                  await InventoryAnalyticsService.logEvent(
+                    itemId: item.id,
+                    itemName: item.name,
+                    quantity: selectedQty,
+                    unit: item.unit,
+                    isExpired: true,
+                    thrownOut: true,
+                  );
+                  await _performDiscard(selectedQty);
+                  return true;
+                } else if (action != 'eat_anyway') {
+                  return false;
+                }
+              }
+
+              await InventoryAnalyticsService.logEvent(
+                itemId: item.id,
+                itemName: item.name,
+                quantity: selectedQty,
+                unit: item.unit,
+                isExpired: item.daysUntilExpiry < 0,
+                thrownOut: false,
+              );
+
               try {
                 if (item.isCookedLeftover) {
                   for (int i = 0; i < selectedQty.round(); i++) {
@@ -107,7 +134,7 @@ class InventoryItemCard extends StatelessWidget {
                     );
                   }
                 }
-                return false; // Snap back, UI updates from realtime stream
+                return false;
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -117,55 +144,24 @@ class InventoryItemCard extends StatelessWidget {
                 return false;
               }
             } else {
-              // Discard Dialog
               final selectedQty = await _showDiscardDialog(context);
               if (selectedQty == null || selectedQty <= 0) return false;
 
               if (isTutorial) {
                 final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
-                return selectedQty >= maxQty; // slide away if fully discarded, else snap back
+                return selectedQty >= maxQty;
               }
 
-              try {
-                if (item.isCookedLeftover) {
-                  final newPortions = item.portionsCount - selectedQty.round();
-                  if (newPortions <= 0) {
-                    await Supabase.instance.client
-                        .from('inventory_items')
-                        .delete()
-                        .eq('id', item.id);
-                    return true; // slide away
-                  } else {
-                    await Supabase.instance.client
-                        .from('inventory_items')
-                        .update({'portions_count': newPortions})
-                        .eq('id', item.id);
-                    return false; // snap back and update quantity
-                  }
-                } else {
-                  final newQty = item.quantity - selectedQty;
-                  if (newQty <= 0) {
-                    await Supabase.instance.client
-                        .from('inventory_items')
-                        .delete()
-                        .eq('id', item.id);
-                    return true; // slide away
-                  } else {
-                    await Supabase.instance.client
-                        .from('inventory_items')
-                        .update({'quantity': newQty})
-                        .eq('id', item.id);
-                    return false; // snap back and update quantity
-                  }
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error discarding item: $e')),
-                  );
-                }
-                return false;
-              }
+              await InventoryAnalyticsService.logEvent(
+                itemId: item.id,
+                itemName: item.name,
+                quantity: selectedQty,
+                unit: item.unit,
+                isExpired: item.daysUntilExpiry < 0,
+                thrownOut: true,
+              );
+
+              return await _performDiscard(selectedQty);
             }
           },
           child: Stack(
@@ -373,13 +369,204 @@ class InventoryItemCard extends StatelessWidget {
     }
   }
 
+  Future<bool> _performDiscard(double selectedQty) async {
+    try {
+      if (item.isCookedLeftover) {
+        final newPortions = item.portionsCount - selectedQty.round();
+        if (newPortions <= 0) {
+          await Supabase.instance.client
+              .from('inventory_items')
+              .delete()
+              .eq('id', item.id);
+          return true;
+        } else {
+          await Supabase.instance.client
+              .from('inventory_items')
+              .update({'portions_count': newPortions})
+              .eq('id', item.id);
+          return false;
+        }
+      } else {
+        final newQty = item.quantity - selectedQty;
+        if (newQty <= 0) {
+          await Supabase.instance.client
+              .from('inventory_items')
+              .delete()
+              .eq('id', item.id);
+          return true;
+        } else {
+          await Supabase.instance.client
+              .from('inventory_items')
+              .update({'quantity': newQty})
+              .eq('id', item.id);
+          return false;
+        }
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static const List<Map<String, String>> _expiredQuotes = [
+    {
+      'uz': 'Tushlik qilmoqchimisiz yoki yangi pandemiya boshlamoqchimisiz? 🦠',
+      'en': 'Are you trying to eat lunch, or start a new pandemic? 🦠',
+    },
+    {
+      'uz': 'Bu mahsulot ba\'zi munosabatlaringizdan ham qadimiyroq. Yaxshisi tashlab yuboring! 🦖',
+      'en': 'That food is older than some of your relationships. Throw it out. 🦖',
+    },
+    {
+      'uz': 'Oddiy ovqat yeyapmizmi yoki biologik tajriba o\'tkazyapmizmi? 🧪',
+      'en': 'Are we eating leftovers, or are we conducting a biology experiment? 🧪',
+    },
+    {
+      'uz': 'Buni yegan odamga temir oshqozon kerak. Oshqozoningizga rahmingiz kelsin! ☣️',
+      'en': 'You need a stomach of steel for this. Pity your poor tummy! ☣️',
+    },
+  ];
+
+  Future<String?> _showExpiredHumorDialog(BuildContext context) async {
+    final uz = Localizations.localeOf(context).languageCode == 'uz';
+    final quote = _expiredQuotes[DateTime.now().millisecondsSinceEpoch % _expiredQuotes.length][uz ? 'uz' : 'en']!;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Text('🧪', style: TextStyle(fontSize: 26)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                uz ? 'Biologik tajriba?' : 'Expired Food Alert!',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              quote,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.analytics_outlined, color: Theme.of(context).colorScheme.error, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      uz
+                          ? 'Ushbu qaror "Oshqozon og\'rig\'i xavfi" yoki "Oziq-ovqat isrofi" analitikasiga yoziladi.'
+                          : 'Logged to "Tummy Hurt Risk" or "Food Waste" metrics.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'throw_out'),
+            icon: const Icon(Icons.delete_outline, color: Colors.green),
+            label: Text(
+              uz ? 'Tashlab yuborish (Oqilona!)' : 'Throw Out (Wise Choice)',
+              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'eat_anyway'),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            icon: const Icon(Icons.warning_amber_rounded, size: 18),
+            label: Text(
+              uz ? 'Bari bir yeyman (Tavakkal!)' : 'Eat Anyway (Risk it!)',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double get _stepSize {
+    final u = item.unit.toLowerCase();
+    if (u == 'g' || u == 'ml') return 10.0;
+    if (u == 'kg' || u == 'l') return 0.1;
+    return 1.0;
+  }
+
+  void _showQuantityEditDialog(BuildContext context, double currentVal, String unit, Function(double) onSaved) {
+    final ctrl = TextEditingController(
+      text: currentVal == currentVal.roundToDouble()
+          ? currentVal.round().toString()
+          : currentVal.toStringAsFixed(1),
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          Localizations.localeOf(context).languageCode == 'uz' ? 'Miqdorni kiritish' : 'Enter Quantity',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          autofocus: true,
+          decoration: InputDecoration(
+            suffixText: unit,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)?.auto_cancel ?? 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final val = double.tryParse(ctrl.text.replaceAll(',', '.'));
+              if (val != null && val > 0) {
+                onSaved(val);
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text(Localizations.localeOf(context).languageCode == 'uz' ? 'Saqlash' : 'Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<double?> _showConsumeDialog(BuildContext context) async {
     double selectedQty = item.isCookedLeftover ? 1.0 : 1.0;
     if (!item.isCookedLeftover && item.quantity < 1.0) {
       selectedQty = item.quantity;
     }
     final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
-    final step = item.isCookedLeftover ? 1.0 : (item.unit == 'pcs' ? 1.0 : 0.1);
+    final step = item.isCookedLeftover ? 1.0 : _stepSize;
 
     return showDialog<double>(
       context: context,
@@ -398,37 +585,73 @@ class InventoryItemCard extends StatelessWidget {
                 children: [
                   Text(
                     'How much are you consuming? (Max: ${item.isCookedLeftover ? "${item.portionsCount} portions" : "${item.quantity.toStringAsFixed(1)} ${item.unit}"})',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        fontSize: 13),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         onPressed: selectedQty <= step
                             ? null
-                            : () => setDialogState(() => selectedQty -= step),
-                        icon: const Icon(Icons.remove_circle_outline, size: 36),
+                            : () => setDialogState(
+                                () => selectedQty = (selectedQty - step).clamp(0.1, maxQty)),
+                        icon: const Icon(Icons.remove_circle_outline, size: 34),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          item.isCookedLeftover
-                              ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
-                              : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      GestureDetector(
+                        onTap: () {
+                          _showQuantityEditDialog(
+                            context,
+                            selectedQty,
+                            item.isCookedLeftover ? 'portions' : item.unit,
+                            (val) => setDialogState(() => selectedQty = val.clamp(0.1, maxQty)),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item.isCookedLeftover
+                                    ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
+                                    : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(Icons.edit_outlined,
+                                  size: 16, color: Theme.of(context).colorScheme.primary),
+                            ],
+                          ),
                         ),
                       ),
                       IconButton(
                         onPressed: selectedQty + step > maxQty
                             ? null
-                            : () => setDialogState(() => selectedQty += step),
-                        icon: const Icon(Icons.add_circle_outline, size: 36),
+                            : () => setDialogState(
+                                () => selectedQty = (selectedQty + step).clamp(0.1, maxQty)),
+                        icon: const Icon(Icons.add_circle_outline, size: 34),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _dialogPortionChip(context, '25%', maxQty * 0.25, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '50%', maxQty * 0.50, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '75%', maxQty * 0.75, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '100%', maxQty, (v) => setDialogState(() => selectedQty = v)),
                     ],
                   ),
                 ],
@@ -456,7 +679,7 @@ class InventoryItemCard extends StatelessWidget {
       selectedQty = item.quantity;
     }
     final maxQty = item.isCookedLeftover ? item.portionsCount.toDouble() : item.quantity;
-    final step = item.isCookedLeftover ? 1.0 : (item.unit == 'pcs' ? 1.0 : 0.1);
+    final step = item.isCookedLeftover ? 1.0 : _stepSize;
 
     return showDialog<double>(
       context: context,
@@ -481,37 +704,71 @@ class InventoryItemCard extends StatelessWidget {
                 children: [
                   Text(
                     'Are you sure you want to throw away this item? How much are you throwing away?',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontSize: 14),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                        fontSize: 14),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         onPressed: selectedQty <= step
                             ? null
-                            : () => setDialogState(() => selectedQty -= step),
-                        icon: const Icon(Icons.remove_circle_outline, size: 36),
+                            : () => setDialogState(
+                                () => selectedQty = (selectedQty - step).clamp(0.1, maxQty)),
+                        icon: const Icon(Icons.remove_circle_outline, size: 34),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          item.isCookedLeftover
-                              ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
-                              : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      GestureDetector(
+                        onTap: () {
+                          _showQuantityEditDialog(
+                            context,
+                            selectedQty,
+                            item.isCookedLeftover ? 'portions' : item.unit,
+                            (val) => setDialogState(() => selectedQty = val.clamp(0.1, maxQty)),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.redAccent.withValues(alpha: 0.08),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item.isCookedLeftover
+                                    ? '${selectedQty.round()} portion${selectedQty.round() > 1 ? "s" : ""}'
+                                    : '${selectedQty.toStringAsFixed(selectedQty == selectedQty.roundToDouble() ? 0 : 1)} ${item.unit}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.edit_outlined, size: 16, color: Colors.redAccent),
+                            ],
+                          ),
                         ),
                       ),
                       IconButton(
                         onPressed: selectedQty + step > maxQty
                             ? null
-                            : () => setDialogState(() => selectedQty += step),
-                        icon: const Icon(Icons.add_circle_outline, size: 36),
+                            : () => setDialogState(
+                                () => selectedQty = (selectedQty + step).clamp(0.1, maxQty)),
+                        icon: const Icon(Icons.add_circle_outline, size: 34),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _dialogPortionChip(context, '25%', maxQty * 0.25, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '50%', maxQty * 0.50, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '75%', maxQty * 0.75, (v) => setDialogState(() => selectedQty = v)),
+                      const SizedBox(width: 6),
+                      _dialogPortionChip(context, '100%', maxQty, (v) => setDialogState(() => selectedQty = v)),
                     ],
                   ),
                 ],
@@ -534,4 +791,34 @@ class InventoryItemCard extends StatelessWidget {
     );
   }
 
+  Widget _dialogPortionChip(BuildContext context, String label, double targetVal, Function(double) onSelected) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          final rounded = targetVal < 1 ? double.parse(targetVal.toStringAsFixed(1)) : targetVal.roundToDouble();
+          onSelected(rounded.clamp(0.1, double.infinity));
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
