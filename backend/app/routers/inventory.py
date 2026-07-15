@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
-from app.core.auth import CurrentUser, require_user_id, verify_inventory_ownership
+from app.core.auth import CurrentUser, OptionalUser, require_user_id, verify_inventory_ownership
 from app.core.security import raise_internal_error, sanitize_search_query, validate_image_upload
 from app.db.supabase_client import get_supabase
 from slowapi import Limiter
@@ -185,7 +185,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
 
 
 @router.get("/api/v1/ingredients/search")
-async def search_ingredients(q: str, current: CurrentUser, limit: int = 8):
+async def search_ingredients(q: str, current: OptionalUser = None, limit: int = 8):
     """
     Search ingredients by name across all supported languages.
     Searches: EN, KO, UZ (Latin), UZ (Cyrillic), RU, and canonical_name.
@@ -217,7 +217,7 @@ async def search_ingredients(q: str, current: CurrentUser, limit: int = 8):
 
 
 @router.get("/api/v1/ingredients/fuzzy")
-async def fuzzy_search_ingredients(q: str, current: CurrentUser, limit: int = 5):
+async def fuzzy_search_ingredients(q: str, current: OptionalUser = None, limit: int = 5):
     """
     Fuzzy search ingredients using PostgreSQL pg_trgm similarity.
     Returns results ranked by best match across all language columns.

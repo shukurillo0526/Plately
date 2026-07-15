@@ -73,7 +73,24 @@ async def get_current_user(
         ) from exc
 
 
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> AuthenticatedUser | None:
+    """Return AuthenticatedUser if valid token is provided, else None."""
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        response = _get_auth_client().auth.get_user(credentials.credentials)
+        user = response.user
+        if user is None:
+            return None
+        return AuthenticatedUser(id=str(user.id), email=user.email)
+    except Exception:
+        return None
+
+
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
+OptionalUser = Annotated[AuthenticatedUser | None, Depends(get_optional_user)]
 
 
 def require_user_id(current: AuthenticatedUser, claimed_user_id: str) -> None:

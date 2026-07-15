@@ -17,7 +17,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core.auth import CurrentUser, require_user_id
+from app.core.auth import CurrentUser, OptionalUser, require_user_id
 from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 
@@ -134,13 +134,13 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
 
 # ── GET  /api/v1/feedback/recipe/{recipe_id}/sentiment ───────────
 @router.get("/api/v1/feedback/recipe/{recipe_id}/sentiment")
-async def get_recipe_sentiment(recipe_id: str, current: CurrentUser):
+async def get_recipe_sentiment(recipe_id: str, current: OptionalUser = None):
     """
     Return aggregated thumbs-up / thumbs-down counts for a recipe.
     Also includes the authenticated user's existing vote.
     """
     try:
-        user_id = current.id
+        user_id = current.id if current else None
         supabase = get_supabase()
 
         # Fetch all sentiment rows for this recipe
