@@ -58,7 +58,11 @@ class Settings(BaseSettings):
 
     def cors_origins_list(self) -> list[str]:
         """Return allowed browser origins. Localhost is included only in DEBUG."""
-        origins: list[str] = []
+        origins: list[str] = [
+            "https://app.theplately.com",
+            "https://theplately.com",
+            "https://shukurillo0526.github.io",
+        ]
         if self.CORS_ORIGINS:
             origins.extend(
                 origin.strip()
