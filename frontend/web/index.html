@@ -131,6 +131,16 @@
       measurementId: "G-YPNSZJ9H9T"
     });
   </script>
+  <script>
+    window._flutter = window._flutter || {};
+    window._flutter.didCreateEngineInitializer = async function(engineInitializer) {
+      console.log("Plately: engineInitializer ready, initializing engine...");
+      const appRunner = await engineInitializer.initializeEngine();
+      console.log("Plately: engine initialized, running app...");
+      await appRunner.runApp();
+      console.log("Plately: app running successfully!");
+    };
+  </script>
   <script src="flutter_bootstrap.js" async=""></script>
 
 
