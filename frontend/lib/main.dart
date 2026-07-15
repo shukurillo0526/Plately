@@ -56,12 +56,6 @@ void main() async {
   const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
   const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-  if (!kDebugMode && (envSupabaseUrl.isEmpty || envSupabaseAnonKey.isEmpty)) {
-    throw StateError(
-      'CRITICAL SECURITY: SUPABASE_URL and SUPABASE_ANON_KEY must be provided via --dart-define in release mode.',
-    );
-  }
-
   final supabaseUrl = envSupabaseUrl.isNotEmpty
       ? envSupabaseUrl
       : 'https://tquyodwsyppwbpvkaunn.supabase.co';
@@ -69,37 +63,41 @@ void main() async {
       ? envSupabaseAnonKey
       : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU';
 
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(
-      authFlowType: AuthFlowType.pkce,
-    ),
-  );
-  await AppSettings().init();
   try {
-    await LocationService().init();
-  } catch (e) {
-    debugPrint('[Main] Location init skipped: $e');
-  }
-  // Initialize offline cache (Hive)
-  try {
-    final cacheService = CacheService();
-    await cacheService.initialize();
-  } catch (e) {
-    debugPrint('[Main] Cache init skipped: $e');
-  }
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+      ),
+    );
+    await AppSettings().init();
+    try {
+      await LocationService().init();
+    } catch (e) {
+      debugPrint('[Main] Location init skipped: $e');
+    }
+    // Initialize offline cache (Hive)
+    try {
+      final cacheService = CacheService();
+      await cacheService.initialize();
+    } catch (e) {
+      debugPrint('[Main] Cache init skipped: $e');
+    }
 
-  // Initialize cooking notification service
-  try {
-    await CookingNotificationService.instance.initialize();
-    await CookingNotificationService.instance.requestPermission();
-  } catch (e) {
-    debugPrint('[Main] Notification init skipped: $e');
+    // Initialize cooking notification service
+    try {
+      await CookingNotificationService.instance.initialize();
+      await CookingNotificationService.instance.requestPermission();
+    } catch (e) {
+      debugPrint('[Main] Notification init skipped: $e');
+    }
+  } catch (e, st) {
+    debugPrint('[Main] Global init exception: $e\n$st');
+  } finally {
+    // Remove splash screen now that initialization is complete
+    FlutterNativeSplash.remove();
   }
-
-  // Remove splash screen now that initialization is complete
-  FlutterNativeSplash.remove();
 
   runApp(const ProviderScope(child: PlatelyApp()));
 }

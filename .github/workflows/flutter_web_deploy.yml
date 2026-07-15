@@ -30,7 +30,7 @@ jobs:
         run: |
           cd frontend
           flutter pub get
-          flutter build web --base-href /
+          flutter build web --base-href / --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL || 'https://tquyodwsyppwbpvkaunn.supabase.co' }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU' }}"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
