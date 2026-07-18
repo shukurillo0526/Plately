@@ -6,7 +6,6 @@
 
 import 'dart:async';
 import 'package:plately_app/core/services/location_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:plately_app/core/theme/app_theme.dart';
@@ -29,6 +28,7 @@ import 'package:plately_app/features/order/presentation/screens/order_feeds_scre
 
 // Auth
 import 'package:plately_app/features/auth/presentation/screens/auth_screen.dart';
+import 'package:plately_app/features/onboarding/presentation/screens/plately_splash_screen.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -198,13 +198,25 @@ class _AuthGate extends StatefulWidget {
 class _AuthGateState extends State<_AuthGate> {
   bool? _onboardingComplete;
   StreamSubscription<AuthState>? _authSubscription;
+  bool _splashFinished = false;
+  late Future<void> _initialLoadingFuture;
 
   @override
   void initState() {
     super.initState();
-    _checkOnboarding();
+    _initialLoadingFuture = _checkOnboardingAndDatabase();
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
       final session = data.session;
+
+      if (event == AuthChangeEvent.passwordRecovery) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showPasswordRecoveryDialog(context);
+          }
+        });
+      }
+
       if (session != null && _onboardingComplete == false) {
         _checkDatabaseOnboarding(session.user.id);
       }
@@ -217,11 +229,27 @@ class _AuthGateState extends State<_AuthGate> {
     super.dispose();
   }
 
-  Future<void> _checkOnboarding() async {
+  Future<void> _checkOnboardingAndDatabase() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
-    });
+    final complete = prefs.getBool('onboarding_complete') ?? false;
+    if (!complete) {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        await _checkDatabaseOnboarding(session.user.id);
+      } else {
+        if (mounted) {
+          setState(() {
+            _onboardingComplete = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _onboardingComplete = true;
+        });
+      }
+    }
   }
 
   Future<void> _checkDatabaseOnboarding(String userId) async {
@@ -243,15 +271,220 @@ class _AuthGateState extends State<_AuthGate> {
               _onboardingComplete = true;
             });
           }
+        } else {
+          if (mounted && _onboardingComplete == null) {
+            setState(() {
+              _onboardingComplete = false;
+            });
+          }
+        }
+      } else {
+        if (mounted && _onboardingComplete == null) {
+          setState(() {
+            _onboardingComplete = false;
+          });
         }
       }
     } catch (e) {
       debugPrint('[AuthGate] Failed to check database onboarding: $e');
+      if (mounted && _onboardingComplete == null) {
+        setState(() {
+          _onboardingComplete = false;
+        });
+      }
     }
+  }
+
+  void _showPasswordRecoveryDialog(BuildContext rootContext) {
+    final passwordController = TextEditingController();
+    final confirmController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+    String? errorMsg;
+
+    showDialog(
+      context: rootContext,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (statefulContext, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E232A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            title: const Text(
+              'Reset Your Password',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enter and confirm your new password below.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.3),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFFF6B00)),
+                        ),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.length < 6) {
+                          return 'Must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: confirmController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Confirm New Password',
+                        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.3),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFFF6B00)),
+                        ),
+                      ),
+                      validator: (val) {
+                        if (val != passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (errorMsg != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        errorMsg!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() {
+                          saving = true;
+                          errorMsg = null;
+                        });
+                        try {
+                          await Supabase.instance.client.auth.updateUser(
+                            UserAttributes(password: passwordController.text.trim()),
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                          if (rootContext.mounted) {
+                            ScaffoldMessenger.of(rootContext).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password updated successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (dialogContext.mounted) {
+                            setDialogState(() {
+                              saving = false;
+                              errorMsg = 'Failed to update password: ${e.toString()}';
+                            });
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6B00),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Save Password', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_splashFinished) {
+      return PlatelySplashScreen(
+        loadingFuture: _initialLoadingFuture,
+        onFinish: () {
+          if (mounted) {
+            setState(() => _splashFinished = true);
+          }
+        },
+      );
+    }
+
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
@@ -319,25 +552,6 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     ),
   ];
 
-  // ── Order mode nav items ───────────────────────────
-  List<NavItem> _orderNavItems(AppLocalizations? l10n) => [
-    NavItem(
-      icon: Icons.storefront_outlined,
-      activeIcon: Icons.storefront,
-      label: 'Order',
-    ),
-    NavItem(
-      icon: Icons.play_circle_outline,
-      activeIcon: Icons.play_circle_filled,
-      label: 'Feeds',
-      isCenter: true,
-    ),
-    NavItem(
-      icon: Icons.grid_view_outlined,
-      activeIcon: Icons.grid_view,
-      label: 'Manage',
-    ),
-  ];
 
   @override
   void initState() {
@@ -391,7 +605,6 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    const isCook = true; // MVP: Always force Cook mode
     final screens = _cookScreens;
     final navItems = _cookNavItems(l10n);
 
@@ -482,7 +695,6 @@ class _ModeSwitchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Container(

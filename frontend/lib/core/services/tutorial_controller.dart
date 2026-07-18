@@ -31,8 +31,8 @@ class TutorialController extends Notifier<TutorialState> {
     // We check if the tutorial has been completed.
     final completed = await TutorialService().isCompleted(TutorialService.homeWalkthrough);
     if (!completed) {
-      // If not completed, we automatically trigger the welcome dialog on first launch.
-      state = TutorialState.welcome;
+      // If not completed, start directly at the tutorial steps without the initial welcome popup.
+      state = TutorialState.shelfIntro;
     }
   }
 
@@ -61,7 +61,7 @@ class TutorialController extends Notifier<TutorialState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_skippedKey);
     await TutorialService().reset(TutorialService.homeWalkthrough);
-    state = TutorialState.welcome;
+    state = TutorialState.shelfIntro;
   }
 
   /// Check if the tutorial was previously skipped by the user.

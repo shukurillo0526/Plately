@@ -884,4 +884,27 @@ This release hardens all three AI Vision Scanners (`Scan Receipt`, `Scan Food`, 
 - **Verification**:
   - Verified across 52 automated regression tests (`pytest tests/`).
 
+---
+
+# 🚀 v0.1.10 — Bulk Meal Prep Hardening & Tutorial Streamlining
+
+This release resolves critical bulk meal prep generation bottlenecks, hardens the multi-recipe prep session flow against empty states and out-of-bounds crashes, and streamlines the onboarding tour experience.
+
+### Highlights
+- **Bulk Cooking / Meal Prep Token & Prompt Hardening**:
+  - Raised default output token limit from `2048` to `8192` across `ai_service.py` and `meal_prep.py` to support comprehensive multi-day meal prep JSON plans without truncation.
+  - Optimized the AI generation prompt (`/api/v1/meal-prep/generate`) for true batch cooking by requesting exactly `min(req.days + 2, 7)` high-yield batch prep recipes (each yielding 3–5 portions) with concise steps. This ensures fast (~10s) generation while covering all requested meals.
+  - Added auto-recovery fallback logic inside `_parse_json_response` (`ai_service.py`) to salvage partial JSON structures if token limits are encountered.
+- **Frontend Meal Prep Safety & Crash Prevention**:
+  - **Pre-Sheet Guard (`cook_screen.dart`)**: Intercepts backend errors (`status == 'error'` or empty `recipes`) and displays a clean red `SnackBar` alert instead of popping up an empty review sheet.
+  - **Review Sheet (`meal_prep_plan_sheet.dart`)**: Displays a dedicated empty state warning (`No recipes found for this plan`) and disables the **Start Prep Session** button when `recipes` is empty. Guarded `_startPrep()` with early return.
+  - **Session Crash Guard (`prep_session_screen.dart`)**: Added defensive empty bounds checks inside `PrepSessionScreen.build()` to prevent `RangeError (length): Invalid value: Valid value range is empty: 0` when zero recipes are loaded.
+- **Streamlined Interactive Tour (`tutorial_controller.dart`)**:
+  - Removed the intermediate invitation popup card (`TutorialState.welcome`) immediately after login, transitioning users directly into the step-by-step interactive walkthrough (`TutorialState.shelfIntro`).
+- **Branding & UI Consistency**:
+  - Replaced legacy placeholder emojis with the authentic round Plately logo asset across `auth_screen.dart`.
+- **Verification**:
+  - All flutter analysis and python syntax checks pass cleanly.
+
+
 

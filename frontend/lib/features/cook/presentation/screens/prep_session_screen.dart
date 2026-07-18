@@ -173,6 +173,29 @@ class _PrepSessionScreenState extends ConsumerState<PrepSessionScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.recipes.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.planTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.restaurant_menu, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('No recipes found in this prep session.', style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 

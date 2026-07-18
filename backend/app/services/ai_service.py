@@ -82,6 +82,22 @@ class AIService:
             except json.JSONDecodeError:
                 pass
 
+        # Fallback recovery for truncated JSON (cut off due to token limits)
+        start = text.find("{")
+        if start >= 0:
+            candidate = text[start:]
+            # Try cutting back to the last complete object or array element and closing brackets
+            for last_sep in [candidate.rfind("},"), candidate.rfind("]}"), candidate.rfind("}")]:
+                if last_sep > 0:
+                    for suffix in ["}", "]}", "]}}"]:
+                        try:
+                            recovered = candidate[:last_sep+1] if candidate[last_sep] == "}" else candidate[:last_sep]
+                            if recovered.endswith(","):
+                                recovered = recovered[:-1]
+                            return self._normalize_parsed_dict(json.loads(recovered + suffix))
+                        except (json.JSONDecodeError, Exception):
+                            pass
+
         logger.warning(f"[AIService] Failed to parse JSON ({len(text)} chars): {text[:200]}")
         return {"error": "Failed to parse JSON", "raw_response": text[:500]}
 
@@ -150,7 +166,7 @@ class AIService:
         model: Optional[str] = None,
         system_prompt: Optional[str] = None,
         temperature: float = 0.3,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
     ) -> Dict[str, Any]:
         """Generate text and parse structured JSON response."""
         raw = await self.generate_text(

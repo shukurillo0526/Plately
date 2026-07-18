@@ -816,6 +816,17 @@ class _CookScreenState extends ConsumerState<CookScreen>
         Navigator.of(context).pop(); // Close loading dialog
 
         final data = result['data'] as Map<String, dynamic>? ?? {};
+        final recipes = (data['recipes'] as List?) ?? [];
+        if (result['status'] == 'error' || data.containsKey('error') || recipes.isEmpty) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['error']?.toString() ?? 'Could not generate meal prep plan. Please try again with fewer days or different constraints.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          return;
+        }
 
         // Show meal prep plan review sheet
         if (!context.mounted) return;

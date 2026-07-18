@@ -1,6 +1,6 @@
 // Plately — Auth Screen
 // =====================
-// Localized login screen with language picker, Google OAuth, and Guest login.
+// Localized login screen with language picker and Google OAuth.
 // Uses a unified "Continue" flow that auto-detects sign-in vs sign-up
 // to eliminate user confusion between the two modes.
 // Uses Supabase Auth for all flows.
@@ -89,6 +89,13 @@ class _AuthScreenState extends State<AuthScreen>
           if (lang == 'ru') return 'Этот email уже зарегистрирован.';
           if (lang == 'ko') return '이미 등록된 이메일입니다.';
           return 'This email is already registered.';
+        }
+        if (lower.contains('rate limit') || lower.contains('too many requests') || lower.contains('security purposes') || lower.contains('once every')) {
+          if (lang == 'uz' && script == 'Cyrl') return 'Сўровлар жуда кўп. Илтимос, бир оз кутиб қайта уриниб кўринг.';
+          if (lang == 'uz') return "So'rovlar juda ko'p. Iltimos, bir oz kutib qayta urinib ko'ring.";
+          if (lang == 'ru') return 'Слишком много запросов. Пожалуйста, подождите немного перед следующей попыткой.';
+          if (lang == 'ko') return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+          return 'Too many requests. Please wait a moment before trying again.';
         }
         return errorType;
     }
@@ -210,6 +217,10 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         );
       }
+    } on AuthException catch (e) {
+      if (mounted) {
+        setState(() => _error = _localizeError(e.message));
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = 'Failed to send reset email. Please try again.');
@@ -237,12 +248,7 @@ class _AuthScreenState extends State<AuthScreen>
           serverClientId: '194605188460-5dd926tsovdm29mc23enqqdupbnkcaf7.apps.googleusercontent.com',
         );
         final googleUser = await googleSignIn.authenticate();
-        if (googleUser == null) {
-          // User cancelled
-          if (mounted) setState(() => _loading = false);
-          return;
-        }
-        final googleAuth = await googleUser.authentication;
+        final googleAuth = googleUser.authentication;
         final idToken = googleAuth.idToken;
 
         if (idToken == null) {
@@ -262,30 +268,6 @@ class _AuthScreenState extends State<AuthScreen>
         setState(() {
           final l10n = AppLocalizations.of(context);
           _error = l10n?.auth_googleFailed ?? 'Google sign\u2011in failed. Please try again.';
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _signInAsGuest() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      // Each guest gets a unique anonymous UUID in Supabase.
-      // Their data is isolated and can be migrated when they
-      // later sign up with email or Google (via identity linking).
-      await Supabase.instance.client.auth.signInAnonymously();
-
-      // Initialize profile rows for this anonymous user
-      await ensureUserInitialized();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          final l10n = AppLocalizations.of(context);
-          _error = l10n?.auth_guestFailed ?? 'Guest sign‑in failed. Please try email or Google instead.';
           _loading = false;
         });
       }
@@ -429,9 +411,14 @@ class _AuthScreenState extends State<AuthScreen>
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Text('🧊',
-                              style: TextStyle(fontSize: 56)),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/icon/splash_icon.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Icon(Icons.restaurant_menu, color: Colors.white, size: 56),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -543,16 +530,6 @@ class _AuthScreenState extends State<AuthScreen>
                       onPressed: _loading ? null : _signInWithGoogle,
                       icon: Icons.g_mobiledata,
                       label: l10n?.auth_continueGoogle ?? 'Continue with Google',
-                      isPrimary: false,
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // ── Guest ──
-                    _AuthButton(
-                      onPressed: _loading ? null : _signInAsGuest,
-                      icon: Icons.person_outline,
-                      label: l10n?.auth_continueGuest ?? 'Continue as Guest',
                       isPrimary: false,
                     ),
 

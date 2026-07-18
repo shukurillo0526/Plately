@@ -86,7 +86,8 @@ async def generate_meal_prep(request: Request, req: GenerateMealPrepRequest, cur
     if req.available_ingredients:
         ingredients_hint = f"\nAvailable ingredients: {', '.join(req.available_ingredients)}"
 
-    prompt = f"""Create a {req.days}-day meal prep plan with {req.meals_per_day} meals per day ({total_recipes} recipes total).
+    batch_count = min(req.days + 2, 7)
+    prompt = f"""Create a {req.days}-day batch cooking meal prep plan with {req.meals_per_day} meals per day (yielding enough total portions to cover {total_recipes} individual meals).
 {cuisine_hint}
 Target macros per serving:
 - Calories: ~{req.target_calories_per_meal or 500} kcal
@@ -96,11 +97,12 @@ Target macros per serving:
 {ingredients_hint}{shelf_constraint}
 
 CRITICAL RULES:
-1. Optimize for BATCH COOKING: recipes should share base components (same rice, same protein, same roasted vegetables) to minimize prep work
-2. Each recipe should yield 3-5 portions for meal prepping
-3. Include variety across the days but reuse base components efficiently
-4. All recipes must be practical to store in fridge (3-4 days) or freezer (up to 30 days)
-5. Order recipes by cooking efficiency (cook base components first)
+1. Optimize for BATCH COOKING: generate exactly {batch_count} high-yield batch prep recipes where each recipe yields 3 to 5 portions. Together, these {batch_count} batch recipes cover all {total_recipes} meals for the week.
+2. Recipes should share base components (same rice, same protein, same roasted vegetables) to minimize total prep work.
+3. Include variety across the batch dishes (e.g. 2-3 main proteins, 2 sides/grains, 1 breakfast/snack base).
+4. All recipes must be practical to store in fridge (3-4 days) or freezer (up to 30 days).
+5. Order recipes by cooking efficiency (cook base components first).
+6. Keep steps clear and concise (3-5 steps per recipe) so the batch cooking workflow is fast and easy to follow.
 
 Return JSON only:
 {{
@@ -138,7 +140,7 @@ Return JSON only:
 
     try:
         result = await ollama.generate_text_json(
-            prompt, system_prompt=system, model="gemini-2.5-flash"
+            prompt, system_prompt=system, model="gemini-2.5-flash", max_tokens=8192
         )
 
         if "error" in result:

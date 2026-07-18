@@ -50,7 +50,7 @@ class TestRootEndpoint:
         resp = client.get("/")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["version"] == "0.1.9"
+        assert data["version"] == "0.1.10"
         assert "docs" in data
 
     def test_root_has_request_id(self, client):

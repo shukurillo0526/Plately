@@ -1,7 +1,7 @@
 # 🍽️ Plately — Feature Registry
 
 > **Complete catalog of every feature, screen, widget, service, and interaction in the Plately app.**
-> Last updated: 2026-07-11 (v0.1.9)
+> Last updated: 2026-07-19 (v0.1.10)
 
 ---
 
@@ -270,6 +270,32 @@
   - Slide "Eaten" slider → updates leftovers count (`Cooked - Eaten`) and macro summaries
   - Toggle "Store Leftovers" → enables/disables fridge storage
   - Tap "Finish & Log" → executes atomic database transaction (`process_meal_prep`) to deduct ingredients, log nutrition, and optionally create a leftover item on the Shelf
+
+### 2.4 Bulk Cooking & Meal Prep Review Sheet
+- **File:** `lib/features/cook/presentation/widgets/meal_prep_plan_sheet.dart` → `MealPrepPlanSheet`, `_MealPrepPlanSheetState`
+- **Purpose:** Draggable bottom sheet displaying an AI-generated multi-day bulk cooking plan optimized for batch meal prepping.
+- **UI Elements:**
+  - **Plan Header** — Title, estimated total prep time (~X min), and total recipe count badge
+  - **Expandable Shopping List** — Aggregated batch shopping list with categories and quantities across all meals
+  - **Expandable Recipe Cards** — Batch recipes with match badges, macro breakdowns, step counts, and storage tips
+  - **Empty State Guard** — Clear warning illustration (`No recipes found for this plan`) if generation yields empty results
+  - **"Start Prep Session" Button** — CTA to begin multi-recipe batch cooking session (disabled when plan is empty or saving)
+- **Interactions:**
+  - Tap shopping list header → toggles shopping list expansion
+  - Tap recipe card → toggles expanded step-by-step preview and ingredient list
+  - Tap "Start Prep Session" → starts plan via API (`/api/v1/meal-prep/{planId}/start`) and pushes `PrepSessionScreen`
+
+### 2.5 Prep Session & Complete Screens
+- **Files:**
+  - `lib/features/cook/presentation/screens/prep_session_screen.dart` → `PrepSessionScreen`, `_PrepSessionScreenState`
+  - `lib/features/cook/presentation/screens/prep_session_screen.dart` → `PrepSessionCompleteScreen`
+- **Purpose:** Guided multi-recipe batch cooking experience with overall session timers, recipe progression bar, and final summary logging.
+- **UI Elements:**
+  - **Overall Timer Badge** — Live ticking session clock (`H:MM:SS`) in AppBar
+  - **Multi-Recipe Progress Bar** — Step indicators across all batch recipes (`1, 2, 3...` with checkmarks)
+  - **Recipe Overview / Steps** — Interactive step checklists and portion scalers
+  - **Empty State Guard** — Safe fallback screen when launched with `0` recipes (`No recipes found in this prep session`)
+  - **Session Summary Screen (`PrepSessionCompleteScreen`)** — Displays total minutes cooked, portions stored, and macros planned
 
 ---
 

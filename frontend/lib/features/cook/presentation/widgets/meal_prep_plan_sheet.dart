@@ -5,7 +5,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/prep_session_screen.dart';
 import '../../../../core/services/api_service.dart';
 
@@ -31,6 +30,7 @@ class _MealPrepPlanSheetState extends State<MealPrepPlanSheet> {
   String? get _planId => _data['plan_id'] as String?;
 
   Future<void> _startPrep() async {
+    if (_recipes.isEmpty) return;
     // Mark plan as started
     if (_planId != null) {
       try {
@@ -222,11 +222,38 @@ class _MealPrepPlanSheetState extends State<MealPrepPlanSheet> {
                           color: theme.colorScheme.onSurface,
                         )),
                     const SizedBox(height: 8),
-                    ...List.generate(_recipes.length, (i) {
-                      final recipe = _recipes[i] as Map<String, dynamic>;
-                      final expanded = _expandedRecipes.contains(i);
-                      return _recipeCard(i, recipe, expanded, theme, primary);
-                    }),
+                    if (_recipes.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        margin: const EdgeInsets.only(top: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.restaurant_menu, size: 40, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No recipes found for this plan.',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: theme.colorScheme.onSurface),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Please try generating with fewer days or simpler preferences.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ...List.generate(_recipes.length, (i) {
+                        final recipe = _recipes[i] as Map<String, dynamic>;
+                        final expanded = _expandedRecipes.contains(i);
+                        return _recipeCard(i, recipe, expanded, theme, primary);
+                      }),
                   ],
                 ),
               ),
@@ -248,9 +275,9 @@ class _MealPrepPlanSheetState extends State<MealPrepPlanSheet> {
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: _saving ? null : _startPrep,
+                        onPressed: (_saving || _recipes.isEmpty) ? null : _startPrep,
                         icon: const Icon(Icons.play_arrow),
-                        label: const Text('Start Prep Session'),
+                        label: Text(_recipes.isEmpty ? 'No Recipes Available' : 'Start Prep Session'),
                         style: FilledButton.styleFrom(
                           backgroundColor: primary,
                           foregroundColor: Colors.black,

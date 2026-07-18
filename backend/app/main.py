@@ -73,7 +73,7 @@ app = FastAPI(
         "- 📈 **Nutrition**: Calorie analysis and daily tracking\n"
         "- 👤 **User**: Flavor profile auto-learning, engagement tracking\n"
     ),
-    version="0.1.9",
+    version="0.1.10",
     docs_url="/docs" if _settings.DEBUG else None,
     redoc_url="/redoc" if _settings.DEBUG else None,
     openapi_tags=[
