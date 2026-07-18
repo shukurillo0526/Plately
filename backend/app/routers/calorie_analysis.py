@@ -313,7 +313,7 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
             db.table("recipe_ingredients")
             .select(
                 "ingredient_id, quantity, unit, "
-                "ingredients(display_name_en, calories_per_100g, category)"
+                "ingredients(display_name_en, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, category)"
             )
             .eq("recipe_id", recipe_id)
             .execute()
@@ -330,13 +330,19 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
             ing_data = ing.get("ingredients") or {}
             name = ing_data.get("display_name_en", "Unknown")
             cal_per_100g = ing_data.get("calories_per_100g")
+            p_per_100g = ing_data.get("protein_per_100g") or 0
+            c_per_100g = ing_data.get("carbs_per_100g") or 0
+            f_per_100g = ing_data.get("fat_per_100g") or 0
             category = ing_data.get("category", "")
             qty = float(ing.get("quantity", 0)) * scale
             unit = ing.get("unit", "")
 
-            if cal_per_100g and cal_per_100g > 0:
+            if cal_per_100g is not None and cal_per_100g > 0:
                 grams = _unit_to_grams(qty, unit, category)
                 item_cal = round(cal_per_100g * grams / 100)
+                item_p = round(p_per_100g * grams / 100, 1)
+                item_c = round(c_per_100g * grams / 100, 1)
+                item_f = round(f_per_100g * grams / 100, 1)
                 items.append({
                     "name": name,
                     "quantity": round(qty, 2),
@@ -344,9 +350,15 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
                     "grams": round(grams, 1),
                     "calories_per_100g": cal_per_100g,
                     "calories": item_cal,
+                    "protein_g": item_p,
+                    "carbs_g": item_c,
+                    "fat_g": item_f,
                     "source": "database",
                 })
                 total_cal += item_cal
+                total_protein += item_p
+                total_carbs += item_c
+                total_fat += item_f
             else:
                 unknown_items.append({
                     "name": name,
@@ -362,27 +374,30 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
                 item_list = ", ".join(
                     f"{u['quantity']} {u['unit']} {u['name']}" for u in unknown_items
                 )
-                prompt = f"""Estimate calories for these recipe ingredients: {item_list}.
+                prompt = f"""Estimate calories and macronutrients (protein, carbs, fat in grams) for these recipe ingredients: {item_list}.
 Return JSON only:
 {{"items": [{{"name": "...", "calories": 120, "protein_g": 5, "carbs_g": 15, "fat_g": 3}}]}}"""
                 system = "Certified nutritionist. Return only valid JSON."
                 ai_result = await ollama.generate_text_json(
-                    prompt, system_prompt=system, model="gemini-2.5-flash-lite"
+                    prompt, system_prompt=system, model="gemini-2.5-flash"
                 )
                 for ai_item in ai_result.get("items", []):
                     cal = ai_item.get("calories", 0)
+                    p = float(ai_item.get("protein_g", 0))
+                    c = float(ai_item.get("carbs_g", 0))
+                    f = float(ai_item.get("fat_g", 0))
                     items.append({
                         "name": ai_item.get("name", "Unknown"),
                         "calories": cal,
-                        "protein_g": ai_item.get("protein_g", 0),
-                        "carbs_g": ai_item.get("carbs_g", 0),
-                        "fat_g": ai_item.get("fat_g", 0),
+                        "protein_g": p,
+                        "carbs_g": c,
+                        "fat_g": f,
                         "source": "ai_estimate",
                     })
                     total_cal += cal
-                    total_protein += ai_item.get("protein_g", 0)
-                    total_carbs += ai_item.get("carbs_g", 0)
-                    total_fat += ai_item.get("fat_g", 0)
+                    total_protein += p
+                    total_carbs += c
+                    total_fat += f
             except Exception as e:
                 logger.warning(f"[Calories] AI fallback failed: {e}")
 

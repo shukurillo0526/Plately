@@ -41,18 +41,18 @@ BEGIN
             (
                 SELECT COALESCE(
                     COUNT(ri.ingredient_id)::NUMERIC /
-                    NULLIF((SELECT COUNT(*) FROM public.recipe_ingredients WHERE recipe_id = r.id), 0),
+                    NULLIF((SELECT COUNT(*) FROM public.recipe_ingredients ri2 WHERE ri2.recipe_id = r.id), 0),
                     0
                 )
                 FROM public.recipe_ingredients ri
                 WHERE ri.recipe_id = r.id
-                  AND ri.ingredient_id IN (SELECT ingredient_id FROM UserInventory)
+                  AND ri.ingredient_id IN (SELECT ui.ingredient_id FROM UserInventory ui)
             ) AS inventory_match,
             -- Expiry Urgency Score: what fraction uses ingredients expiring within 3 days?
             (
                 SELECT COALESCE(
                     COUNT(ri.ingredient_id)::NUMERIC /
-                    NULLIF((SELECT COUNT(*) FROM public.recipe_ingredients WHERE recipe_id = r.id), 0),
+                    NULLIF((SELECT COUNT(*) FROM public.recipe_ingredients ri3 WHERE ri3.recipe_id = r.id), 0),
                     0
                 )
                 FROM public.recipe_ingredients ri

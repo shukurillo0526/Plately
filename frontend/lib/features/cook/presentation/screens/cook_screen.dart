@@ -281,17 +281,29 @@ class _CookScreenState extends ConsumerState<CookScreen>
         } catch (_) {}
       }
 
-      // Pre-fetch ALL recipe_ingredients in ONE query (avoid N+1)
-      final allRiRows = await client
-          .from('recipe_ingredients')
-          .select('recipe_id, ingredient_id, ingredients(display_name_en, display_name_ko, display_name_uz, display_name_uz_cyrl, display_name_ru)');
+      // Pre-fetch ALL recipe_ingredients in paginated batches (avoid PostgREST 1000 row limit)
+      final List<dynamic> allRiRows = [];
+      int offset = 0;
+      const int batchSize = 1000;
+      while (true) {
+        final batch = await client
+            .from('recipe_ingredients')
+            .select('recipe_id, ingredient_id, ingredients(display_name_en, display_name_ko, display_name_uz, display_name_uz_cyrl, display_name_ru)')
+            .range(offset, offset + batchSize - 1);
+        final batchList = batch as List;
+        allRiRows.addAll(batchList);
+        if (batchList.length < batchSize) break;
+        offset += batchSize;
+      }
 
       // Group by recipe_id
       final Map<String, List<Map<String, dynamic>>> riByRecipe = {};
-      for (final ri in (allRiRows as List)) {
-        final rid = ri['recipe_id'] as String;
+      for (final ri in allRiRows) {
+        if (ri is! Map) continue;
+        final rid = ri['recipe_id'] as String? ?? '';
+        if (rid.isEmpty) continue;
         riByRecipe.putIfAbsent(rid, () => []);
-        riByRecipe[rid]!.add(ri);
+        riByRecipe[rid]!.add(Map<String, dynamic>.from(ri));
       }
 
       if (useDirectQuery) {

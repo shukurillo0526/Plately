@@ -72,10 +72,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   int _dislikes = 0;
   int _userVote = 0; // 1 = liked, -1 = disliked, 0 = no vote
 
+  bool _initialized = false;
+
   @override
   void initState() {
     super.initState();
-    _loadDetails();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.recipeId == 'tutorial-stir-fry') {
         ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.recipeDetail);
@@ -86,6 +87,15 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
       'recipe_id': widget.recipeId,
       'source': 'unknown', // Could be passed as parameter
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _loadDetails();
+    }
   }
 
     Future<void> _loadDetails() async {
@@ -213,9 +223,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
       // 3. Map relational ingredients to the format the UI expects
       final isUzCyrillic = userLanguage == 'uz' && locale.scriptCode == 'Cyrl';
+      final rawIngData = ingredientData as List? ?? [];
 
-      _ingredients = (ingredientData as List).map<Map<String, dynamic>>((ri) {
-        final ing = ri['ingredients'] as Map<String, dynamic>? ?? {};
+      _ingredients = rawIngData.whereType<Map>().map<Map<String, dynamic>>((riMap) {
+        final ri = Map<String, dynamic>.from(riMap);
+        final ing = ri['ingredients'] is Map ? Map<String, dynamic>.from(ri['ingredients']) : <String, dynamic>{};
         // Pick the display name for the user's language
         String name;
         if (isUzCyrillic) {
@@ -249,7 +261,8 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         };
       }).toList();
 
-      _steps = List<Map<String, dynamic>>.from(recipeData?['steps'] ?? []);
+      final rawSteps = recipeData?['steps'] as List? ?? [];
+      _steps = rawSteps.whereType<Map>().map((s) => Map<String, dynamic>.from(s)).toList();
       _displayTitle = widget.title;
       _displayDescription = widget.description;
       _imageUrl = recipeData?['image_url'] as String?;
@@ -274,7 +287,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             final translatedSteps = transData['steps'] as List<dynamic>?;
             if (translatedSteps != null) {
               for (int i = 0; i < _steps.length && i < translatedSteps.length; i++) {
-                _steps[i]['translated_text'] = translatedSteps[i]['text'];
+                if (translatedSteps[i] is Map && (translatedSteps[i] as Map)['text'] != null) {
+                  _steps[i]['translated_text'] = (translatedSteps[i] as Map)['text'];
+                }
               }
             }
             _isTranslated = true;
@@ -310,11 +325,16 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
       // 6. Load recipe sentiment votes
       await _loadSentiment();
 
-      setState(() {
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('[RecipeDetailScreen] _loadRecipeDetails ERROR: $e\n$stack');
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
