@@ -308,6 +308,30 @@ class InventoryItemCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
+              // --- Container Label Badge (for bulk cooking) ---
+              if (item.containerLabel != null && item.containerLabel!.isNotEmpty)
+                Positioned(
+                  bottom: 6,
+                  right: 6,
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 80),
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '📦 ${item.containerLabel}',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 7,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

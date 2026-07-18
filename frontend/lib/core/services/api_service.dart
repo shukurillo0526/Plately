@@ -842,6 +842,103 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  // ── Meal Prep Plan APIs ────────────────────────────────────────
+
+  /// Generate a multi-day meal prep plan via AI.
+  Future<Map<String, dynamic>> generateMealPrepPlan({
+    required String userId,
+    required List<String> ingredients,
+    required int days,
+    required int mealsPerDay,
+    int? targetCaloriesPerMeal,
+    double? targetProteinG,
+    double? targetCarbsG,
+    double? targetFatG,
+    String? cuisine,
+    bool shelfOnly = false,
+    String? locale,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/meal-prep/generate');
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'days': days,
+        'meals_per_day': mealsPerDay,
+        'target_calories_per_meal': targetCaloriesPerMeal,
+        'target_protein_g': targetProteinG,
+        'target_carbs_g': targetCarbsG,
+        'target_fat_g': targetFatG,
+        'cuisine': cuisine,
+        'available_ingredients': ingredients,
+        'shelf_only': shelfOnly,
+        'locale': locale,
+      }),
+    );
+    return _handleResponse(response);
+  }
+
+  /// List user's meal prep plans.
+  Future<Map<String, dynamic>> getMealPrepPlans() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/meal-prep/plans');
+    final response = await _client.get(uri, headers: _headers);
+    return _handleResponse(response);
+  }
+
+  /// Get a single meal prep plan with recipes.
+  Future<Map<String, dynamic>> getMealPrepPlan(String planId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/meal-prep/$planId');
+    final response = await _client.get(uri, headers: _headers);
+    return _handleResponse(response);
+  }
+
+  /// Mark a meal prep plan as in_progress.
+  Future<Map<String, dynamic>> startMealPrepPlan(String planId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/meal-prep/$planId/start');
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({}),
+    );
+    return _handleResponse(response);
+  }
+
+  /// Mark a meal prep plan as completed.
+  Future<Map<String, dynamic>> completeMealPrepPlan(String planId, int actualMinutes) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/meal-prep/$planId/complete');
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({'actual_prep_time_minutes': actualMinutes}),
+    );
+    return _handleResponse(response);
+  }
+
+  /// Mark an individual recipe in a prep plan as cooked.
+  Future<Map<String, dynamic>> markPrepRecipeCooked(
+    String planId, int recipeIndex, int portionsCooked,
+  ) async {
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/v1/meal-prep/$planId/recipe/$recipeIndex/cooked',
+    );
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({'portions_cooked': portionsCooked}),
+    );
+    return _handleResponse(response);
+  }
+
+  /// Get meal prep stock levels and expiry warnings.
+  Future<Map<String, dynamic>> getPrepStatus(String userId) async {
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/v1/notifications/prep-status/$userId',
+    );
+    final response = await _client.get(uri, headers: _headers);
+    return _handleResponse(response);
+  }
+
   void dispose() => _client.close();
 }
 

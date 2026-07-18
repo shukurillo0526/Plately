@@ -31,6 +31,10 @@ class InventoryItem {
   final double? fatPerPortion;
   final DateTime? dateCooked;
 
+  // Bulk cooking / container tracking fields
+  final String? containerLabel;
+  final String? prepPlanId;
+
   InventoryItem({
     required this.id,
     required this.ingredientId,
@@ -55,6 +59,8 @@ class InventoryItem {
     this.carbsPerPortion,
     this.fatPerPortion,
     this.dateCooked,
+    this.containerLabel,
+    this.prepPlanId,
   });
 
   /// Days until this item expires. Negative = already expired.
@@ -113,6 +119,8 @@ class InventoryItem {
       dateCooked: json['date_cooked'] != null
           ? DateTime.tryParse(json['date_cooked'])
           : null,
+      containerLabel: json['container_label'] as String?,
+      prepPlanId: json['prep_plan_id'] as String?,
     );
   }
 
@@ -154,6 +162,8 @@ class InventoryItem {
       dateCooked: row['date_cooked'] != null
           ? DateTime.tryParse(row['date_cooked'].toString())
           : null,
+      containerLabel: row['container_label'] as String?,
+      prepPlanId: row['prep_plan_id'] as String?,
     );
   }
 

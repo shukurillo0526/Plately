@@ -16,6 +16,7 @@ import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/core/utils/ingredient_icons.dart';
 import 'package:plately_app/features/cook/presentation/screens/cooking_run_screen.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/features/cook/presentation/widgets/bulk_cooking_section.dart';
 
 class RecipePrepScreen extends ConsumerStatefulWidget {
   final String recipeId;
@@ -67,6 +68,12 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
   bool _aiLoading = false;
   bool _isBeginnerMode = false;
 
+  // Bulk cooking state (auto-enabled when servings > 3)
+  bool _isBulkMode = false;
+  String _containerLabel = '';
+  String _storageZone = 'fridge';
+  int _portionsToEatNow = 1;
+
   @override
   void initState() {
     super.initState();
@@ -84,8 +91,18 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
     return UnitConverter.scale(qty, widget.originalServings, _servings);
   }
 
-  void _incrementServings() => setState(() => _servings = (_servings + 1).clamp(1, 20));
-  void _decrementServings() => setState(() => _servings = (_servings - 1).clamp(1, 20));
+  void _incrementServings() {
+    setState(() {
+      _servings = (_servings + 1).clamp(1, 20);
+      if (_servings > 3 && !_isBulkMode) _isBulkMode = true;
+    });
+  }
+  void _decrementServings() {
+    setState(() {
+      _servings = (_servings - 1).clamp(1, 20);
+      if (_servings <= 3 && _isBulkMode) _isBulkMode = false;
+    });
+  }
 
   Future<void> _editIngredient(int index) async {
     final ing = widget.ingredients[index];
@@ -493,6 +510,21 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
+
+                  // ── Bulk Cooking Section (auto-enabled when servings > 3) ──
+                  if (_isBulkMode)
+                    Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      child: BulkCookingSection(
+                        servings: _servings,
+                        initialContainerLabel: _containerLabel,
+                        initialStorageZone: _storageZone,
+                        initialPortionsToEatNow: _portionsToEatNow,
+                        onContainerLabelChanged: (v) => _containerLabel = v,
+                        onStorageZoneChanged: (v) => _storageZone = v,
+                        onPortionsToEatNowChanged: (v) => _portionsToEatNow = v,
+                      ),
+                    ),
 
                   // Scaled calorie info
                   if (widget.caloriesPerServing != null && widget.caloriesPerServing! > 0)

@@ -408,7 +408,9 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                          crossAxisAlignment: CrossAxisAlignment.start,
                                          children: [
                                            Text(
-                                             'Leftovers Stored!',
+                                             widget.servingsCooked > 3
+                                                 ? '🍱 Bulk Cooking Stored!'
+                                                 : 'Leftovers Stored!',
                                              style: TextStyle(
                                                color: Colors.green,
                                                fontWeight: FontWeight.bold,
@@ -423,6 +425,24 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                                fontSize: 13,
                                              ),
                                            ),
+                                           if (widget.prepResult!['container_label'] != null &&
+                                               (widget.prepResult!['container_label'] as String).isNotEmpty) ...[
+                                             SizedBox(height: 4),
+                                             Row(
+                                               children: [
+                                                 Icon(Icons.label_outline, size: 13, color: Theme.of(context).colorScheme.primary),
+                                                 SizedBox(width: 4),
+                                                 Text(
+                                                   '📦 ${widget.prepResult!['container_label']}',
+                                                   style: TextStyle(
+                                                     color: Theme.of(context).colorScheme.primary,
+                                                     fontSize: 12,
+                                                     fontWeight: FontWeight.w600,
+                                                   ),
+                                                 ),
+                                               ],
+                                             ),
+                                           ],
                                          ],
                                        ),
                                      ),

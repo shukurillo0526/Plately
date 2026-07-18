@@ -457,6 +457,7 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
 
   Widget _buildCategoryChips() {
     if (_categories.isEmpty) return SizedBox.shrink();
+    final hasPrepItems = _displayItems.any((i) => i.isCookedLeftover);
     return SizedBox(
       height: 40,
       child: ListView(
@@ -464,7 +465,9 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
         padding: EdgeInsets.symmetric(horizontal: 12),
         children: [
           _filterChip(null, AppLocalizations.of(context)?.all ?? 'All'),
-          ..._categories.map((c) => _filterChip(c, L10nHelper.translateCategory(c, Localizations.localeOf(context)))),
+          if (hasPrepItems)
+            _filterChip('prepared', '🍱 Meal Prep'),
+          ..._categories.where((c) => c != 'prepared').map((c) => _filterChip(c, L10nHelper.translateCategory(c, Localizations.localeOf(context)))),
         ],
       ),
     );

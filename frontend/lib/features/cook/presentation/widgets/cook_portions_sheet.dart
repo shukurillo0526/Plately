@@ -67,6 +67,7 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
   late int _portionsEaten;
   bool _submitting = false;
   String? _error;
+  String _containerLabel = '';
 
   @override
   void initState() {
@@ -97,6 +98,7 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
           'leftovers_stored': leftovers,
           'calories_logged': (widget.caloriesPerPortion * _portionsEaten).round(),
           'deducted_count': 0,
+          'container_label': _containerLabel,
         };
         if (mounted) {
           Navigator.pop(context);
@@ -347,6 +349,39 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
                   ],
                 ),
               ),
+
+              // Container Label (for bulk/leftover storage)
+              if (leftoversStored > 0) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Label container (e.g., "Blue box — Mon lunch")',
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      fontSize: 12,
+                    ),
+                    prefixIcon: Icon(Icons.label_outline,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4), size: 18),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                    ),
+                  ),
+                  onChanged: (v) => _containerLabel = v,
+                ),
+              ],
               const SizedBox(height: 28),
 
               // Action button

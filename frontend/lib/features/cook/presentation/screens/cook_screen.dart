@@ -23,6 +23,8 @@ import 'package:plately_app/core/services/app_settings.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/features/cook/presentation/widgets/meal_prep_config_panel.dart';
+import 'package:plately_app/features/cook/presentation/widgets/meal_prep_plan_sheet.dart';
 
 class CookScreen extends ConsumerStatefulWidget {
   const CookScreen({super.key});
@@ -554,6 +556,8 @@ class _CookScreenState extends ConsumerState<CookScreen>
     int selectedMaxTime = 30;
     int selectedServings = 2;
     bool shelfOnly = false;
+    bool isBulkMode = false;
+    MealPrepConfig bulkConfig = const MealPrepConfig();
 
     final shouldGenerate = await showModalBottomSheet<bool>(
       context: context,
@@ -605,49 +609,99 @@ class _CookScreenState extends ConsumerState<CookScreen>
             )),
             SizedBox(height: 12),
 
-            // Max time
-            _aiOptionRow('Max Time', Row(children: [
-              Text('$selectedMaxTime min',
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
-              Expanded(
-                child: Slider(
-                  value: selectedMaxTime.toDouble(),
-                  min: 10, max: 120, divisions: 11,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (v) => setSheetState(() => selectedMaxTime = v.round()),
-                ),
+            // ── Bulk Cooking toggle ──
+            Container(
+              decoration: BoxDecoration(
+                color: isBulkMode
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isBulkMode
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
               ),
-            ])),
+              child: SwitchListTile(
+                value: isBulkMode,
+                onChanged: (v) => setSheetState(() => isBulkMode = v),
+                title: Text('Bulk Cooking',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  isBulkMode
+                      ? 'Plan meals for multiple days'
+                      : 'Generate a single recipe',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 11),
+                ),
+                secondary: Icon(
+                  isBulkMode ? Icons.calendar_month : Icons.restaurant,
+                  color: isBulkMode ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  size: 20,
+                ),
+                activeThumbColor: Theme.of(context).colorScheme.primary,
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
             SizedBox(height: 12),
 
-            // Servings
-            _aiOptionRow('Servings', Row(children: [
-              ...List.generate(4, (i) {
-                final s = i + 1;
-                final active = s == selectedServings;
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setSheetState(() => selectedServings = s),
-                    child: Container(
-                      width: 36, height: 36, alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: active ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
-                      ),
-                      child: Text('$s',
-                          style: TextStyle(
-                              color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                              fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
-                    ),
+            // ── Conditional: Bulk or Standard controls ──
+            if (isBulkMode) ...[
+              MealPrepConfigPanel(
+                onConfigChanged: (config) => setSheetState(() => bulkConfig = config),
+                initialConfig: bulkConfig,
+              ),
+              SizedBox(height: 12),
+            ] else ...[
+              // Max time
+              _aiOptionRow('Max Time', Row(children: [
+                Text('$selectedMaxTime min',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
+                Expanded(
+                  child: Slider(
+                    value: selectedMaxTime.toDouble(),
+                    min: 10, max: 120, divisions: 11,
+                    activeColor: Theme.of(context).colorScheme.primary,
+                    onChanged: (v) => setSheetState(() => selectedMaxTime = v.round()),
                   ),
-                );
-              }),
-            ])),
-            SizedBox(height: 16),
+                ),
+              ])),
+              SizedBox(height: 12),
+
+              // Servings
+              _aiOptionRow('Servings', Row(children: [
+                ...List.generate(4, (i) {
+                  final s = i + 1;
+                  final active = s == selectedServings;
+                  return Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setSheetState(() => selectedServings = s),
+                      child: Container(
+                        width: 36, height: 36, alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: active ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+                        ),
+                        child: Text('$s',
+                            style: TextStyle(
+                                color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
+                      ),
+                    ),
+                  );
+                }),
+              ])),
+              SizedBox(height: 16),
+            ],
 
             // Shelf Only toggle
             Container(
@@ -688,8 +742,10 @@ class _CookScreenState extends ConsumerState<CookScreen>
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: () => Navigator.pop(ctx, true),
-                icon: Icon(Icons.auto_awesome, size: 18),
-                label: Text(AppLocalizations.of(context)?.auto_generateRecipe ?? 'Generate Recipe'),
+                icon: Icon(isBulkMode ? Icons.calendar_month : Icons.auto_awesome, size: 18),
+                label: Text(isBulkMode
+                    ? 'Generate Prep Plan'
+                    : (AppLocalizations.of(context)?.auto_generateRecipe ?? 'Generate Recipe')),
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -717,7 +773,9 @@ class _CookScreenState extends ConsumerState<CookScreen>
           SizedBox(height: 8),
           CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
           SizedBox(height: 20),
-          Text('Generating your ${selectedCuisine ?? ''} recipe...',
+          Text(isBulkMode
+              ? 'Generating your ${bulkConfig.days}-day meal prep plan...'
+              : 'Generating your ${selectedCuisine ?? ''} recipe...',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 14)),
         ]),
       ),
@@ -725,29 +783,62 @@ class _CookScreenState extends ConsumerState<CookScreen>
 
     try {
       final api = ApiService();
-      final result = await api.generateRecipe(
-        ingredients: ingredientNames,
-        cuisine: selectedCuisine,
-        maxTimeMinutes: selectedMaxTime,
-        difficulty: selectedDifficulty,
-        servings: selectedServings,
-        shelfOnly: shelfOnly,
-        locale: AppLocalizations.of(context)?.localeName,
-      );
-      api.dispose();
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
 
-      final data = result['data'] ?? {};
+      if (isBulkMode) {
+        // ── Bulk Cooking: Generate meal prep plan ──
+        final result = await api.generateMealPrepPlan(
+          userId: currentUserId(),
+          ingredients: ingredientNames,
+          days: bulkConfig.days,
+          mealsPerDay: bulkConfig.mealsPerDay,
+          targetCaloriesPerMeal: bulkConfig.targetCalories,
+          targetProteinG: bulkConfig.targetProteinG,
+          targetCarbsG: bulkConfig.targetCarbsG,
+          targetFatG: bulkConfig.targetFatG,
+          cuisine: selectedCuisine,
+          shelfOnly: shelfOnly,
+          locale: AppLocalizations.of(context)?.localeName,
+        );
+        api.dispose();
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // Close loading dialog
 
-      // Show formatted result bottom sheet
-      if (!context.mounted) return;
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => _GeneratedRecipeSheet(recipeData: data),
-      );
+        final data = result['data'] as Map<String, dynamic>? ?? {};
+
+        // Show meal prep plan review sheet
+        if (!context.mounted) return;
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => MealPrepPlanSheet(planData: data),
+        );
+      } else {
+        // ── Standard: Generate single recipe ──
+        final result = await api.generateRecipe(
+          ingredients: ingredientNames,
+          cuisine: selectedCuisine,
+          maxTimeMinutes: selectedMaxTime,
+          difficulty: selectedDifficulty,
+          servings: selectedServings,
+          shelfOnly: shelfOnly,
+          locale: AppLocalizations.of(context)?.localeName,
+        );
+        api.dispose();
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+
+        final data = result['data'] ?? {};
+
+        // Show formatted result bottom sheet
+        if (!context.mounted) return;
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => _GeneratedRecipeSheet(recipeData: data),
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       Navigator.of(context).pop();

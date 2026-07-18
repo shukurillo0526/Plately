@@ -33,6 +33,8 @@ class AddItemRequest(BaseModel):
     location: str = "Fridge"
     expiry_date: Optional[str] = None  # ISO 8601, defaults to 7 days
     ingredient_id: Optional[str] = None  # If known, skip search
+    container_label: Optional[str] = None  # For bulk cooking container tracking
+    prep_plan_id: Optional[str] = None  # Links to a meal prep plan
 
 
 @router.post("/api/v1/inventory/add-item")
@@ -158,15 +160,19 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
                 "message": f"Updated {req.ingredient_name} quantity to {new_qty}",
             }
         else:
-            # Insert new inventory item
-            db.table("inventory_items").insert({
+            insert_data = {
                 "user_id": req.user_id,
                 "ingredient_id": ingredient_id,
                 "quantity": req.quantity,
                 "unit": req.unit,
                 "location": location,
                 "manual_expiry_date": expiry,
-            }).execute()
+            }
+            if req.container_label:
+                insert_data["container_label"] = req.container_label
+            if req.prep_plan_id:
+                insert_data["prep_plan_id"] = req.prep_plan_id
+            db.table("inventory_items").insert(insert_data).execute()
 
             logger.info(f"[Inventory] Added {req.ingredient_name} (id={ingredient_id})")
             return {

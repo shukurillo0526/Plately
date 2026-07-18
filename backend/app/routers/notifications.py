@@ -126,3 +126,115 @@ async def get_expiring_items(user_id: str, current: CurrentUser, days: int = 2):
 
     except Exception as e:
         raise_internal_error(logger, "[Notifications] Failed to check expiring items", e)
+
+
+@router.get("/api/v1/notifications/prep-status/{user_id}")
+async def get_prep_status(user_id: str, current: CurrentUser):
+    """
+    Get meal prep stock levels and upcoming expiry warnings.
+    Groups cooked leftover items by recipe and returns alerts for:
+    - Running low: ≤2 portions remaining
+    - Expiring soon: ≤2 days until recommended consumption limit
+    """
+    require_user_id(current, user_id)
+    try:
+        supabase = get_supabase()
+        today = date.today()
+
+        # Fetch all cooked leftover items for this user
+        response = (
+            supabase.from_("inventory_items")
+            .select("id, parent_recipe_id, parent_recipe_title, portions_count, "
+                    "computed_expiry, location, container_label, "
+                    "calories_per_portion, protein_per_portion, carbs_per_portion, fat_per_portion")
+            .eq("user_id", user_id)
+            .eq("is_cooked_leftover", True)
+            .gt("portions_count", 0)
+            .execute()
+        )
+
+        items = response.data or []
+        if not items:
+            return {
+                "status": "success",
+                "data": {"recipes": [], "alerts": [], "total_portions": 0},
+            }
+
+        # Group by recipe
+        by_recipe = {}
+        for item in items:
+            title = item.get("parent_recipe_title") or "Unknown Meal"
+            if title not in by_recipe:
+                by_recipe[title] = {
+                    "recipe_title": title,
+                    "recipe_id": item.get("parent_recipe_id"),
+                    "portions_remaining": 0,
+                    "oldest_expiry": None,
+                    "storage_zone": item.get("location", "fridge"),
+                    "container_labels": [],
+                    "calories_per_portion": item.get("calories_per_portion"),
+                }
+            entry = by_recipe[title]
+            entry["portions_remaining"] += item.get("portions_count", 0)
+
+            label = item.get("container_label")
+            if label and label not in entry["container_labels"]:
+                entry["container_labels"].append(label)
+
+            expiry = item.get("computed_expiry")
+            if expiry:
+                expiry_date = date.fromisoformat(str(expiry)[:10])
+                if entry["oldest_expiry"] is None or expiry_date < entry["oldest_expiry"]:
+                    entry["oldest_expiry"] = expiry_date
+
+        # Build alerts
+        alerts = []
+        recipes_out = []
+        total_portions = 0
+
+        for title, data in by_recipe.items():
+            portions = data["portions_remaining"]
+            total_portions += portions
+            days_left = None
+            if data["oldest_expiry"]:
+                days_left = (data["oldest_expiry"] - today).days
+                data["oldest_expiry"] = data["oldest_expiry"].isoformat()
+            else:
+                data["oldest_expiry"] = None
+
+            data["days_left"] = days_left
+            recipes_out.append(data)
+
+            # Low stock alert
+            if portions <= 2:
+                alerts.append({
+                    "type": "running_low",
+                    "recipe_title": title,
+                    "portions_remaining": portions,
+                    "message": f"Your prep meals are running low: {portions} serving{'s' if portions != 1 else ''} of {title} left.",
+                    "priority": "normal",
+                })
+
+            # Expiring soon alert
+            if days_left is not None and days_left <= 2:
+                container_text = f" ({', '.join(data['container_labels'])})" if data['container_labels'] else ""
+                alerts.append({
+                    "type": "expiring_soon",
+                    "recipe_title": title,
+                    "days_left": days_left,
+                    "message": f"{title}{container_text} will hit recommended storage limit in {days_left} day{'s' if days_left != 1 else ''}.",
+                    "priority": "high" if days_left <= 1 else "normal",
+                })
+
+        return {
+            "status": "success",
+            "data": {
+                "recipes": recipes_out,
+                "alerts": alerts,
+                "total_portions": total_portions,
+            },
+        }
+
+    except Exception as e:
+        raise_internal_error(logger, "[Notifications] Failed to check prep status", e)
+
