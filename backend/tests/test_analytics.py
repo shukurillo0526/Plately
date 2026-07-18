@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from app.routers import analytics
 from app.core.auth import CurrentUser
 
@@ -16,9 +16,21 @@ app.dependency_overrides[CurrentUser] = mock_current_user
 
 @pytest.fixture
 def mock_db():
-    with patch("app.routers.analytics.get_supabase") as mock:
+    with patch("app.routers.analytics.get_supabase", new_callable=AsyncMock) as mock_get_db, \
+         patch("app.routers.analytics.GamificationEngine") as mock_engine_cls:
         db_instance = MagicMock()
-        mock.return_value = db_instance
+        
+        # Make chained calls return awaitable results
+        insert_chain = db_instance.table.return_value.insert.return_value
+        insert_chain.execute = AsyncMock(return_value=MagicMock(data=[]))
+        
+        mock_get_db.return_value = db_instance
+        
+        # Mock gamification engine
+        mock_engine = MagicMock()
+        mock_engine.process_event = AsyncMock(return_value={"xp_gained": 10, "badges": []})
+        mock_engine_cls.return_value = mock_engine
+        
         yield db_instance
 
 def test_log_event(mock_db):
@@ -27,8 +39,6 @@ def test_log_event(mock_db):
         "event_name": "cook_session_completed",
         "properties": {"recipe_id": "123", "mode": "normal"}
     }
-    
-    mock_db.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
     
     response = client.post("/analytics/event", json=payload)
     
@@ -46,8 +56,6 @@ def test_log_events_batch(mock_db):
             {"event_name": "meal_logged_auto", "properties": {}}
         ]
     }
-    
-    mock_db.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
 
     response = client.post("/analytics/events/batch", json=payload)
     

@@ -27,13 +27,13 @@ def client():
     mock_db = MagicMock()
     mock_result = MagicMock()
     mock_result.data = [{"id": "test"}]
-    mock_db.table.return_value.select.return_value.limit.return_value.execute.return_value = mock_result
+    mock_db.table.return_value.select.return_value.limit.return_value.execute = AsyncMock(return_value=mock_result)
 
     mock_ollama_instance = MagicMock()
     mock_ollama_instance.is_available = AsyncMock(return_value=False)
     mock_ollama_instance.list_models = AsyncMock(return_value=[])
 
-    with patch("app.routers.health.get_supabase", return_value=mock_db), \
+    with patch("app.routers.health.get_supabase", new_callable=AsyncMock, return_value=mock_db), \
          patch("app.routers.health.get_ollama_service", return_value=mock_ollama_instance):
         from app.routers.health import router
         app.include_router(router)
