@@ -67,13 +67,13 @@ async def init_user(req: InitUserRequest, current: CurrentUser):
     Idempotent — safe to call multiple times.
     """
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         name = req.display_name or req.email.split("@")[0]
 
         # 1. Upsert users row
-        db.table("users").upsert(
+        await db.table("users").upsert(
             {
                 "id": req.user_id,
                 "email": req.email,
@@ -83,13 +83,13 @@ async def init_user(req: InitUserRequest, current: CurrentUser):
         ).execute()
 
         # 2. Upsert gamification_stats
-        db.table("gamification_stats").upsert(
+        await db.table("gamification_stats").upsert(
             {"user_id": req.user_id},
             on_conflict="user_id",
         ).execute()
 
         # 3. Upsert user_flavor_profile
-        db.table("user_flavor_profile").upsert(
+        await db.table("user_flavor_profile").upsert(
             {"user_id": req.user_id},
             on_conflict="user_id",
         ).execute()
@@ -108,11 +108,11 @@ async def get_dashboard(user_id: str, current: CurrentUser):
     Replaces 5 parallel queries from the Profile screen.
     """
     require_user_id(current, user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         # Parallel-safe: all reads, no conflicts
-        user_res = (
+        user_res = await (
             db.table("users")
             .select("display_name, email, avatar_url, dietary_tags, household_size")
             .eq("id", user_id)
@@ -120,7 +120,7 @@ async def get_dashboard(user_id: str, current: CurrentUser):
             .execute()
         )
 
-        stats_res = (
+        stats_res = await (
             db.table("gamification_stats")
             .select("*")
             .eq("user_id", user_id)
@@ -128,7 +128,7 @@ async def get_dashboard(user_id: str, current: CurrentUser):
             .execute()
         )
 
-        flavor_res = (
+        flavor_res = await (
             db.table("user_flavor_profile")
             .select("sweet, salty, sour, bitter, umami, spicy, preferred_cuisines")
             .eq("user_id", user_id)
@@ -136,7 +136,7 @@ async def get_dashboard(user_id: str, current: CurrentUser):
             .execute()
         )
 
-        shopping_res = (
+        shopping_res = await (
             db.table("shopping_list")
             .select("id, ingredient_name, quantity, unit, is_purchased, created_at")
             .eq("user_id", user_id)
@@ -148,7 +148,7 @@ async def get_dashboard(user_id: str, current: CurrentUser):
         from datetime import date
         today = date.today().isoformat()
 
-        meal_res = (
+        meal_res = await (
             db.table("meal_plan")
             .select("id, planned_date, meal_type, notes, recipe_id, recipes(title)")
             .eq("user_id", user_id)
@@ -174,7 +174,7 @@ async def get_dashboard(user_id: str, current: CurrentUser):
 async def update_profile(req: UpdateProfileRequest, current: CurrentUser):
     """Update user profile fields."""
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         update_data = {}
@@ -188,7 +188,7 @@ async def update_profile(req: UpdateProfileRequest, current: CurrentUser):
         if not update_data:
             return {"status": "no_changes"}
 
-        db.table("users").update(update_data).eq("id", req.user_id).execute()
+        await db.table("users").update(update_data).eq("id", req.user_id).execute()
 
         logger.info(f"[User] Profile updated for {req.user_id}")
         return {"status": "success"}
@@ -203,10 +203,10 @@ async def update_profile(req: UpdateProfileRequest, current: CurrentUser):
 async def add_shopping_item(req: ShoppingItemRequest, current: CurrentUser):
     """Add an item to the shopping list."""
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
-        res = db.table("shopping_list").insert({
+        res = await db.table("shopping_list").insert({
             "user_id": req.user_id,
             "ingredient_name": req.ingredient_name,
             "quantity": req.quantity,
@@ -224,11 +224,11 @@ async def add_shopping_item(req: ShoppingItemRequest, current: CurrentUser):
 @router.patch("/shopping-list/{item_id}")
 async def toggle_shopping_item(item_id: str, req: ToggleShoppingRequest, current: CurrentUser):
     """Toggle purchased status of a shopping list item."""
-    db = get_supabase()
+    db = await get_supabase()
     verify_shopping_item_ownership(db, item_id, current.id)
 
     try:
-        db.table("shopping_list").update({
+        await db.table("shopping_list").update({
             "is_purchased": req.is_purchased,
         }).eq("id", item_id).execute()
 
@@ -241,11 +241,11 @@ async def toggle_shopping_item(item_id: str, req: ToggleShoppingRequest, current
 @router.delete("/shopping-list/{item_id}")
 async def delete_shopping_item(item_id: str, current: CurrentUser):
     """Delete a shopping list item."""
-    db = get_supabase()
+    db = await get_supabase()
     verify_shopping_item_ownership(db, item_id, current.id)
 
     try:
-        db.table("shopping_list").delete().eq("id", item_id).execute()
+        await db.table("shopping_list").delete().eq("id", item_id).execute()
         return {"status": "success"}
 
     except Exception as e:
@@ -258,10 +258,10 @@ async def delete_shopping_item(item_id: str, current: CurrentUser):
 async def add_meal_plan(req: MealPlanRequest, current: CurrentUser):
     """Plan a recipe for a specific date."""
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
-        res = db.table("meal_plan").upsert(
+        res = await db.table("meal_plan").upsert(
             {
                 "user_id": req.user_id,
                 "recipe_id": req.recipe_id,
@@ -281,11 +281,11 @@ async def add_meal_plan(req: MealPlanRequest, current: CurrentUser):
 @router.delete("/meal-plan/{meal_id}")
 async def delete_meal_plan(meal_id: str, current: CurrentUser):
     """Remove a planned meal."""
-    db = get_supabase()
+    db = await get_supabase()
     verify_meal_plan_ownership(db, meal_id, current.id)
 
     try:
-        db.table("meal_plan").delete().eq("id", meal_id).execute()
+        await db.table("meal_plan").delete().eq("id", meal_id).execute()
         return {"status": "success"}
 
     except Exception as e:
@@ -335,12 +335,12 @@ async def track_engagement(req: VideoEngagementRequest, current: CurrentUser):
     - view: increments view count (no toggle)
     """
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
     
     try:
         if req.action == "view":
             # Upsert view count
-            db.table("user_video_engagement").upsert(
+            await db.table("user_video_engagement").upsert(
                 {
                     "user_id": req.user_id,
                     "video_id": req.video_id,
@@ -351,7 +351,7 @@ async def track_engagement(req: VideoEngagementRequest, current: CurrentUser):
             
             # Also try incrementing via RPC if available
             try:
-                db.rpc("increment_video_views", {
+                await db.rpc("increment_video_views", {
                     "p_video_id": req.video_id,
                 }).execute()
             except Exception:
@@ -378,7 +378,7 @@ async def track_engagement(req: VideoEngagementRequest, current: CurrentUser):
         else:
             raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
         
-        db.table("user_video_engagement").upsert(
+        await db.table("user_video_engagement").upsert(
             {
                 "user_id": req.user_id,
                 "video_id": req.video_id,

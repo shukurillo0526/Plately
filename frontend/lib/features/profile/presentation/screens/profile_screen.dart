@@ -169,7 +169,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _level = levelFromXp(_totalXp);
         _mealsCooked = (statsData?['total_meals_cooked'] as int?) ?? 0;
         _itemsSaved = (statsData?['items_saved'] as int?) ?? 0;
-        _currentStreak = (statsData?['current_streak'] as int?) ?? 0;
+        _currentStreak = (statsData?['current_cooking_streak'] as int?) ?? 
+                         (statsData?['current_streak'] as int?) ?? 0;
 
         // Badges from JSONB
         final rawBadges = statsData?['badges'];

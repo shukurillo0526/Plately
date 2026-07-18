@@ -42,7 +42,7 @@ class VisionService:
 
     def __init__(self):
         self.settings = get_settings()
-        self.db = get_supabase()
+        pass
         self._stub = None
         self._metadata = None
 
@@ -139,8 +139,8 @@ class VisionService:
         2. Fuzzy match on display_name_en using trigram similarity
         """
         # 1. Exact concept ID match
-        result = (
-            self.db.table("ingredients")
+        result = await (
+            (await get_supabase()).table("ingredients")
             .select("id, canonical_name, display_name_en")
             .contains("clarifai_concept_ids", [clarifai_id])
             .limit(1)
@@ -150,7 +150,7 @@ class VisionService:
             return result.data[0]
 
         # 2. Fuzzy name match via Supabase RPC (uses pg_trgm)
-        result = self.db.rpc(
+        result = await (await get_supabase()).rpc(
             "fuzzy_match_ingredient",
             {"search_name": concept_name, "min_similarity": 0.3, "max_results": 1},
         ).execute()
@@ -165,7 +165,7 @@ class VisionService:
         Get alternative ingredient suggestions for the correction UI.
         Returns top 5 fuzzy matches by name similarity.
         """
-        result = self.db.rpc(
+        result = await (await get_supabase()).rpc(
             "fuzzy_match_ingredient",
             {"search_name": concept_name, "min_similarity": 0.2, "max_results": 5},
         ).execute()
@@ -188,7 +188,7 @@ class VisionService:
         2. Fine-tuning dataset for custom vision models
         3. Analytics on model blind spots
         """
-        self.db.table("vision_corrections").insert(
+        await (await get_supabase()).table("vision_corrections").insert(
             {
                 "user_id": user_id,
                 "original_prediction": original_prediction,
@@ -207,8 +207,8 @@ class VisionService:
         source: str = "camera",
     ) -> str:
         """Add a recognized ingredient to the user's inventory."""
-        result = (
-            self.db.table("inventory_items")
+        result = await (
+            (await get_supabase()).table("inventory_items")
             .insert(
                 {
                     "user_id": user_id,

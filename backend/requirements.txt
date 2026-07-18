@@ -29,6 +29,8 @@ slowapi>=0.1.9
 
 # --- Monitoring (optional on free tier) ---
 sentry-sdk[fastapi]>=2.0.0
+structlog>=24.1.0
+prometheus-fastapi-instrumentator>=7.0.0
 
 # --- Testing (not needed in production) ---
 # pytest>=8.3.0

@@ -40,9 +40,9 @@ async def health_check():
     # 1. Supabase DB connectivity
     db_start = time.perf_counter()
     try:
-        db = get_supabase()
+        db = await get_supabase()
         # Simple read to verify connection
-        result = db.table("ingredients").select("id").limit(1).execute()
+        result = await db.table("ingredients").select("id").limit(1).execute()
         db_ms = round((time.perf_counter() - db_start) * 1000, 1)
         checks["supabase"] = {
             "status": "up",

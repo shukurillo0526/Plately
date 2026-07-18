@@ -405,8 +405,50 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // ── Internals ────────────────────────────────────────────────────
+  // ── Gamification & Social ────────────────────────────────────────
 
+  Future<List<dynamic>> getActiveChallenges() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/challenges/active');
+    final response = await _client.get(uri, headers: _headers);
+    final data = _handleResponse(response);
+    return data['challenges'] as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getMySquads() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/social/squads/my');
+    final response = await _client.get(uri, headers: _headers);
+    final data = _handleResponse(response);
+    return data['squads'] as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> createSquad(String name) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/social/squads/create');
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> joinSquad(String inviteCode) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/social/squads/join');
+    final response = await _client.post(
+      uri,
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({'invite_code': inviteCode}),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<List<dynamic>> getSquadLeaderboard(String squadId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/social/squads/$squadId/leaderboard');
+    final response = await _client.get(uri, headers: _headers);
+    final data = _handleResponse(response);
+    return data['leaderboard'] as List<dynamic>;
+  }
+
+  // ── Internals ────────────────────────────────────────────────────
   Map<String, String> get _headers {
     final headers = <String, String>{
       'Accept': 'application/json',

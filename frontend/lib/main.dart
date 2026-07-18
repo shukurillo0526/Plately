@@ -40,6 +40,8 @@ import 'package:plately_app/core/services/tutorial_controller.dart';
 import 'package:plately_app/core/widgets/tutorial_guide_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:plately_app/core/services/gamification_service.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -99,6 +101,9 @@ void main() async {
     FlutterNativeSplash.remove();
   }
 
+  // Attempt to sync offline analytics on app start
+  AnalyticsService.syncQueue();
+
   runApp(const ProviderScope(child: PlatelyApp()));
 }
 
@@ -129,6 +134,7 @@ class _PlatelyAppState extends State<PlatelyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: GamificationService.navigatorKey,
       title: 'Plately',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

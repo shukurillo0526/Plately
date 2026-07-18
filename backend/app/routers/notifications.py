@@ -37,11 +37,11 @@ async def get_expiring_items(user_id: str, current: CurrentUser, days: int = 2):
     """
     require_user_id(current, user_id)
     try:
-        supabase = get_supabase()
+        supabase = await get_supabase()
         today = date.today()
         cutoff = today + timedelta(days=days)
 
-        response = supabase.from_("inventory").select(
+        response = await supabase.from_("inventory").select(
             "id, quantity, unit, expiry_date, location, ingredients(name, category, emoji)"
         ).eq(
             "user_id", user_id
@@ -138,11 +138,11 @@ async def get_prep_status(user_id: str, current: CurrentUser):
     """
     require_user_id(current, user_id)
     try:
-        supabase = get_supabase()
+        supabase = await get_supabase()
         today = date.today()
 
         # Fetch all cooked leftover items for this user
-        response = (
+        response = await (
             supabase.from_("inventory_items")
             .select("id, parent_recipe_id, parent_recipe_title, portions_count, "
                     "computed_expiry, location, container_label, "

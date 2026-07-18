@@ -85,7 +85,7 @@ class RecommendationEngine:
     """
 
     def __init__(self):
-        self.db = get_supabase()
+        pass
 
     async def generate(
         self,
@@ -106,8 +106,8 @@ class RecommendationEngine:
         # 1c. Load user skill level (default: 2 = intermediate)
         user_skill = await self._get_user_skill_level(user_id)
 
-        # 2. Execute tier classification (safe ORM, no raw SQL)
-        tier_results = self._execute_tier_query(user_id)
+        # 2. Extract base tier logic (the 5 categories)
+        tier_results = await self._execute_tier_query(user_id)
 
         # 3. Score each recipe with 6-signal composite
         tiers: dict[int, list[ScoredRecipe]] = {1: [], 2: [], 3: [], 4: [], 5: []}
@@ -120,7 +120,7 @@ class RecommendationEngine:
             recipe_id = str(row["recipe_id"])
 
             # Get recipe ingredient IDs for expiry scoring
-            recipe_ing_ids = self._get_recipe_ingredient_ids(recipe_id)
+            recipe_ing_ids = await self._get_recipe_ingredient_ids(recipe_id)
 
             # Compute sub-scores
             expiry_urg = compute_expiry_urgency(recipe_ing_ids, inventory_expiry)
@@ -180,7 +180,7 @@ class RecommendationEngine:
 
     # --- Private helpers ---
 
-    def _execute_tier_query(self, user_id: str) -> list[dict]:
+    async def _execute_tier_query(self, user_id: str) -> list[dict]:
         """Execute tier classification using safe parameterized RPC.
         
         Uses the get_recommended_recipes RPC with bind parameters instead
@@ -195,7 +195,7 @@ class RecommendationEngine:
         
         try:
             # Try parameterized RPC first (safe)
-            result = self.db.rpc(
+            result = await (await get_supabase()).rpc(
                 "get_tier_recommendations",
                 {"p_user_id": user_id}
             ).execute()
@@ -207,8 +207,8 @@ class RecommendationEngine:
         # Safe ORM fallback — uses Supabase query builder (no raw SQL)
         try:
             # 1. Get user's valid inventory
-            inv_result = (
-                self.db.table("inventory_items")
+            inv_result = await (
+                (await get_supabase()).table("inventory_items")
                 .select("ingredient_id")
                 .eq("user_id", user_id)
                 .gte("computed_expiry", date.today().isoformat())
@@ -218,8 +218,8 @@ class RecommendationEngine:
             owned_ids = {r["ingredient_id"] for r in (inv_result.data or [])}
             
             # 2. Get user cooking history
-            hist_result = (
-                self.db.table("user_recipe_history")
+            hist_result = await (
+                (await get_supabase()).table("user_recipe_history")
                 .select("recipe_id")
                 .eq("user_id", user_id)
                 .execute()
@@ -227,8 +227,8 @@ class RecommendationEngine:
             cooked_ids = {r["recipe_id"] for r in (hist_result.data or [])}
             
             # 3. Get all recipes with ingredients
-            recipes_result = (
-                self.db.table("recipes")
+            recipes_result = await (
+                (await get_supabase()).table("recipes")
                 .select("id, title, cuisine, prep_time_minutes, image_url, flavor_vectors, recipe_ingredients(ingredient_id, is_optional, ingredients(display_name_en))")
                 .limit(200)
                 .execute()
@@ -289,10 +289,10 @@ class RecommendationEngine:
             logger.error(f"[Recommendation] ORM fallback failed: {e}")
             return []
 
-    def _get_recipe_ingredient_ids(self, recipe_id: str) -> list[str]:
+    async def _get_recipe_ingredient_ids(self, recipe_id: str) -> list[str]:
         """Get required ingredient IDs for a specific recipe."""
-        result = (
-            self.db.table("recipe_ingredients")
+        result = await (
+            (await get_supabase()).table("recipe_ingredients")
             .select("ingredient_id")
             .eq("recipe_id", recipe_id)
             .eq("is_optional", False)
@@ -302,8 +302,8 @@ class RecommendationEngine:
 
     async def _get_inventory_expiry_map(self, user_id: str) -> dict[str, date]:
         """Build a {ingredient_id: expiry_date} map for the user's inventory."""
-        result = (
-            self.db.table("inventory_items")
+        result = await (
+            (await get_supabase()).table("inventory_items")
             .select("ingredient_id, computed_expiry")
             .eq("user_id", user_id)
             .gte("computed_expiry", date.today().isoformat())
@@ -327,8 +327,8 @@ class RecommendationEngine:
         Fixed: Eliminated N+1 query by joining ingredients table.
         """
         two_days_ahead = (date.today() + timedelta(days=2)).isoformat()
-        result = (
-            self.db.table("inventory_items")
+        result = await (
+            (await get_supabase()).table("inventory_items")
             .select("ingredient_id, computed_expiry, quantity, unit, ingredients(display_name_en)")
             .eq("user_id", user_id)
             .gte("computed_expiry", date.today().isoformat())
@@ -353,8 +353,8 @@ class RecommendationEngine:
 
     async def _get_flavor_profile(self, user_id: str) -> dict[str, float]:
         """Get user's learned flavor profile, or return neutral defaults."""
-        result = (
-            self.db.table("user_flavor_profile")
+        result = await (
+            (await get_supabase()).table("user_flavor_profile")
             .select("sweet, salty, sour, bitter, umami, spicy")
             .eq("user_id", user_id)
             .maybe_single()
@@ -380,8 +380,8 @@ class RecommendationEngine:
         """
         thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
         try:
-            result = (
-                self.db.table("user_recipe_history")
+            result = await (
+                (await get_supabase()).table("user_recipe_history")
                 .select("recipe_id, cooked_at")
                 .eq("user_id", user_id)
                 .gte("cooked_at", thirty_days_ago)
@@ -408,8 +408,8 @@ class RecommendationEngine:
         """
         try:
             # Try explicit skill_level column first
-            result = (
-                self.db.table("user_flavor_profile")
+            result = await (
+                (await get_supabase()).table("user_flavor_profile")
                 .select("skill_level")
                 .eq("user_id", user_id)
                 .maybe_single()
@@ -422,8 +422,8 @@ class RecommendationEngine:
         
         # Fallback: estimate from cooking history count
         try:
-            result = (
-                self.db.table("user_recipe_history")
+            result = await (
+                (await get_supabase()).table("user_recipe_history")
                 .select("id", count="exact")
                 .eq("user_id", user_id)
                 .execute()
@@ -449,7 +449,7 @@ class RecommendationEngine:
             flavor_profile.get(axis, 0.5)
             for axis in ["sweet", "salty", "sour", "bitter", "umami", "spicy"]
         ]
-        result = self.db.rpc(
+        result = await (await get_supabase()).rpc(
             "search_recipes_by_flavor",
             {"query_embedding": query_vector, "dietary_filter": [], "match_count": limit},
         ).execute()

@@ -9,7 +9,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/shelf/domain/inventory_item.dart';
-import 'package:plately_app/features/shelf/domain/inventory_analytics_service.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/analytics_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class InventoryDetailSheet extends StatefulWidget {
   final InventoryItem item;
@@ -177,35 +179,44 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
       );
 
       if (action == 'throw_out') {
-        await InventoryAnalyticsService.logEvent(
-          itemId: item.id,
-          itemName: item.name,
-          quantity: _quantity,
-          unit: item.unit,
-          isExpired: true,
-          thrownOut: true,
+        await AnalyticsService.logEvent(
+          'shelf_item_discarded',
+          {
+            'item_id': item.id,
+            'item_name': item.name,
+            'quantity': _quantity,
+            'unit': item.unit,
+            'is_expired': true,
+            'thrown_out': true,
+          }
         );
         await _deleteItemSilently();
         return;
       } else if (action == 'eat_anyway') {
-        await InventoryAnalyticsService.logEvent(
-          itemId: item.id,
-          itemName: item.name,
-          quantity: _quantity,
-          unit: item.unit,
-          isExpired: true,
-          thrownOut: false,
+        await AnalyticsService.logEvent(
+          'shelf_item_consumed',
+          {
+            'item_id': item.id,
+            'item_name': item.name,
+            'quantity': _quantity,
+            'unit': item.unit,
+            'is_expired': true,
+            'thrown_out': false,
+          }
         );
         await _consumeQuantity(_quantity);
       }
     } else {
-      await InventoryAnalyticsService.logEvent(
-        itemId: item.id,
-        itemName: item.name,
-        quantity: _quantity,
-        unit: item.unit,
-        isExpired: false,
-        thrownOut: false,
+      await AnalyticsService.logEvent(
+        'shelf_item_consumed',
+        {
+          'item_id': item.id,
+          'item_name': item.name,
+          'quantity': _quantity,
+          'unit': item.unit,
+          'is_expired': false,
+          'thrown_out': false,
+        }
       );
       await _consumeQuantity(_quantity);
     }
@@ -289,14 +300,14 @@ class _InventoryDetailSheetState extends State<InventoryDetailSheet> {
     );
     if (confirm != true) return;
     try {
-      await InventoryAnalyticsService.logEvent(
-        itemId: item.id,
-        itemName: item.name,
-        quantity: _quantity,
-        unit: item.unit,
-        isExpired: item.daysUntilExpiry < 0,
-        thrownOut: true,
-      );
+      await AnalyticsService.logEvent('shelf_item_discarded', {
+        'item_id': item.id,
+        'item_name': item.name,
+        'quantity': _quantity,
+        'unit': item.unit,
+        'is_expired': item.daysUntilExpiry < 0,
+        'thrown_out': true,
+      });
       await Supabase.instance.client
           .from('inventory_items')
           .delete()

@@ -121,15 +121,19 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
   <script>
-    firebase.initializeApp({
-      apiKey: "AIzaSy" + "AIrvmEslvnuvYZJwqyJrun0yVvbOF2tK4",
-      authDomain: "plately-9b737.firebaseapp.com",
-      projectId: "plately-9b737",
-      storageBucket: "plately-9b737.firebasestorage.app",
-      messagingSenderId: "852189904322",
-      appId: "1:852189904322:web:fb6eb5f0495df202c2aa5b",
-      measurementId: "G-YPNSZJ9H9T"
-    });
+    try {
+      firebase.initializeApp({
+        apiKey: "AIzaSy" + "AIrvmEslvnuvYZJwqyJrun0yVvbOF2tK4",
+        authDomain: "plately-9b737.firebaseapp.com",
+        projectId: "plately-9b737",
+        storageBucket: "plately-9b737.firebasestorage.app",
+        messagingSenderId: "852189904322",
+        appId: "1:852189904322:web:fb6eb5f0495df202c2aa5b",
+        measurementId: "G-YPNSZJ9H9T"
+      });
+    } catch (e) {
+      console.error("Firebase initialization failed:", e);
+    }
   </script>
   <script>
     window._flutter = window._flutter || {};

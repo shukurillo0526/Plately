@@ -6,6 +6,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/api_service.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 
 class InventoryRepository {
@@ -63,7 +64,7 @@ class InventoryRepository {
     String location = 'Fridge',
     String? expiryDate,
   }) async {
-    return await _api.addInventoryItem(
+    final result = await _api.addInventoryItem(
       userId: currentUserId(),
       ingredientName: ingredientName,
       category: category,
@@ -72,6 +73,14 @@ class InventoryRepository {
       location: location,
       expiryDate: expiryDate,
     );
+    
+    // Instrument analytics
+    AnalyticsService.logEvent('shelf_item_added', {
+      'ingredient_name': ingredientName,
+      'source': 'unknown', // can be passed through if needed
+    });
+
+    return result;
   }
 
   /// Update an inventory item's properties.

@@ -3,6 +3,8 @@ venv/
 
 # Environment secrets (NEVER upload this)
 .env
+*.json
+!package.json
 
 # Python cache
 __pycache__/

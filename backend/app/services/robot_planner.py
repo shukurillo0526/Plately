@@ -40,7 +40,7 @@ class RobotPlanner:
     """
 
     def __init__(self):
-        self.db = get_supabase()
+        pass
 
     async def create_plan(
         self, recipe_id: str, user_id: str
@@ -56,8 +56,8 @@ class RobotPlanner:
         5. Build kitchen state (ingredients, tools, appliances)
         """
         # 1. Fetch recipe
-        recipe_result = (
-            self.db.table("recipes")
+        recipe_result = await (
+            (await get_supabase()).table("recipes")
             .select("id, title, prep_time_minutes, cook_time_minutes, servings")
             .eq("id", recipe_id)
             .single()
@@ -68,8 +68,8 @@ class RobotPlanner:
             raise RobotPlannerError(f"Recipe {recipe_id} not found")
 
         # 2. Fetch structured steps
-        steps_result = (
-            self.db.table("recipe_steps")
+        steps_result = await (
+            (await get_supabase()).table("recipe_steps")
             .select("step_number, human_text, robot_action, estimated_seconds, requires_attention")
             .eq("recipe_id", recipe_id)
             .order("step_number")
@@ -120,8 +120,8 @@ class RobotPlanner:
                 all_appliances.add("oven")
 
         # 4. Fetch recipe ingredients for kitchen state
-        ingredients_result = (
-            self.db.table("recipe_ingredients")
+        ingredients_result = await (
+            (await get_supabase()).table("recipe_ingredients")
             .select("ingredient_id, quantity, unit")
             .eq("recipe_id", recipe_id)
             .execute()
@@ -129,8 +129,8 @@ class RobotPlanner:
         kitchen_ingredients: list[KitchenIngredient] = []
         for ing in ingredients_result.data or []:
             # Get ingredient name
-            ing_detail = (
-                self.db.table("ingredients")
+            ing_detail = await (
+                (await get_supabase()).table("ingredients")
                 .select("canonical_name")
                 .eq("id", ing["ingredient_id"])
                 .single()

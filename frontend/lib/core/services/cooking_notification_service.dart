@@ -11,7 +11,6 @@
 //    - No-op on unsupported platforms (Windows, macOS, Linux, Web)
 // ═══════════════════════════════════════════════════════════════════
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -32,7 +31,7 @@ const kActionStopCooking = 'ACTION_STOP_COOKING';
 
 /// Whether the current platform supports notifications
 bool get _isMobilePlatform =>
-    !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
 class CookingNotificationService {
   CookingNotificationService._();
@@ -69,7 +68,7 @@ class CookingNotificationService {
       );
 
       // Create Android notification channels
-      if (Platform.isAndroid) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         final androidPlugin =
             _plugin!.resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>();
@@ -107,7 +106,7 @@ class CookingNotificationService {
   /// Request notification permission (Android 13+)
   Future<bool> requestPermission() async {
     if (!_initialized || _plugin == null) return false;
-    if (Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final androidPlugin =
           _plugin!.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();

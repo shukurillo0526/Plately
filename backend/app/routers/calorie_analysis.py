@@ -110,14 +110,14 @@ async def analyze_calories(req: CalorieAnalyzeRequest, current: CurrentUser):
     Estimate calories and macros for a list of food items.
     First checks ingredient DB for calories_per_100g, then falls back to AI.
     """
-    db = get_supabase()
+    db = await get_supabase()
     results = []
     unknown_items = []
 
     for item_name in req.food_items:
         # Try DB lookup first
         safe_name = sanitize_search_query(item_name)
-        match = (
+        match = await (
             db.table("ingredients")
             .select("display_name_en, calories_per_100g, default_unit, category")
             .ilike("display_name_en", f"%{safe_name}%")
@@ -176,7 +176,7 @@ Return JSON only:
 async def log_nutrition(req: NutritionLogRequest, current: CurrentUser):
     """Log a meal to the user's daily nutrition tracker."""
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         total_cal = sum(item.get("calories", 0) for item in req.food_items)
@@ -184,7 +184,7 @@ async def log_nutrition(req: NutritionLogRequest, current: CurrentUser):
         total_carbs = sum(item.get("carbs_g", 0) for item in req.food_items)
         total_fat = sum(item.get("fat_g", 0) for item in req.food_items)
 
-        db.table("nutrition_logs").insert({
+        await db.table("nutrition_logs").insert({
             "user_id": req.user_id,
             "meal_type": req.meal_type,
             "food_items": json.dumps(req.food_items),
@@ -206,12 +206,12 @@ async def log_nutrition(req: NutritionLogRequest, current: CurrentUser):
 async def get_daily_nutrition(user_id: str, current: CurrentUser, date: Optional[str] = None):
     """Get a user's nutrition summary for a specific date."""
     require_user_id(current, user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     target_date = date or datetime.now().strftime("%Y-%m-%d")
 
     try:
-        logs = (
+        logs = await (
             db.table("nutrition_logs")
             .select("*")
             .eq("user_id", user_id)
@@ -292,11 +292,11 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
     
     Returns: per-ingredient breakdown + totals + per-serving values.
     """
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         # 1. Get recipe default servings
-        recipe = (
+        recipe = await (
             db.table("recipes")
             .select("servings, title")
             .eq("id", recipe_id)
@@ -309,7 +309,7 @@ async def get_recipe_calories(recipe_id: str, current: OptionalUser = None, serv
         scale = requested_servings / default_servings
 
         # 2. Get recipe ingredients with calorie data
-        ings = (
+        ings = await (
             db.table("recipe_ingredients")
             .select(
                 "ingredient_id, quantity, unit, "

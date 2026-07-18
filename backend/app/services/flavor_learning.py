@@ -41,11 +41,11 @@ async def update_flavor_profile_on_cook(user_id: str, recipe_id: str) -> dict:
     
     Returns the updated profile or empty dict on failure.
     """
-    db = get_supabase()
+    db = await get_supabase()
     
     try:
         # 1. Get the recipe's flavor vector
-        recipe_flavor = (
+        recipe_flavor = await (
             db.table("recipes")
             .select("flavor_sweet, flavor_salty, flavor_sour, flavor_bitter, flavor_umami, flavor_spicy")
             .eq("id", recipe_id)
@@ -67,7 +67,7 @@ async def update_flavor_profile_on_cook(user_id: str, recipe_id: str) -> dict:
         }
         
         # 2. Get the user's current flavor profile
-        profile = (
+        profile = await (
             db.table("user_flavor_profile")
             .select("sweet, salty, sour, bitter, umami, spicy")
             .eq("user_id", user_id)
@@ -92,7 +92,7 @@ async def update_flavor_profile_on_cook(user_id: str, recipe_id: str) -> dict:
             )
         
         # 4. Upsert the updated profile
-        db.table("user_flavor_profile").upsert(
+        await db.table("user_flavor_profile").upsert(
             {
                 "user_id": user_id,
                 **updated,
@@ -114,11 +114,11 @@ async def record_cook_event(user_id: str, recipe_id: str) -> dict:
     Full pipeline: record the cook in history + update flavor profile.
     Called from the frontend when user taps "I cooked this".
     """
-    db = get_supabase()
+    db = await get_supabase()
     
     try:
         # Record in cooking history
-        db.table("user_recipe_history").insert({
+        await db.table("user_recipe_history").insert({
             "user_id": user_id,
             "recipe_id": recipe_id,
             "cooked_at": date.today().isoformat(),

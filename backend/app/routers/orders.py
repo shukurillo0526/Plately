@@ -98,7 +98,7 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
     """
     require_user_id(current, req.user_id)
     try:
-        db = get_supabase()
+        db = await get_supabase()
 
         # Calculate totals with server-side price verification
         items_data = []
@@ -107,7 +107,7 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
             verified_price = item.price
             verified_name = item.name
             try:
-                db_item = (
+                db_item = await (
                     db.table("menu_items")
                     .select("price, name")
                     .eq("id", item.menu_item_id)
@@ -136,7 +136,7 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
         delivery_fee = 0.0
         estimated_minutes = 20
         try:
-            restaurant = db.table("restaurants").select(
+            restaurant = await db.table("restaurants").select(
                 "delivery_fee, avg_prep_minutes"
             ).eq("id", req.restaurant_id).single().execute()
             if restaurant.data:
@@ -169,7 +169,7 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
             "customer_note": req.customer_note,
         }
 
-        result = db.table("orders").insert(order_data).execute()
+        result = await db.table("orders").insert(order_data).execute()
 
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to create order")
@@ -199,7 +199,7 @@ async def create_order(req: CreateOrderRequest, current: CurrentUser):
 async def get_order(order_id: str, current: CurrentUser):
     """Get a specific order by ID."""
     try:
-        db = get_supabase()
+        db = await get_supabase()
         order = get_order_or_404(db, order_id)
         if str(order.get("user_id")) != current.id:
             verify_restaurant_owner(db, current, str(order["restaurant_id"]))
@@ -225,11 +225,11 @@ async def get_user_orders(
     """
     require_user_id(current, user_id)
     try:
-        db = get_supabase()
+        db = await get_supabase()
 
         # Try RPC first (includes restaurant name via JOIN)
         try:
-            result = db.rpc("get_user_orders", {
+            result = await db.rpc("get_user_orders", {
                 "p_user_id": user_id,
                 "p_limit": limit,
                 "p_offset": offset,
@@ -239,7 +239,7 @@ async def get_user_orders(
             pass
 
         # Fallback: direct query
-        result = (
+        result = await (
             db.table("orders")
             .select("*")
             .eq("user_id", user_id)
@@ -259,8 +259,8 @@ async def get_active_orders(user_id: str, current: CurrentUser):
     """Get user's active (non-completed, non-cancelled) orders."""
     require_user_id(current, user_id)
     try:
-        db = get_supabase()
-        result = (
+        db = await get_supabase()
+        result = await (
             db.table("orders")
             .select("*")
             .eq("user_id", user_id)
@@ -285,7 +285,7 @@ async def update_order_status(order_id: str, req: UpdateStatusRequest, current: 
     For delivery: ready → picked_up → delivering → completed
     """
     try:
-        db = get_supabase()
+        db = await get_supabase()
         order = get_order_or_404(db, order_id)
         verify_restaurant_owner(db, current, str(order["restaurant_id"]))
 
@@ -300,7 +300,7 @@ async def update_order_status(order_id: str, req: UpdateStatusRequest, current: 
         elif req.status == "cancelled":
             update_data["cancelled_at"] = now
 
-        result = (
+        result = await (
             db.table("orders")
             .update(update_data)
             .eq("id", order_id)
@@ -329,7 +329,7 @@ async def cancel_order(order_id: str, req: CancelOrderRequest, current: CurrentU
     Only allows cancellation if the order is in 'confirmed' or 'preparing' status.
     """
     try:
-        db = get_supabase()
+        db = await get_supabase()
         order = get_order_or_404(db, order_id)
         verify_order_customer(current, order)
         current_status = order["status"]
@@ -340,7 +340,7 @@ async def cancel_order(order_id: str, req: CancelOrderRequest, current: CurrentU
                        f"Only 'confirmed' or 'preparing' orders can be cancelled.",
             )
 
-        result = (
+        result = await (
             db.table("orders")
             .update({
                 "status": "cancelled",

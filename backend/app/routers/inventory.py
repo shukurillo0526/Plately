@@ -6,10 +6,10 @@ Uses the service role key to bypass RLS restrictions.
 """
 
 import logging
-from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, HTTPException, Request, Depends
+from pydantic import BaseModel, Field
+from typing import Optional, List
 
 from app.core.auth import CurrentUser, OptionalUser, require_user_id, verify_inventory_ownership
 from app.core.security import raise_internal_error, sanitize_search_query, validate_image_upload
@@ -46,12 +46,12 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
     Uses the service role key, so RLS is bypassed.
     """
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         # 1. If ingredient_id is provided, skip search
         if req.ingredient_id:
-            existing_by_id = (
+            existing_by_id = await (
                 db.table("ingredients")
                 .select("*")
                 .eq("id", req.ingredient_id)
@@ -65,7 +65,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
                 raise HTTPException(status_code=404, detail=f"Ingredient {req.ingredient_id} not found")
         else:
             # 1b. Find or create ingredient (fetch full metadata)
-            existing = (
+            existing = await (
                 db.table("ingredients")
                 .select("*")
                 .ilike("display_name_en", req.ingredient_name)
@@ -79,7 +79,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
             else:
                 # Try canonical_name match as well
                 canonical = req.ingredient_name.strip().lower().replace(" ", "_")
-                canonical_match = (
+                canonical_match = await (
                     db.table("ingredients")
                     .select("*")
                     .eq("canonical_name", canonical)
@@ -91,7 +91,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
                     ingredient_id = ingredient["id"]
                 else:
                     # Create new ingredient — tagged as user-contributed
-                    inserted = (
+                    inserted = await (
                         db.table("ingredients")
                         .insert({
                             "canonical_name": canonical,
@@ -129,7 +129,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
             expiry = (datetime.now() + timedelta(days=fallback_days)).strftime("%Y-%m-%d")
 
         # Check if item already exists for this user+ingredient+location
-        existing_inv = (
+        existing_inv = await (
             db.table("inventory_items")
             .select("id, quantity")
             .eq("user_id", req.user_id)
@@ -143,7 +143,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
             # Update quantity (add to existing)
             old_qty = existing_inv.data[0]["quantity"]
             new_qty = old_qty + req.quantity
-            db.table("inventory_items").update({
+            await db.table("inventory_items").update({
                 "quantity": new_qty,
                 "manual_expiry_date": expiry,
             }).eq("id", existing_inv.data[0]["id"]).execute()
@@ -172,7 +172,7 @@ async def add_inventory_item(req: AddItemRequest, current: CurrentUser):
                 insert_data["container_label"] = req.container_label
             if req.prep_plan_id:
                 insert_data["prep_plan_id"] = req.prep_plan_id
-            db.table("inventory_items").insert(insert_data).execute()
+            await db.table("inventory_items").insert(insert_data).execute()
 
             logger.info(f"[Inventory] Added {req.ingredient_name} (id={ingredient_id})")
             return {
@@ -197,13 +197,13 @@ async def search_ingredients(q: str, current: OptionalUser = None, limit: int = 
     Searches: EN, KO, UZ (Latin), UZ (Cyrillic), RU, and canonical_name.
     Returns full metadata for auto-fill.
     """
-    db = get_supabase()
+    db = await get_supabase()
     try:
         safe_q = sanitize_search_query(q)
         if not safe_q:
             return {"ingredients": []}
         # Search across all language name fields
-        results = (
+        results = await (
             db.table("ingredients")
             .select("*")
             .or_(
@@ -229,14 +229,14 @@ async def fuzzy_search_ingredients(q: str, current: OptionalUser = None, limit: 
     Returns results ranked by best match across all language columns.
     Useful for typo-tolerant search in the 'add ingredient' flow.
     """
-    db = get_supabase()
+    db = await get_supabase()
     try:
         safe_q = sanitize_search_query(q)
         if not safe_q:
             return {"ingredients": [], "exact_match": False}
         # Use the existing fuzzy_match_ingredient RPC for English,
         # then also do a multilingual ILIKE fallback
-        fuzzy_results = db.rpc(
+        fuzzy_results = await db.rpc(
             "fuzzy_match_ingredient",
             {"search_name": safe_q, "min_similarity": 0.15, "max_results": limit}
         ).execute()
@@ -244,7 +244,7 @@ async def fuzzy_search_ingredients(q: str, current: OptionalUser = None, limit: 
         if fuzzy_results.data and len(fuzzy_results.data) > 0:
             # Enrich with full ingredient data
             ids = [r["id"] for r in fuzzy_results.data]
-            full_data = (
+            full_data = await (
                 db.table("ingredients")
                 .select("*")
                 .in_("id", ids)
@@ -266,7 +266,7 @@ async def fuzzy_search_ingredients(q: str, current: OptionalUser = None, limit: 
             safe_q = sanitize_search_query(q)
             if not safe_q:
                 return {"ingredients": [], "exact_match": False}
-            results = (
+            results = await (
                 db.table("ingredients")
                 .select("*")
                 .or_(
@@ -300,7 +300,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser
 
     Returns: ingredient data + resolution method (exact/fuzzy/created)
     """
-    db = get_supabase()
+    db = await get_supabase()
     if req.user_id:
         require_user_id(current, req.user_id)
     name = req.name.strip()
@@ -308,7 +308,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser
 
     try:
         # Step 1: Exact match on display_name_en
-        exact = (
+        exact = await (
             db.table("ingredients")
             .select("*")
             .ilike("display_name_en", name)
@@ -319,25 +319,22 @@ async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser
             return {"ingredient": exact.data[0], "resolution": "exact", "created": False}
 
         # Step 2: Exact match on canonical_name
-        canonical_match = (
-            db.table("ingredients")
+        canonical_match = await (db.table("ingredients")
             .select("*")
             .eq("canonical_name", canonical)
-            .limit(1)
-            .execute()
-        )
+            .limit(1).execute())
         if canonical_match.data and len(canonical_match.data) > 0:
             return {"ingredient": canonical_match.data[0], "resolution": "canonical", "created": False}
 
         # Step 3: Fuzzy match
         try:
-            fuzzy = db.rpc(
+            fuzzy = await db.rpc(
                 "fuzzy_match_ingredient",
                 {"search_name": name, "min_similarity": 0.5, "max_results": 1}
             ).execute()
             if fuzzy.data and len(fuzzy.data) > 0:
                 match_id = fuzzy.data[0]["id"]
-                full = db.table("ingredients").select("*").eq("id", match_id).limit(1).execute()
+                full = await db.table("ingredients").select("*").eq("id", match_id).limit(1).execute()
                 if full.data:
                     return {
                         "ingredient": full.data[0],
@@ -349,8 +346,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser
             pass  # pg_trgm not available, fall through to create
 
         # Step 4: Create as user-contributed
-        inserted = (
-            db.table("ingredients")
+        inserted = await (db.table("ingredients")
             .insert({
                 "canonical_name": canonical,
                 "display_name_en": name,
@@ -360,9 +356,7 @@ async def resolve_ingredient(req: ResolveIngredientRequest, current: CurrentUser
                 "source": "user_contributed",
                 "verified": False,
                 "created_by": req.user_id or current.id,
-            })
-            .execute()
-        )
+            }).execute())
         logger.info(f"[Ingredients] Auto-created '{name}' as user_contributed")
         return {"ingredient": inserted.data[0], "resolution": "created", "created": True}
 
@@ -383,7 +377,7 @@ class UpdateItemRequest(BaseModel):
 @router.patch("/api/v1/inventory/{item_id}")
 async def update_inventory_item(item_id: str, req: UpdateItemRequest, current: CurrentUser):
     """Update an inventory item's properties."""
-    db = get_supabase()
+    db = await get_supabase()
     verify_inventory_ownership(db, item_id, current.id)
 
     try:
@@ -402,7 +396,7 @@ async def update_inventory_item(item_id: str, req: UpdateItemRequest, current: C
         if not update_data:
             return {"status": "no_changes"}
 
-        db.table("inventory_items").update(update_data).eq("id", item_id).eq("user_id", current.id).execute()
+        await db.table("inventory_items").update(update_data).eq("id", item_id).eq("user_id", current.id).execute()
 
         logger.info(f"[Inventory] Updated item {item_id}")
         return {"status": "success"}
@@ -414,11 +408,11 @@ async def update_inventory_item(item_id: str, req: UpdateItemRequest, current: C
 @router.delete("/api/v1/inventory/{item_id}")
 async def delete_inventory_item(item_id: str, current: CurrentUser):
     """Delete an inventory item."""
-    db = get_supabase()
+    db = await get_supabase()
     verify_inventory_ownership(db, item_id, current.id)
 
     try:
-        db.table("inventory_items").delete().eq("id", item_id).eq("user_id", current.id).execute()
+        await db.table("inventory_items").delete().eq("id", item_id).eq("user_id", current.id).execute()
         logger.info(f"[Inventory] Deleted item {item_id}")
         return {"status": "success"}
 
@@ -437,11 +431,11 @@ async def consume_inventory_item(req: ConsumeItemRequest, current: CurrentUser):
     Consume (decrement) an inventory item's quantity.
     Uses the consume_inventory_item RPC which auto-deletes at 0.
     """
-    db = get_supabase()
+    db = await get_supabase()
     verify_inventory_ownership(db, req.inventory_id, current.id)
 
     try:
-        db.rpc(
+        await db.rpc(
             "consume_inventory_item",
             {
                 "p_inventory_id": req.inventory_id,
@@ -475,11 +469,11 @@ async def consume_recipe_ingredients(req: ConsumeRecipeRequest, current: Current
     Skips ingredients not in user's inventory or explicitly unchecked.
     """
     require_user_id(current, req.user_id)
-    db = get_supabase()
+    db = await get_supabase()
 
     try:
         # 1. Get recipe default servings
-        recipe = (
+        recipe = await (
             db.table("recipes")
             .select("servings")
             .eq("id", req.recipe_id)
@@ -489,70 +483,20 @@ async def consume_recipe_ingredients(req: ConsumeRecipeRequest, current: Current
         default_servings = (recipe.data or {}).get("servings", 2) or 2
         scale = req.servings_cooked / default_servings
 
-        # 2. Get recipe ingredients
-        ings = (
-            db.table("recipe_ingredients")
-            .select("ingredient_id, quantity, unit, ingredients(display_name_en)")
-            .eq("recipe_id", req.recipe_id)
-            .execute()
-        )
+        # 2. Call the batch RPC to handle the entire consumption process atomically
+        rpc_result = await db.rpc(
+            "consume_recipe_ingredients_batch",
+            {
+                "p_user_id": req.user_id,
+                "p_recipe_id": req.recipe_id,
+                "p_scale": scale,
+                "p_skipped_ids": req.skipped_ingredient_ids,
+            }
+        ).execute()
 
-        # 3. Get user's inventory (ingredient_id → inventory row)
-        inv = (
-            db.table("inventory_items")
-            .select("id, ingredient_id, quantity, unit")
-            .eq("user_id", req.user_id)
-            .gt("quantity", 0)
-            .execute()
-        )
-        inv_map = {}
-        for row in (inv.data or []):
-            inv_map[row["ingredient_id"]] = row
-
-        consumed = []
-        skipped = []
-
-        for ing in (ings.data or []):
-            iid = ing["ingredient_id"]
-            ing_name = (ing.get("ingredients") or {}).get("display_name_en", "Unknown")
-
-            # Skip if user unchecked this ingredient
-            if iid in req.skipped_ingredient_ids:
-                skipped.append({"ingredient_id": iid, "name": ing_name, "reason": "user_skipped"})
-                continue
-
-            # Skip if not in inventory
-            if iid not in inv_map:
-                skipped.append({"ingredient_id": iid, "name": ing_name, "reason": "not_in_inventory"})
-                continue
-
-            recipe_qty = float(ing.get("quantity", 0)) * scale
-            if recipe_qty <= 0:
-                continue
-
-            inv_item = inv_map[iid]
-
-            # Deduct (cap at available quantity)
-            actual_deduct = min(recipe_qty, inv_item["quantity"])
-
-            try:
-                db.rpc(
-                    "consume_inventory_item",
-                    {
-                        "p_inventory_id": inv_item["id"],
-                        "p_qty_to_consume": actual_deduct,
-                    },
-                ).execute()
-
-                consumed.append({
-                    "ingredient_id": iid,
-                    "name": ing_name,
-                    "deducted": actual_deduct,
-                    "unit": inv_item.get("unit", ing.get("unit", "")),
-                })
-            except Exception as e:
-                logger.warning(f"[Inventory] Failed to consume {ing_name}: {e}")
-                skipped.append({"ingredient_id": iid, "name": ing_name, "reason": f"error: {e}"})
+        batch_data = rpc_result.data or {}
+        consumed = batch_data.get("consumed", [])
+        skipped = batch_data.get("skipped", [])
 
         logger.info(
             f"[Inventory] Recipe {req.recipe_id} consumed: "

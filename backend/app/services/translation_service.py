@@ -253,12 +253,12 @@ async def translate_recipe(
     4. Call AI → parse result
     5. Save to DB → return translation
     """
-    db = get_supabase()
+    db = await get_supabase()
     lang_config = get_lang_config(target_language)
 
     # ── Step 1: Check cache ──
     try:
-        cached = (
+        cached = await (
             db.table("recipe_translations")
             .select("*")
             .eq("recipe_id", recipe_id)
@@ -301,7 +301,7 @@ async def translate_recipe(
 
     # ── Step 2: Claim lock ──
     try:
-        db.table("recipe_translations").upsert({
+        await db.table("recipe_translations").upsert({
             "recipe_id": recipe_id,
             "language_code": target_language,
             "title": title,
@@ -347,7 +347,7 @@ async def translate_recipe(
             "translated_at": datetime.now(timezone.utc).isoformat(),
             "retry_after": None,
         }
-        db.table("recipe_translations").upsert(translation_data).execute()
+        await db.table("recipe_translations").upsert(translation_data).execute()
 
         logger.info(f"[Translation] Completed {recipe_id}/{target_language} via {method}")
 
@@ -366,7 +366,7 @@ async def translate_recipe(
         logger.error(f"[Translation] Failed for {recipe_id}/{target_language}: {e}")
         # Save failure with retry delay
         try:
-            db.table("recipe_translations").upsert({
+            await db.table("recipe_translations").upsert({
                 "recipe_id": recipe_id,
                 "language_code": target_language,
                 "title": title,
@@ -393,12 +393,12 @@ async def translate_titles_batch(
     Batch-translate recipe titles for list view.
     Single AI call for up to 20 recipes.
     """
-    db = get_supabase()
+    db = await get_supabase()
     lang_config = get_lang_config(target_language)
 
     # 1. Check which are already cached
     try:
-        cached = (
+        cached = await (
             db.table("recipe_translations")
             .select("recipe_id, title, short_description")
             .in_("recipe_id", recipe_ids)
@@ -417,7 +417,7 @@ async def translate_titles_batch(
 
     # 2. Fetch English titles for missing recipes
     try:
-        recipes = (
+        recipes = await (
             db.table("recipes")
             .select("id, title, description")
             .in_("id", missing_ids)
@@ -448,7 +448,7 @@ async def translate_titles_batch(
             if not rid:
                 continue
             try:
-                db.table("recipe_translations").upsert({
+                await db.table("recipe_translations").upsert({
                     "recipe_id": rid,
                     "language_code": target_language,
                     "title": item.get("title", ""),
@@ -480,15 +480,15 @@ async def rate_translation(
     score: float,
 ) -> dict:
     """Record user quality feedback for a translation (0.0 = bad, 1.0 = good)."""
-    db = get_supabase()
+    db = await get_supabase()
     try:
-        db.table("recipe_translations").update({
+        await db.table("recipe_translations").update({
             "quality_score": max(0.0, min(1.0, score)),
         }).eq("recipe_id", recipe_id).eq("language_code", language_code).execute()
 
         # If score is very low, mark for re-translation
         if score <= 0.3:
-            db.table("recipe_translations").update({
+            await db.table("recipe_translations").update({
                 "translation_status": "failed",
                 "retry_after": None,  # Allow immediate retry
             }).eq("recipe_id", recipe_id).eq("language_code", language_code).execute()

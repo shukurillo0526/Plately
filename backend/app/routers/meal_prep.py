@@ -66,7 +66,7 @@ async def generate_meal_prep(request: Request, req: GenerateMealPrepRequest, cur
     """
     require_user_id(current, req.user_id)
     ollama = get_ollama_service()
-    db = get_supabase()
+    db = await get_supabase()
 
     total_recipes = req.days * req.meals_per_day
     # Cap at reasonable limits
@@ -156,7 +156,7 @@ Return JSON only:
         total_prep_minutes = result.get("estimated_total_prep_minutes", 0)
 
         # Save plan to database
-        plan_insert = db.table("meal_prep_plans").insert({
+        plan_insert = await db.table("meal_prep_plans").insert({
             "user_id": req.user_id,
             "title": plan_title,
             "days": req.days,
@@ -174,7 +174,7 @@ Return JSON only:
 
         # Save individual recipes
         for i, recipe in enumerate(recipes):
-            db.table("prep_plan_recipes").insert({
+            await db.table("prep_plan_recipes").insert({
                 "plan_id": plan_id,
                 "recipe_data": json.dumps(recipe) if isinstance(recipe, dict) else recipe,
                 "portions_target": recipe.get("servings", 4) if isinstance(recipe, dict) else 4,
@@ -205,9 +205,9 @@ Return JSON only:
 @router.get("/api/v1/meal-prep/plans")
 async def list_meal_prep_plans(current: CurrentUser):
     """List the current user's meal prep plans, newest first."""
-    db = get_supabase()
+    db = await get_supabase()
     try:
-        result = (
+        result = await (
             db.table("meal_prep_plans")
             .select("*")
             .eq("user_id", current.id)
@@ -223,10 +223,10 @@ async def list_meal_prep_plans(current: CurrentUser):
 @router.get("/api/v1/meal-prep/{plan_id}")
 async def get_meal_prep_plan(plan_id: str, current: CurrentUser):
     """Get a single meal prep plan with all its recipes."""
-    db = get_supabase()
+    db = await get_supabase()
     try:
         # Fetch plan
-        plan = (
+        plan = await (
             db.table("meal_prep_plans")
             .select("*")
             .eq("id", plan_id)
@@ -238,7 +238,7 @@ async def get_meal_prep_plan(plan_id: str, current: CurrentUser):
             raise HTTPException(status_code=404, detail="Plan not found")
 
         # Fetch recipes
-        recipes = (
+        recipes = await (
             db.table("prep_plan_recipes")
             .select("*")
             .eq("plan_id", plan_id)
@@ -270,10 +270,10 @@ async def get_meal_prep_plan(plan_id: str, current: CurrentUser):
 @router.post("/api/v1/meal-prep/{plan_id}/start")
 async def start_meal_prep(plan_id: str, current: CurrentUser):
     """Mark a meal prep plan as in_progress."""
-    db = get_supabase()
+    db = await get_supabase()
     try:
         # Verify ownership
-        plan = (
+        plan = await (
             db.table("meal_prep_plans")
             .select("id, user_id, status")
             .eq("id", plan_id)
@@ -286,7 +286,7 @@ async def start_meal_prep(plan_id: str, current: CurrentUser):
         if plan.data["status"] not in ("planned", "abandoned"):
             raise HTTPException(status_code=400, detail=f"Plan is already {plan.data['status']}")
 
-        db.table("meal_prep_plans").update({
+        await db.table("meal_prep_plans").update({
             "status": "in_progress",
             "started_at": datetime.now(timezone.utc).isoformat(),
         }).eq("id", plan_id).execute()
@@ -304,10 +304,10 @@ async def complete_meal_prep(plan_id: str, req: CompletePlanRequest, current: Cu
     Mark a meal prep plan as completed. Updates gamification stats:
     total_prep_sessions, total_prepped_meals, total_prep_minutes, prep streak.
     """
-    db = get_supabase()
+    db = await get_supabase()
     try:
         # Verify ownership and status
-        plan = (
+        plan = await (
             db.table("meal_prep_plans")
             .select("id, user_id, status")
             .eq("id", plan_id)
@@ -319,7 +319,7 @@ async def complete_meal_prep(plan_id: str, req: CompletePlanRequest, current: Cu
             raise HTTPException(status_code=404, detail="Plan not found")
 
         # Count cooked recipes
-        recipes = (
+        recipes = await (
             db.table("prep_plan_recipes")
             .select("status, portions_cooked")
             .eq("plan_id", plan_id)
@@ -329,7 +329,7 @@ async def complete_meal_prep(plan_id: str, req: CompletePlanRequest, current: Cu
         total_portions = sum(r.get("portions_cooked", 0) for r in (recipes.data or []))
 
         # Update plan
-        db.table("meal_prep_plans").update({
+        await db.table("meal_prep_plans").update({
             "status": "completed",
             "actual_prep_time_minutes": req.actual_prep_time_minutes,
             "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -338,7 +338,7 @@ async def complete_meal_prep(plan_id: str, req: CompletePlanRequest, current: Cu
         # Update gamification stats
         try:
             today = datetime.now(timezone.utc).date().isoformat()
-            stats = (
+            stats = await (
                 db.table("gamification_stats")
                 .select("total_prep_sessions, total_prepped_meals, total_prep_minutes, "
                         "current_prep_streak, best_prep_streak, last_prep_date")
@@ -368,7 +368,7 @@ async def complete_meal_prep(plan_id: str, req: CompletePlanRequest, current: Cu
 
                 best_streak = max(s.get("best_prep_streak") or 0, current_streak)
 
-                db.table("gamification_stats").update({
+                await db.table("gamification_stats").update({
                     "total_prep_sessions": new_sessions,
                     "total_prepped_meals": new_meals,
                     "total_prep_minutes": new_minutes,
@@ -398,10 +398,10 @@ async def mark_recipe_cooked(
     plan_id: str, recipe_index: int, req: RecipeCookedRequest, current: CurrentUser
 ):
     """Mark an individual recipe in a prep plan as cooked."""
-    db = get_supabase()
+    db = await get_supabase()
     try:
         # Verify plan ownership
-        plan = (
+        plan = await (
             db.table("meal_prep_plans")
             .select("id, user_id")
             .eq("id", plan_id)
@@ -413,7 +413,7 @@ async def mark_recipe_cooked(
             raise HTTPException(status_code=404, detail="Plan not found")
 
         # Find the recipe by cook_order
-        recipe = (
+        recipe = await (
             db.table("prep_plan_recipes")
             .select("id, status")
             .eq("plan_id", plan_id)
@@ -424,7 +424,7 @@ async def mark_recipe_cooked(
         if not recipe.data:
             raise HTTPException(status_code=404, detail=f"Recipe at index {recipe_index} not found")
 
-        db.table("prep_plan_recipes").update({
+        await db.table("prep_plan_recipes").update({
             "status": "cooked",
             "portions_cooked": req.portions_cooked,
         }).eq("id", recipe.data["id"]).execute()

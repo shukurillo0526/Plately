@@ -11,8 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/widgets/shimmer_loading.dart';
 import 'package:plately_app/core/widgets/slide_in_item.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_prep_screen.dart';
-import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/services/api_service.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
+import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
@@ -79,6 +80,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
       if (widget.recipeId == 'tutorial-stir-fry') {
         ref.read(tutorialControllerProvider.notifier).setStep(TutorialState.recipeDetail);
       }
+    });
+
+    AnalyticsService.logEvent('recipe_viewed', {
+      'recipe_id': widget.recipeId,
+      'source': 'unknown', // Could be passed as parameter
     });
   }
 

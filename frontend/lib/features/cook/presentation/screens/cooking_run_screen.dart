@@ -11,6 +11,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/features/cook/presentation/screens/cooking_reward_screen.dart';
 import 'package:plately_app/features/cook/providers/cooking_session_provider.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
 import 'package:plately_app/features/cook/presentation/widgets/step_timer_widget.dart';
 import 'package:plately_app/features/cook/presentation/widgets/cook_portions_sheet.dart';
 
@@ -330,7 +331,12 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
       proteinPerPortion: proteinPerPortion,
       carbsPerPortion: carbsPerPortion,
       fatPerPortion: fatPerPortion,
-      onComplete: (prepResult) {
+      onComplete: (prepResult) async {
+        await AnalyticsService.logEvent('cook_session_completed', {
+          'recipe_id': widget.recipeId,
+          'mode': widget.isBeginnerMode ? 'beginner' : 'normal',
+        });
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -569,7 +575,13 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
 
               // Start button
               FilledButton.icon(
-                onPressed: () => setState(() => _showPrepNotes = false),
+                onPressed: () {
+                  AnalyticsService.logEvent('cook_session_started', {
+                    'recipe_id': widget.recipeId,
+                    'mode': widget.isBeginnerMode ? 'beginner' : 'normal',
+                  });
+                  setState(() => _showPrepNotes = false);
+                },
                 icon: Icon(Icons.restaurant, size: 20),
                 label: Text('Start Cooking →', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                 style: FilledButton.styleFrom(

@@ -6,9 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:plately_app/core/utils/ingredient_icons.dart';
 import 'package:plately_app/features/shelf/domain/inventory_item.dart';
 import 'package:plately_app/features/shelf/presentation/widgets/freshness_overlay.dart';
-import 'package:plately_app/features/shelf/domain/inventory_analytics_service.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/analytics_service.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InventoryItemCard extends StatelessWidget {
@@ -78,14 +79,14 @@ class InventoryItemCard extends StatelessWidget {
               if (item.daysUntilExpiry < 0) {
                 final action = await _showExpiredHumorDialog(context);
                 if (action == 'throw_out') {
-                  await InventoryAnalyticsService.logEvent(
-                    itemId: item.id,
-                    itemName: item.name,
-                    quantity: selectedQty,
-                    unit: item.unit,
-                    isExpired: true,
-                    thrownOut: true,
-                  );
+                  await AnalyticsService.logEvent('shelf_item_discarded', {
+                    'item_id': item.id,
+                    'item_name': item.name,
+                    'quantity': selectedQty,
+                    'unit': item.unit,
+                    'is_expired': true,
+                    'thrown_out': true,
+                  });
                   await _performDiscard(selectedQty);
                   return true;
                 } else if (action != 'eat_anyway') {
@@ -93,14 +94,14 @@ class InventoryItemCard extends StatelessWidget {
                 }
               }
 
-              await InventoryAnalyticsService.logEvent(
-                itemId: item.id,
-                itemName: item.name,
-                quantity: selectedQty,
-                unit: item.unit,
-                isExpired: item.daysUntilExpiry < 0,
-                thrownOut: false,
-              );
+              await AnalyticsService.logEvent('shelf_item_consumed', {
+                'item_id': item.id,
+                'item_name': item.name,
+                'quantity': selectedQty,
+                'unit': item.unit,
+                'is_expired': item.daysUntilExpiry < 0,
+                'thrown_out': false,
+              });
 
               try {
                 if (item.isCookedLeftover) {
@@ -152,13 +153,16 @@ class InventoryItemCard extends StatelessWidget {
                 return selectedQty >= maxQty;
               }
 
-              await InventoryAnalyticsService.logEvent(
-                itemId: item.id,
-                itemName: item.name,
-                quantity: selectedQty,
-                unit: item.unit,
-                isExpired: item.daysUntilExpiry < 0,
-                thrownOut: true,
+              await AnalyticsService.logEvent(
+                'shelf_item_discarded',
+                {
+                  'item_id': item.id,
+                  'item_name': item.name,
+                  'quantity': selectedQty,
+                  'unit': item.unit,
+                  'is_expired': item.daysUntilExpiry < 0,
+                  'thrown_out': true,
+                }
               );
 
               return await _performDiscard(selectedQty);

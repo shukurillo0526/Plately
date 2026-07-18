@@ -13,15 +13,16 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from supabase import Client, create_client
+from supabase import acreate_client, AsyncClient
 
+from fastapi.concurrency import run_in_threadpool
 from app.core.config import get_settings
 
 logger = logging.getLogger("plately.auth")
 
 _bearer = HTTPBearer(auto_error=False)
 
-_auth_client: Client | None = None
+_auth_client: AsyncClient | None = None
 
 
 @dataclass(frozen=True)
@@ -30,7 +31,7 @@ class AuthenticatedUser:
     email: str | None = None
 
 
-def _get_auth_client() -> Client:
+async def _get_auth_client() -> AsyncClient:
     global _auth_client
     if _auth_client is None:
         settings = get_settings()
@@ -39,7 +40,7 @@ def _get_auth_client() -> Client:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication is not configured",
             )
-        _auth_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+        _auth_client = await acreate_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
     return _auth_client
 
 
@@ -54,8 +55,10 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+
     try:
-        response = _get_auth_client().auth.get_user(credentials.credentials)
+        client = await _get_auth_client()
+        response = await client.auth.get_user(credentials.credentials)
         user = response.user
         if user is None:
             raise HTTPException(
@@ -80,7 +83,8 @@ async def get_optional_user(
     if credentials is None or not credentials.credentials:
         return None
     try:
-        response = _get_auth_client().auth.get_user(credentials.credentials)
+        client = await _get_auth_client()
+        response = await client.auth.get_user(credentials.credentials)
         user = response.user
         if user is None:
             return None

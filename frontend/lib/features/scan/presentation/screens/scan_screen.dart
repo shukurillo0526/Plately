@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
@@ -1747,6 +1748,13 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
 
       await _api.logNutrition(
         userId: userId, mealType: _mealType, foodItems: items);
+
+      // Instrument analytics
+      AnalyticsService.logEvent('meal_logged_photo', {
+        'meal_type': _mealType,
+        'calories': _result!['total_estimated_calories'] ?? 0,
+        'item_count': items.length,
+      });
 
       if (!mounted) return;
       setState(() => _logging = false);

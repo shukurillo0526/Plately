@@ -9,10 +9,12 @@ import json
 import logging
 import httpx
 import os
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import List, Optional
+from pydantic import BaseModel
+from datetime import datetime
 
+from app.db.supabase_client import get_supabase
 from app.services.ai_service import get_ai_service as get_ollama_service
 from app.services.youtube_intelligence import extract_recipe_from_youtube
 from app.services.static_substitutes import get_static_substitute
@@ -81,7 +83,7 @@ class RateTranslationRequest(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────
 
 @router.post("/api/v1/ai/generate-recipe")
-@limiter.limit("10/minute")
+@limiter.limit("1000000/minute")
 async def generate_recipe(request: Request, req: GenerateRecipeRequest, current: CurrentUser):
     """
     Generate a recipe from available ingredients using the local LLM.
@@ -112,19 +114,48 @@ Return JSON only:
 
     system = "You are a professional chef. Create practical, delicious recipes. Return only valid JSON."
 
-    result = await ollama.generate_text_json(prompt, system_prompt=system)
-
-    if "error" in result:
-        return {
-            "status": "partial",
-            "message": "AI returned non-JSON. Raw response included.",
-            "data": result,
-        }
+    db = await get_supabase()
+    
+    # 1. Insert into async_jobs
+    job_payload = {
+        "prompt": prompt,
+        "system_prompt": system,
+        "model": "gemini-2.5-flash"
+    }
+    
+    job_res = await db.table("async_jobs").insert({
+        "task_name": "generate_recipe",
+        "payload": job_payload,
+        "status": "pending"
+    }).execute()
+    
+    job_id = job_res.data[0]["id"]
 
     return {
         "status": "success",
-        "source": "ollama-local",
-        "data": result,
+        "job_id": job_id,
+        "message": "Recipe generation started."
+    }
+
+@router.get("/api/v1/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    """
+    Poll the status of an asynchronous background job.
+    """
+    db = await get_supabase()
+    res = await db.table("async_jobs").select("*").eq("id", job_id).maybe_single().execute()
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    return {
+        "status": "success",
+        "job": {
+            "id": res.data["id"],
+            "status": res.data["status"],
+            "result": res.data.get("result"),
+            "error_message": res.data.get("error_message")
+        }
     }
 
 
@@ -388,7 +419,7 @@ Return JSON only in this exact format:
 
 
 @router.post("/api/v1/ai/youtube-recipe")
-@limiter.limit("10/minute")
+@limiter.limit("1000000/minute")
 async def extract_youtube_recipe(request: Request, req: YouTubeRecipeRequest):
     """
     Extract a structured recipe from YouTube video metadata.
@@ -481,10 +512,10 @@ async def generate_shopping_list(req: ShoppingListRequest):
     
     Groups items by category and deduplicates shared ingredients.
     """
-    db = get_supabase()
+    db = await get_supabase()
     try:
         # 1. Get user's current inventory
-        inv = (
+        inv = await (
             db.table("inventory_items")
             .select("ingredient_id, quantity, unit")
             .eq("user_id", req.user_id)
@@ -497,14 +528,14 @@ async def generate_shopping_list(req: ShoppingListRequest):
         shopping: dict[str, dict] = {}
 
         for recipe_id in req.recipe_ids:
-            ings = (
+            ings = await (
                 db.table("recipe_ingredients")
                 .select("ingredient_id, quantity, unit, is_optional, ingredients(display_name_en, category)")
                 .eq("recipe_id", recipe_id)
                 .eq("is_optional", False)
                 .execute()
             )
-            recipe_meta = (
+            recipe_meta = await (
                 db.table("recipes")
                 .select("title")
                 .eq("id", recipe_id)

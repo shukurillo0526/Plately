@@ -66,7 +66,7 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
         )
 
     try:
-        supabase = get_supabase()
+        supabase = await get_supabase()
 
         row = {
             "recipe_id": body.recipe_id,
@@ -80,7 +80,7 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
 
         # 2. Upsert logic for recipe_sentiment
         if body.feedback_type == "recipe_sentiment":
-            existing = (
+            existing = await (
                 supabase.from_("recipe_feedback")
                 .select("id")
                 .eq("recipe_id", body.recipe_id)
@@ -92,7 +92,7 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
             if existing.data:
                 # Update existing sentiment row
                 feedback_id = existing.data[0]["id"]
-                supabase.from_("recipe_feedback").update({
+                await supabase.from_("recipe_feedback").update({
                     "rating": body.rating,
                     "comment": body.comment,
                     "locale": body.locale,
@@ -109,7 +109,7 @@ async def submit_feedback(body: FeedbackSubmission, current: CurrentUser):
                 }
 
         # 3. Insert new feedback row
-        response = (
+        response = await (
             supabase.from_("recipe_feedback")
             .insert(row)
             .execute()
@@ -141,10 +141,10 @@ async def get_recipe_sentiment(recipe_id: str, current: OptionalUser = None):
     """
     try:
         user_id = current.id if current else None
-        supabase = get_supabase()
+        supabase = await get_supabase()
 
         # Fetch all sentiment rows for this recipe
-        response = (
+        response = await (
             supabase.from_("recipe_feedback")
             .select("rating, user_id")
             .eq("recipe_id", recipe_id)

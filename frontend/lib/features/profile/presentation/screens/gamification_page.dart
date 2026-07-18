@@ -5,7 +5,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
+import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/features/gamification/domain/badges.dart';
+
+import 'package:plately_app/features/social/presentation/screens/squad_screen.dart';
 
 class GamificationPage extends StatefulWidget {
   const GamificationPage({super.key});
@@ -16,6 +19,7 @@ class GamificationPage extends StatefulWidget {
 class _GamificationPageState extends State<GamificationPage> {
   Map<String, dynamic>? _stats;
   Set<String> _earnedBadgeIds = {};
+  List<dynamic> _activeChallenges = [];
   bool _loading = true;
 
   @override
@@ -27,12 +31,18 @@ class _GamificationPageState extends State<GamificationPage> {
       final stats = await Supabase.instance.client
           .from('gamification_stats').select().eq('user_id', uid).maybeSingle();
       final earned = computeEarnedBadges(stats);
+      
+      final challenges = await ApiService().getActiveChallenges();
+      
+      if (!mounted) return;
       setState(() {
         _stats = stats;
         _earnedBadgeIds = earned.map((b) => b.name).toSet();
+        _activeChallenges = challenges;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
     }
   }
@@ -47,7 +57,18 @@ class _GamificationPageState extends State<GamificationPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text('Badges & Achievements', style: TextStyle(fontWeight: FontWeight.w700))),
+      appBar: AppBar(
+        title: Text('Badges & Achievements', style: TextStyle(fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.group),
+            tooltip: 'My Squads',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SquadScreen()));
+            },
+          )
+        ],
+      ),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : ListView(
@@ -85,17 +106,80 @@ class _GamificationPageState extends State<GamificationPage> {
                 ),
                 SizedBox(height: 24),
 
-                // Stats
-                Row(
+                // Stats (Streaks)
+                Text('Current Streaks', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                SizedBox(height: 12),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 2.2,
                   children: [
-                    _StatCard(label: 'Meals Cooked', value: '${_stats?['meals_cooked'] ?? 0}', emoji: '🍳'),
-                    SizedBox(width: 8),
-                    _StatCard(label: 'Items Saved', value: '${_stats?['items_saved'] ?? 0}', emoji: '🥫'),
-                    SizedBox(width: 8),
-                    _StatCard(label: 'Day Streak', value: '${_stats?['streak_days'] ?? 0}', emoji: '🔥'),
+                    _StatCard(label: 'Cooking Streak', value: '${_stats?['current_cooking_streak'] ?? 0} days', emoji: '🍳'),
+                    _StatCard(label: 'Waste Saver', value: '${_stats?['current_waste_streak'] ?? 0} days', emoji: '♻️'),
+                    _StatCard(label: 'Health Tracker', value: '${_stats?['current_health_streak'] ?? 0} days', emoji: '🍎'),
+                    _StatCard(label: 'Meal Prep', value: '${_stats?['current_prep_streak'] ?? 0} days', emoji: '🍱'),
                   ],
                 ),
                 SizedBox(height: 24),
+
+                // Active Challenges
+                if (_activeChallenges.isNotEmpty) ...[
+                  Text('Active Challenges', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+                  SizedBox(height: 12),
+                  ..._activeChallenges.map((challenge) {
+                    final int target = challenge['goal_target'] ?? 1;
+                    final int progress = challenge['progress'] ?? 0;
+                    final String status = challenge['status'] ?? 'active';
+                    final bool isCompleted = status == 'completed' || progress >= target;
+                    final double pct = isCompleted ? 1.0 : (progress / target);
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isCompleted ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isCompleted ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  challenge['title'],
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ),
+                              if (isCompleted)
+                                const Icon(Icons.check_circle, color: Colors.green)
+                              else
+                                Text('$progress / $target', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(challenge['description'] ?? '', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: pct,
+                              minHeight: 8,
+                              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                              valueColor: AlwaysStoppedAnimation(isCompleted ? Colors.green : Theme.of(context).colorScheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  SizedBox(height: 24),
+                ],
 
                 // All Badges
                 Text('All Badges',

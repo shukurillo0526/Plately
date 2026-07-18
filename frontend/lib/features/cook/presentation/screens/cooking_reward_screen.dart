@@ -10,6 +10,7 @@ import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/features/gamification/data/gamification_repository.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/core/services/analytics_service.dart';
 
 class CookingRewardScreen extends ConsumerStatefulWidget {
   final String recipeId;
@@ -228,6 +229,14 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
               'notes': 'Cooked ${widget.servingsCooked} servings',
             });
             debugPrint('[Reward] Nutrition logged: $cal kcal');
+            
+            // Instrument analytics
+            AnalyticsService.logEvent('meal_logged_auto', {
+              'meal_type': 'cooked',
+              'calories': cal,
+              'recipe_id': widget.recipeId,
+              'servings': widget.servingsCooked,
+            });
           }
         } catch (e) {
           debugPrint('[Reward] Nutrition logging failed (non-critical): $e');

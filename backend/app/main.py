@@ -18,7 +18,7 @@ from app.routers import (
     ocr_parser, barcode_lookup, vision_detect, recipe_ai,
     embeddings, inventory, user_data, calorie_analysis,
     recommendations, health, chat, notifications, orders,
-    feedback, meal_prep,
+    feedback, meal_prep, analytics, challenges, social,
 )
 from app.services.ai_service import get_ai_service as get_ollama_service
 from app.core.auth import CurrentUser
@@ -33,7 +33,7 @@ import uvicorn
 # ── Logging ──────────────────────────────────────────────────────
 # Use structured=False for local development (readable logs)
 # Use structured=True for production (JSON logs)
-setup_logging(level="INFO", structured=False)
+setup_logging(level="INFO", structured=True)
 
 # ── Sentry (optional — activate by setting SENTRY_DSN in .env) ──
 try:
@@ -140,7 +140,9 @@ app.include_router(notifications.router)
 app.include_router(orders.router)
 app.include_router(feedback.router)
 app.include_router(meal_prep.router)
-
+app.include_router(analytics.router)
+app.include_router(challenges.router)
+app.include_router(social.router)
 
 # ── Root ─────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
@@ -170,6 +172,18 @@ async def ai_status(current: CurrentUser):
         }
     }
 
+
+from prometheus_fastapi_instrumentator import Instrumentator
+import asyncio
+from app.core.worker import worker_loop
+
+# Instrument FastAPI with Prometheus
+Instrumentator().instrument(app).expose(app)
+
+@app.on_event("startup")
+async def startup_event():
+    # Start the async job worker loop in the background
+    asyncio.create_task(worker_loop())
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
