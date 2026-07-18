@@ -7,6 +7,7 @@ batch cooking with shared base components.
 """
 
 import json
+import httpx
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
@@ -144,9 +145,18 @@ Return JSON only:
         )
 
         if "error" in result:
+            logger.warning(f"[MealPrep] First attempt returned error ({result.get('error')}). Retrying with strict format prompt...")
+            strict_prompt = prompt + "\n\nCRITICAL: Return ONLY clean JSON without markdown blocks, without trailing commas, and without comments."
+            result = await ollama.generate_text_json(
+                strict_prompt, system_prompt=system, model="gemini-2.5-flash", max_tokens=8192
+            )
+
+        if "error" in result:
+            raw_preview = result.get("raw_response", "")[:120].strip()
+            msg = f"AI formatting error: {result['error']} ({raw_preview})" if raw_preview else f"AI error: {result['error']}"
             return {
                 "status": "partial",
-                "message": "AI returned non-JSON. Raw response included.",
+                "message": msg,
                 "data": result,
             }
 
@@ -200,6 +210,10 @@ Return JSON only:
 
     except HTTPException:
         raise
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise HTTPException(status_code=429, detail="AI quota or rate-limit reached. Please try again in a few moments.")
+        raise_internal_error(logger, "[MealPrep] HTTP status error from AI provider", e)
     except Exception as e:
         raise_internal_error(logger, "[MealPrep] Failed to generate meal prep plan", e)
 

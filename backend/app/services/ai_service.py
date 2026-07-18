@@ -9,6 +9,7 @@ import asyncio
 import base64
 import json
 import logging
+import re
 from typing import Optional, Dict, List, Any, AsyncGenerator
 
 import httpx
@@ -46,6 +47,19 @@ class AIService:
             return ["gpt-4o-mini"]
         return []
 
+    def _clean_json_text(self, s: str) -> Any:
+        try:
+            return json.loads(s)
+        except Exception:
+            pass
+        s_clean = re.sub(r'^\s*//.*$', '', s, flags=re.MULTILINE)
+        s_clean = re.sub(r',\s*([\]}])', r'\1', s_clean)
+        try:
+            return json.loads(s_clean)
+        except Exception:
+            s_clean = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', s_clean)
+            return json.loads(s_clean)
+
     def _parse_json_response(self, raw: str) -> Dict[str, Any]:
         """Parse raw LLM output into structured JSON."""
         text = raw.strip()
@@ -57,9 +71,8 @@ class AIService:
             text = text.strip()
 
         try:
-            result = json.loads(text)
-            return self._normalize_parsed_dict(result)
-        except json.JSONDecodeError:
+            return self._normalize_parsed_dict(self._clean_json_text(text))
+        except Exception:
             pass
 
         start = text.find("{")
@@ -67,8 +80,8 @@ class AIService:
         if start >= 0 and end > start:
             candidate = text[start:end]
             try:
-                return self._normalize_parsed_dict(json.loads(candidate))
-            except json.JSONDecodeError:
+                return self._normalize_parsed_dict(self._clean_json_text(candidate))
+            except Exception:
                 pass
 
         start = text.find("[")
@@ -76,30 +89,29 @@ class AIService:
         if start >= 0 and end > start:
             candidate = text[start:end]
             try:
-                result = json.loads(candidate)
+                result = self._clean_json_text(candidate)
                 if isinstance(result, list):
                     return {"items": result}
-            except json.JSONDecodeError:
+            except Exception:
                 pass
 
         # Fallback recovery for truncated JSON (cut off due to token limits)
         start = text.find("{")
         if start >= 0:
             candidate = text[start:]
-            # Try cutting back to the last complete object or array element and closing brackets
             for last_sep in [candidate.rfind("},"), candidate.rfind("]}"), candidate.rfind("}")]:
                 if last_sep > 0:
-                    for suffix in ["}", "]}", "]}}"]:
+                    for suffix in ["}", "]}", "]}}", "]}]}", '"]}]}']:
                         try:
                             recovered = candidate[:last_sep+1] if candidate[last_sep] == "}" else candidate[:last_sep]
                             if recovered.endswith(","):
                                 recovered = recovered[:-1]
-                            return self._normalize_parsed_dict(json.loads(recovered + suffix))
-                        except (json.JSONDecodeError, Exception):
+                            return self._normalize_parsed_dict(self._clean_json_text(recovered + suffix))
+                        except Exception:
                             pass
 
         logger.warning(f"[AIService] Failed to parse JSON ({len(text)} chars): {text[:200]}")
-        return {"error": "Failed to parse JSON", "raw_response": text[:500]}
+        return {"error": "Failed to parse JSON", "raw_response": text[:1000]}
 
     def _normalize_parsed_dict(self, result: Any) -> Dict[str, Any]:
         """Normalize JSON output so that any returned list of items under any key is mapped to 'items'."""

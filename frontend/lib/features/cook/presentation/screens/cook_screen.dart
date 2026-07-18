@@ -817,12 +817,14 @@ class _CookScreenState extends ConsumerState<CookScreen>
 
         final data = result['data'] as Map<String, dynamic>? ?? {};
         final recipes = (data['recipes'] as List?) ?? [];
-        if (result['status'] == 'error' || data.containsKey('error') || recipes.isEmpty) {
+        if (result['status'] == 'error' || result['status'] == 'partial' || data.containsKey('error') || recipes.isEmpty) {
           if (!context.mounted) return;
+          final errorText = data['error']?.toString() ?? result['message']?.toString() ?? 'Could not generate meal prep plan. Please try again with fewer days or different constraints.';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(data['error']?.toString() ?? 'Could not generate meal prep plan. Please try again with fewer days or different constraints.'),
+              content: Text(errorText),
               backgroundColor: Colors.redAccent,
+              duration: const Duration(seconds: 6),
             ),
           );
           return;
