@@ -50,7 +50,10 @@ This document reflects the exact feature set currently available in the Plately 
     *   **Architecture Shift & Second Tab:** Introduction of a fundamentally new architecture to unlock the currently hidden "Ordering" tab (the codebase foundation for this already exists).
     *   **Business Creator (Restaurant SaaS):** A "Shopify for Restaurants" suite where eating place owners can easily spin up their own custom in-app websites and use AI to automatically manage their social media presence.
     *   **In-App Ordering, Payments & Seat Booking:** Plately manages the entire transaction layer, functioning as a mobile POS (similar to modern digital-only cafes). Users can order their food, pay digitally, and book seats directly through the app without external platforms.
-*   **Version 4:** Long-term ecosystem expansions.
+*   **Version 4 (Full Vertical Integration & Hardware):**
+    *   **Full-In Ordering Ecosystem:** Scaling the ordering architecture to handle complete, end-to-end logistics for both diners and restaurants.
+    *   **Shared Delivery Network (Fleet App):** Launching a dedicated courier fleet application to power a shared, optimized delivery network for all contracted eating places.
+    *   **Self-Service Kiosk Hardware:** Deploying proprietary physical ordering kiosks to partnered restaurants, perfectly syncing their physical storefront operations with the Plately digital ecosystem.
 
 ---
 
