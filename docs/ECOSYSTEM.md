@@ -35,15 +35,9 @@ This document reflects the exact feature set currently available in the Plately 
 
 ### 🌐 Vision (Future Strategy)
 
-*   **Smart Kitchen IoT**
-    *   **Smart Fridge Integration:** Camera integration to auto-update the Living Shelf passively.
-    *   **Smart Scale Connectivity:** Precision measuring paired directly with Cook Mode instructions.
-*   **Hyper-Personalization**
-    *   **AI Dietitian:** Automated health goal coaching and macro adherence.
-    *   **Family Account Sharing:** Shared Living Shelves and aggregated household flavor profiles.
-*   **Order Mode & Commerce**
-    *   **Grocery Auto-Cart:** Instantly push missing ingredients to delivery APIs (Instacart, Whole Foods).
-    *   **Restaurant Discovery:** Local dining recommendations tailored by the user's AI Flavor Profile.
+*   **Version 2:** Upcoming features and enhancements.
+*   **Version 3:** Mid-term strategic additions.
+*   **Version 4:** Long-term ecosystem expansions.
 
 ---
 
@@ -159,18 +153,9 @@ flowchart LR
     PSoc --> SCreate["Creator Dashboard"]:::level4
 
     %% ==========================================
-    %% VISION BRANCH (Levels 2, 3)
+    %% VISION BRANCH (Roadmap)
     %% ==========================================
-    Vision --> IoT["Smart Kitchen IoT"]:::level2
-    Vision --> Hyper["Hyper-Personalization"]:::level2
-    Vision --> Order["Order Mode & Commerce"]:::level2
-
-    IoT --> Fridge["Smart Fridge Integration"]:::level3
-    IoT --> Scale["Smart Scale Connectivity"]:::level3
-
-    Hyper --> Diet["AI Dietitian"]:::level3
-    Hyper --> Fam["Family Account Sharing"]:::level3
-
-    Order --> Cart["Grocery Auto-Cart"]:::level3
-    Order --> Res["Restaurant Discovery"]:::level3
+    Vision --> V2["Version 2"]:::level2
+    Vision --> V3["Version 3"]:::level2
+    Vision --> V4["Version 4"]:::level2
 ```
