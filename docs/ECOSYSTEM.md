@@ -39,7 +39,7 @@ This document outlines the current state of the Plately consumer app alongside o
 ## Ecosystem Map
 
 ```mermaid
-flowchart TD
+flowchart LR
     %% Styling to match the dark aesthetic
     classDef root fill:#444b5a,color:#fff,stroke:none,rx:5,ry:5,padding:20px;
     classDef level1 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
