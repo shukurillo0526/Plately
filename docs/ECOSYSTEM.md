@@ -39,7 +39,10 @@ This document reflects the exact feature set currently available in the Plately 
     *   **Phase 1: Showcase & Advertise:** Delay public launch. Focus entirely on advertising and showcasing the deeply built current features.
     *   **Phase 2: Prototype Furthest Milestones:** Fork into a new GitHub branch to rapidly build out the furthest possible technical milestones. The goal is to perfectly showcase the *flow* and vision, rather than achieving perfect, production-ready functionality.
     *   **Phase 3: Beta Signups & Investment:** Leverage the showcase to capture massive beta sign-ups. Use this verified traction and technical demonstration to secure multi-million dollar seed investment before the actual working public launch.
-*   **Version 2:** Upcoming features and enhancements.
+*   **Version 2 (Social, Analytics & Creator Monetization):**
+    *   **Feeds & Socialization:** A dedicated feeds section featuring video content, interactive chat, and community social engagement.
+    *   **Profile Analytics:** Deep, data-driven analytics within user profiles (tracking flavor profiles, nutritional impact, and meal habits).
+    *   **Creator Marketplace:** Premium recipes created by top chefs/creators, which can be purchased by users, opening a monetization channel for the community.
 *   **Version 3:** Mid-term strategic additions.
 *   **Version 4:** Long-term ecosystem expansions.
 
