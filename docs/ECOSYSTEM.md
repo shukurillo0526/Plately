@@ -1,6 +1,6 @@
 # Plately Smart Kitchen & Food Ecosystem
 
-This document outlines the comprehensive current state, specific technical details, and the broader future vision of the Plately ecosystem.
+This document outlines the current state and existing features available in the Plately consumer app at launch.
 
 ## Flow & Detailed Feature Breakdown
 
@@ -36,12 +36,11 @@ This document outlines the comprehensive current state, specific technical detai
 *   **Manual & Quick Management**
     *   Add, edit, delete functionality with smart emoji/icon pairing.
 
-### 📸 Scanning & Vision Suite
+### 📸 Scanning Suite
 *   **AI Receipt Parsing**
     *   Camera integration for real-time scanning of grocery receipts.
     *   Gallery import for digital receipts.
     *   Automated OCR text extraction, parsed by AI into structured Living Shelf items.
-*   **Future Vision:** Direct barcode scanning and food packaging recognition.
 
 ### 🥗 Meal Prep & Health Analytics
 *   **Nutrition Tracking**
@@ -61,32 +60,9 @@ This document outlines the comprehensive current state, specific technical detai
     *   Ingredient diversity scoring.
     *   Cooking habits and frequency dashboard.
 
-### 🛒 Order Mode & Commerce (Foundation)
-*   **Grocery Delivery Integration**
-    *   Auto-cart generation: automatically adds "missing ingredients" from a recipe to a shopping list.
-    *   *Future:* Direct API partnerships with delivery services (Instacart, Whole Foods).
-*   **Restaurant Discovery**
-    *   Local dining recommendations tailored by the user's AI Flavor Profile.
-
-### 🌐 Vision & Future Strategy
-*   **Hyper-Personalization**
-    *   AI Dietitian for automated health goal coaching.
-    *   Family and household account sharing (shared Living Shelves).
-*   **Smart Kitchen IoT**
-    *   Smart Fridge camera integration to auto-update the Living Shelf.
-    *   Smart Scale and Smart Oven connectivity for precision cooking.
-*   **Monetization & Scale**
-    *   Plately+ Premium Subscription (Advanced AI analytics, unlimited receipt scans).
-
-### ⚙️ Technical Architecture
-*   **Frontend:** Flutter UI, Riverpod State Management.
-*   **Backend:** Supabase (PostgreSQL, Auth, Edge Functions, Row Level Security).
-*   **AI/ML:** Google Gemini Multimodal AI (Text + Vision) with custom JSON parsing guards and rate limiting.
-*   **DevOps:** GitHub Actions CI/CD pipelines for automated Web/Mobile deployment.
-
 ---
 
-## The Broader Ecosystem Mindmap
+## Consumer App Mindmap
 
 ```mermaid
 flowchart LR
@@ -96,21 +72,14 @@ flowchart LR
     classDef level2 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
     classDef level3 fill:#344e41,color:#fff,stroke:none,rx:5,ry:5;
 
-    Root["Plately Smart Kitchen & Food Ecosystem"]:::root
-    
-    %% Level 1
-    Root --> App["Existing Consumer App"]:::level1
-    Root --> Vision["Vision & Future Strategy"]:::level1
-    Root --> Tech["Technical Architecture"]:::level1
-    Root --> Market["Market Advantage"]:::level1
+    Root["Plately Consumer App"]:::root
 
-    %% Level 2 - App
-    App --> Cook["Cook Mode"]:::level2
-    App --> Shelf["Living Shelf (Inventory)"]:::level2
-    App --> Scan["Scanning Suite"]:::level2
-    App --> Prep["Meal Prep & Health"]:::level2
-    App --> Social["Social & Profile"]:::level2
-    App --> Order["Order Mode Foundation"]:::level2
+    %% Level 2 - App Modules
+    Root --> Cook["Cook Mode"]:::level2
+    Root --> Shelf["Living Shelf (Inventory)"]:::level2
+    Root --> Scan["Scanning Suite"]:::level2
+    Root --> Prep["Meal Prep & Health"]:::level2
+    Root --> Social["Social & Profile"]:::level2
 
     %% Level 3 - Cook
     Cook --> Rec["5-Tier Recommendations"]:::level3
@@ -135,25 +104,4 @@ flowchart LR
     Social --> Gam["Gamification & Badges"]:::level3
     Social --> Fla["Flavor Profile Matrix"]:::level3
     Social --> Str["Activity Streaks"]:::level3
-
-    %% Level 3 - Order
-    Order --> Cart["Grocery Auto-Cart"]:::level3
-    Order --> Del["Delivery Partnerships"]:::level3
-    Order --> Res["Restaurant Discovery"]:::level3
-
-    %% Level 2 - Vision
-    Vision --> IoT["Smart Fridge Integration"]:::level3
-    Vision --> Fam["Family Account Sharing"]:::level3
-    Vision --> Diet["AI Dietitian"]:::level3
-
-    %% Level 2 - Tech
-    Tech --> Flu["Flutter Riverpod UI"]:::level3
-    Tech --> Sup["Supabase PostgreSQL"]:::level3
-    Tech --> Gem["Gemini AI Engine"]:::level3
-    Tech --> Git["GitHub Actions CI/CD"]:::level3
-    
-    %% Level 2 - Market Advantage
-    Market --> Sp["Hyper-Personalized AI"]:::level3
-    Market --> Cross["Cross-Platform Sync"]:::level3
-    Market --> Waste["Zero-Waste Focus"]:::level3
 ```
