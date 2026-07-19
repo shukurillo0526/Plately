@@ -74,9 +74,6 @@ flowchart LR
     Scan --> SFood["Scan recipe, food or barcode"]:::level3
     Scan --> SCal["Camera & Gallery Import"]:::level3
 
-    %% Level 3 - Prep
-    Prep --> Mac["Macro Analytics"]:::level3
-    Prep --> Cal["Calendar Planner"]:::level3
 
     %% Level 3 - Social
     Social --> Gam["Gamification & Badges"]:::level3
@@ -100,15 +97,14 @@ flowchart LR
     Order --> Cart["Grocery Auto-Cart"]:::level3
     Order --> Res["Restaurant Discovery"]:::level3
 
-    %% Level 4 - SFood -> Receipt
-    
-    %% Level 4 - SFood -> Food
+    %% Level 4 - SFood
+    SFood --> Receipt["Receipt"]:::level3
+    SFood --> Food["Food"]:::level3
+    SFood --> Barcode["Barcode"]:::level3
 
-    %% Level 4 - SFood -> Barcode
-
-    %% Level 4 - SCal -> Camera
-
-    %% Level 4 - SCal -> Gellery
+    %% Level 4 - SCal
+    SCal --> Camera["Camera"]:::level3
+    SCal --> Gallery["Gallery"]:::level3
     
     
 ```
