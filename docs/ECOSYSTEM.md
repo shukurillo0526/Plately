@@ -56,6 +56,8 @@ flowchart LR
     classDef level1 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
     classDef level2 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
     classDef level3 fill:#344e41,color:#fff,stroke:none,rx:5,ry:5;
+    classDef level4 fill:#2d4036,color:#fff,stroke:none,rx:5,ry:5;
+    classDef level5 fill:#233329,color:#fff,stroke:none,rx:5,ry:5;
 
     Root["Plately"]:::root
 
@@ -63,53 +65,112 @@ flowchart LR
     Root --> App["Consumer App"]:::level1
     Root --> Vision["Vision"]:::level1
 
+    %% ==========================================
+    %% CONSUMER APP BRANCH (Deeply Detailed)
+    %% ==========================================
+    
     %% Level 2 - App Modules
     App --> Cook["Cook Mode"]:::level2
     App --> Shelf["Living Shelf"]:::level2
     App --> Scan["Scanning Suite"]:::level2
     App --> Profile["Social & Profile"]:::level2
 
-    %% Level 3 - Cook
-    Cook --> Rec["5-Tier Recommendations"]:::level3
-    Cook --> Gen["Gemini AI Generator"]:::level3
-    Cook --> Exec["Interactive Cooking"]:::level3
-    Cook --> Feed["Vertical Recipe Feeds"]:::level3
-    Cook --> Rew["Gamified Cooking Rewards"]:::level3
+    %% ------------------------------------------
+    %% COOK MODE (Levels 3, 4, 5)
+    %% ------------------------------------------
+    Cook --> CookDisc["Recipe Discovery"]:::level3
+    CookDisc --> Tiers["5 Match Tiers"]:::level4
+    Tiers --> T1["Perfect (100% Match)"]:::level5
+    Tiers --> T2["For You (AI Pick)"]:::level5
+    Tiers --> T3["Use It Up (Expiring)"]:::level5
+    Tiers --> T4["Almost (Missing 1-2)"]:::level5
+    Tiers --> T5["Explore (All)"]:::level5
+    
+    CookDisc --> AIGen["AI Recipe Generator"]:::level4
+    AIGen --> Constraint["Inventory Constrained"]:::level5
+    AIGen --> Freeform["Freeform Generation"]:::level5
 
-    %% Level 3 - Shelf
-    Shelf --> Cat["Categorized Tracking"]:::level3
-    Shelf --> Exp["Expiration Monitoring"]:::level3
-    Shelf --> Dep["Auto-Depletion"]:::level3
-    Shelf --> Man["Manual Management"]:::level3
+    CookDisc --> CookFeed["Video Recipe Feeds"]:::level4
 
-    %% Level 3 - Scan
-    Scan --> Receipt["AI Receipt Parsing"]:::level3
-    Scan --> Barcode["Live Barcode Scanner"]:::level3
-    Scan --> Photo["Food Photo Recognition"]:::level3
-    Scan --> Audit["Extraction Audit Flow"]:::level3
+    Cook --> CookRun["Active Cooking Execution"]:::level3
+    CookRun --> CSteps["Interactive Steps"]:::level4
+    CookRun --> CTimer["Visual Step Timer"]:::level4
+    CookRun --> CAssist["AI Chat Assistant"]:::level4
+    CookRun --> CMini["Floating Mini-Player"]:::level4
 
-    %% Level 3 - Profile
-    Profile --> Gam["Gamification & Badges"]:::level3
-    Profile --> Flav["Flavor Profile Matrix"]:::level3
-    Profile --> Nutri["Nutrition Tracker"]:::level3
-    Profile --> Plan["7-Day Meal Planner"]:::level3
-    Profile --> Shop["Smart Shopping List"]:::level3
-    Profile --> Soc["Social & Creator Hub"]:::level3
+    Cook --> CookPost["Post-Cook Flow"]:::level3
+    CookPost --> CReward["Gamified Rewards (XP)"]:::level4
+    CookPost --> CPortion["Portions Logging Sheet"]:::level4
+    CPortion --> LogEat["Log Eaten Macros"]:::level5
+    CPortion --> StoreLeft["Store Leftovers to Shelf"]:::level5
 
-    %% Level 2 - Vision
+    Cook --> CookBulk["Bulk Meal Prep"]:::level3
+    CookBulk --> PrepPlan["Multi-Day Plan Sheet"]:::level4
+    CookBulk --> PrepShop["Aggregated Batch Shopping"]:::level4
+
+    %% ------------------------------------------
+    %% SHELF MODE (Levels 3, 4, 5)
+    %% ------------------------------------------
+    Shelf --> SZone["Zone Tracking"]:::level3
+    SZone --> ZFridge["Fridge"]:::level4
+    SZone --> ZFreezer["Freezer"]:::level4
+    SZone --> ZPantry["Pantry"]:::level4
+
+    Shelf --> SFresh["Freshness System"]:::level3
+    SFresh --> FPredict["AI Expiry Predictions"]:::level4
+    SFresh --> FPulse["Visual Urgency Pulses"]:::level4
+
+    Shelf --> SAction["Inventory Actions"]:::level3
+    SAction --> SSwipeR["Swipe Right (Consume)"]:::level4
+    SSwipeR --> SLogMac["Logs Macros to Diary"]:::level5
+    SAction --> SSwipeL["Swipe Left (Discard)"]:::level4
+    SAction --> SMan["Manual Detail Editor"]:::level4
+
+    %% ------------------------------------------
+    %% SCAN SUITE (Levels 3, 4, 5)
+    %% ------------------------------------------
+    Scan --> ScanMode["Scan Modes"]:::level3
+    ScanMode --> MRec["AI Receipt Parsing (OCR)"]:::level4
+    ScanMode --> MPhoto["Loose Food Photo Recognition"]:::level4
+    ScanMode --> MBar["Live Barcode Scanner"]:::level4
+    ScanMode --> MCal["Visual Plate Calorie Scanner"]:::level4
+
+    Scan --> ScanAud["Audit Flow"]:::level3
+    ScanAud --> AConf["Confidence Indicators"]:::level4
+    ScanAud --> AEdit["Manual Correction"]:::level4
+    ScanAud --> ABulk["Bulk Add to Shelf"]:::level4
+
+    %% ------------------------------------------
+    %% PROFILE MODE (Levels 3, 4, 5)
+    %% ------------------------------------------
+    Profile --> PGam["Gamification"]:::level3
+    PGam --> GProg["XP & Level Progress"]:::level4
+    PGam --> GBadge["Unlockable Badges"]:::level4
+    PGam --> GStreak["Cooking Streaks"]:::level4
+
+    Profile --> PHealth["Health & Diet"]:::level3
+    PHealth --> HFlav["Flavor Profile Radar Matrix"]:::level4
+    PHealth --> HNut["Macro & Nutrition Tracker"]:::level4
+    PHealth --> HPlan["7-Day Calendar Meal Planner"]:::level4
+    PHealth --> HShop["Smart Syncing Shopping List"]:::level4
+
+    Profile --> PSoc["Social Hub"]:::level3
+    PSoc --> SFeed["Community Feed"]:::level4
+    PSoc --> SCreate["Creator Dashboard"]:::level4
+
+    %% ==========================================
+    %% VISION BRANCH (Levels 2, 3)
+    %% ==========================================
     Vision --> IoT["Smart Kitchen IoT"]:::level2
     Vision --> Hyper["Hyper-Personalization"]:::level2
     Vision --> Order["Order Mode & Commerce"]:::level2
 
-    %% Level 3 - Vision -> IoT
     IoT --> Fridge["Smart Fridge Integration"]:::level3
     IoT --> Scale["Smart Scale Connectivity"]:::level3
 
-    %% Level 3 - Vision -> Hyper
     Hyper --> Diet["AI Dietitian"]:::level3
     Hyper --> Fam["Family Account Sharing"]:::level3
 
-    %% Level 3 - Vision -> Order
     Order --> Cart["Grocery Auto-Cart"]:::level3
     Order --> Res["Restaurant Discovery"]:::level3
 ```
