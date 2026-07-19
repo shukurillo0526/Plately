@@ -1,85 +1,63 @@
-# Plately Smart Kitchen & Food Ecosystem
+# Plately Ecosystem
 
-This document outlines the current state and existing features available in the Plately consumer app at launch.
+This document outlines the current state of the Plately consumer app alongside our future vision.
 
 ## Flow & Detailed Feature Breakdown
 
-### 📱 Consumer Applications (Cross-Platform)
-*   **Unified Interface**
-    *   Flutter-built architecture supporting iOS, Android, and Web simultaneously.
-    *   Responsive design with dynamic theming and dual-mode navigation.
+### 📱 Consumer App (Existing Features)
+*   **Cook Mode (Smart Cooking & AI)**
+    *   **5-Tier Recommendation Engine:** Perfect Match, For You, Use It Up, Almost There, Explore.
+    *   **Cuisine & Dietary Sorting:** Dynamic filtering by global cuisines and dietary needs.
+    *   **Gemini AI Recipe Generator:** Constraint-based (inventory) and Freeform generation.
+    *   **Bulk Cooking & Meal Prep Engine:** Target macro-nutrient optimization.
+*   **Living Shelf (Inventory Management)**
+    *   **Smart Ingredient Tracking:** Categorized storage with visual expiration monitoring.
+    *   **Automated Lifecycle:** Auto-depletion upon cooking.
+    *   **Manual Management:** Add, edit, delete with smart icons.
+*   **Scanning Suite**
+    *   **AI Receipt Parsing:** Camera integration and gallery import for automated OCR text extraction.
+*   **Meal Prep & Health Analytics**
+    *   **Nutrition Tracking:** Detailed macro-nutrient breakdowns and caloric tracking.
+    *   **Calendar & Scheduling:** Weekly calendar view for scheduled meals.
+*   **Social & User Profile**
+    *   **Gamification & Rewards Engine:** Activity streaks, points, and unlockable badges.
+    *   **Flavor Profile Analytics:** Taste mapping analytics and ingredient diversity scoring.
 
-### 🍳 Cook Mode (Smart Cooking & AI)
-*   **5-Tier Recommendation Engine** (Learning algorithm based on interaction history)
-    1.  **Perfect Match:** 100% ingredient match with current Living Shelf.
-    2.  **For You:** High affinity based on past likes and Flavor Profile.
-    3.  **Use It Up:** Prioritizes recipes containing soon-to-expire ingredients to reduce waste.
-    4.  **Almost There:** 75%+ ingredient match (suggests missing items).
-    5.  **Explore:** Discovery of trending, new, and diverse recipes globally.
-*   **Cuisine & Dietary Sorting**
-    *   Dynamic filtering by global cuisines (Uzbek, Korean, Italian, Mexican, etc.) and dietary needs.
-*   **Gemini AI Recipe Generator**
-    *   *Constraint-based generation:* Creates unique recipes strictly using available ingredients.
-    *   *Freeform generation:* Inspires new ideas regardless of current inventory.
-*   **Bulk Cooking & Meal Prep Engine**
-    *   Input target days and meals/day.
-    *   Target macro-nutrient optimization (custom calorie and protein goals).
-*   **Recipe Execution**
-    *   Interactive, step-by-step cooking interface with ingredient portioning.
-
-### 🥫 Living Shelf (Inventory Management)
-*   **Smart Ingredient Tracking**
-    *   Categorized storage structures (Produce, Meat, Dairy, Pantry, Spices, etc.).
-    *   Visual expiration monitoring with color-coded freshness indicators.
-*   **Automated Lifecycle**
-    *   Auto-depletion of ingredients from the shelf upon cooking a recipe.
-*   **Manual & Quick Management**
-    *   Add, edit, delete functionality with smart emoji/icon pairing.
-
-### 📸 Scanning Suite
-*   **AI Receipt Parsing**
-    *   Camera integration for real-time scanning of grocery receipts.
-    *   Gallery import for digital receipts.
-    *   Automated OCR text extraction, parsed by AI into structured Living Shelf items.
-
-### 🥗 Meal Prep & Health Analytics
-*   **Nutrition Tracking**
-    *   Detailed macro-nutrient breakdowns (Protein, Carbs, Fats).
-    *   Caloric tracking against user health goals.
-*   **Calendar & Scheduling**
-    *   Weekly calendar view for scheduled meals.
-    *   Prep-day optimization and batch cooking schedules.
-
-### 👤 Social & User Profile
-*   **Gamification & Rewards Engine**
-    *   Activity streaks and dynamic point accumulation.
-    *   Unlockable achievements and badges (e.g., Novice Chef, AI Master, Wok Star).
-    *   Tier progression leveling system.
-*   **Flavor Profile Analytics**
-    *   Taste mapping analytics (Spicy, Sweet, Savory, Sour preferences).
-    *   Ingredient diversity scoring.
-    *   Cooking habits and frequency dashboard.
+### 🌐 Vision (Future Strategy)
+*   **Smart Kitchen IoT**
+    *   Smart Fridge camera integration to auto-update the Living Shelf.
+    *   Smart Scale and Smart Oven connectivity for precision cooking.
+*   **Hyper-Personalization**
+    *   AI Dietitian for automated health goal coaching.
+    *   Family and household account sharing (shared Living Shelves).
+*   **Order Mode & Commerce**
+    *   Auto-cart generation for grocery delivery (Instacart, Whole Foods).
+    *   Local restaurant discovery tailored by AI Flavor Profile.
 
 ---
 
-## Consumer App Mindmap
+## Ecosystem Map
 
 ```mermaid
-flowchart LR
+flowchart TD
     %% Styling to match the dark aesthetic
     classDef root fill:#444b5a,color:#fff,stroke:none,rx:5,ry:5,padding:20px;
     classDef level1 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
     classDef level2 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
     classDef level3 fill:#344e41,color:#fff,stroke:none,rx:5,ry:5;
 
-    Root["Plately Consumer App"]:::root
+    Root["Plately"]:::root
+
+    %% Level 1
+    Root --> App["Consumer App"]:::level1
+    Root --> Vision["Vision"]:::level1
 
     %% Level 2 - App Modules
-    Root --> Cook["Cook Mode"]:::level2
-    Root --> Shelf["Living Shelf (Inventory)"]:::level2
-    Root --> Scan["Scanning Suite"]:::level2
-    Root --> Prep["Meal Prep & Health"]:::level2
-    Root --> Social["Social & Profile"]:::level2
+    App --> Cook["Cook Mode"]:::level2
+    App --> Shelf["Living Shelf"]:::level2
+    App --> Scan["Scanning Suite"]:::level2
+    App --> Prep["Meal Prep & Health"]:::level2
+    App --> Social["Social & Profile"]:::level2
 
     %% Level 3 - Cook
     Cook --> Rec["5-Tier Recommendations"]:::level3
@@ -97,11 +75,28 @@ flowchart LR
     Scan --> Cam["Camera & Gallery Import"]:::level3
 
     %% Level 3 - Prep
-    Prep --> Mac["Macro & Calorie Analytics"]:::level3
+    Prep --> Mac["Macro Analytics"]:::level3
     Prep --> Cal["Calendar Planner"]:::level3
 
     %% Level 3 - Social
     Social --> Gam["Gamification & Badges"]:::level3
-    Social --> Fla["Flavor Profile Matrix"]:::level3
+    Social --> Fla["Flavor Profile"]:::level3
     Social --> Str["Activity Streaks"]:::level3
+
+    %% Level 2 - Vision
+    Vision --> IoT["Smart Kitchen IoT"]:::level2
+    Vision --> Hyper["Hyper-Personalization"]:::level2
+    Vision --> Order["Order Mode & Commerce"]:::level2
+
+    %% Level 3 - Vision -> IoT
+    IoT --> Fridge["Smart Fridge Integration"]:::level3
+    IoT --> Scale["Smart Scale Connectivity"]:::level3
+
+    %% Level 3 - Vision -> Hyper
+    Hyper --> Diet["AI Dietitian"]:::level3
+    Hyper --> Fam["Family Account Sharing"]:::level3
+
+    %% Level 3 - Vision -> Order
+    Order --> Cart["Grocery Auto-Cart"]:::level3
+    Order --> Res["Restaurant Discovery"]:::level3
 ```
