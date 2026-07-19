@@ -35,6 +35,7 @@ This document reflects the exact feature set currently available in the Plately 
 
 ### 🌐 Vision (Future Strategy)
 
+*   **Version 1:** Initial launch features and optimizations.
 *   **Version 2:** Upcoming features and enhancements.
 *   **Version 3:** Mid-term strategic additions.
 *   **Version 4:** Long-term ecosystem expansions.
@@ -155,6 +156,7 @@ flowchart LR
     %% ==========================================
     %% VISION BRANCH (Roadmap)
     %% ==========================================
+    Vision --> V1["Version 1"]:::level2
     Vision --> V2["Version 2"]:::level2
     Vision --> V3["Version 3"]:::level2
     Vision --> V4["Version 4"]:::level2
