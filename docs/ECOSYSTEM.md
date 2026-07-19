@@ -43,7 +43,7 @@ This document reflects the exact feature set currently available in the Plately 
     *   **Phase 5: Massive Recipe Database:** Build and ingest a highly usable, structured recipe database containing tens of thousands of actual recipes ready for launch.
 *   **Version 2 (Social, Analytics & Creator Monetization):**
     *   **Feeds & Socialization:** A dedicated feeds section featuring video content, interactive chat, and community social engagement.
-    *   **Profile Analytics:** Deep, data-driven analytics within user profiles (tracking flavor profiles, nutritional impact, and meal habits).
+    *   **Profile & Creator Analytics:** Deep, data-driven analytics within user profiles (tracking flavor profiles, nutritional impact, and meal habits), alongside a dedicated **Creator Studio** providing advanced metrics on recipe engagement, follower growth, and monetization for creators.
     *   **Creator Marketplace:** Premium recipes created by top chefs/creators, which can be purchased by users, opening a monetization channel for the community.
 *   **Version 3:** Mid-term strategic additions.
 *   **Version 4:** Long-term ecosystem expansions.
