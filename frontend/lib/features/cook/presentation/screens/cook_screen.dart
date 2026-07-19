@@ -5,6 +5,7 @@
 // user's inventory, and computes a match score.
 
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -1075,13 +1076,23 @@ class _CookScreenState extends ConsumerState<CookScreen>
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.fromLTRB(16, 10, 16, 2),
-                  children: [
-                    _cuisineChip(null, AppLocalizations.of(context)?.all ?? 'All'),
-                    ..._allCuisines.map((c) => _cuisineChip(c, L10nHelper.translateCuisine(c, Localizations.localeOf(context)))),
-                  ],
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.trackpad,
+                    },
+                  ),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(16, 10, 16, 2),
+                    children: [
+                      _cuisineChip(null, AppLocalizations.of(context)?.all ?? 'All'),
+                      ..._allCuisines.map((c) => _cuisineChip(c, L10nHelper.translateCuisine(c, Localizations.localeOf(context)))),
+                    ],
+                  ),
                 ),
               ),
             ),
