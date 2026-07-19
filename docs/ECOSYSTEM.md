@@ -176,23 +176,47 @@ flowchart LR
     Vision --> V3["Version 3 (Restaurant SaaS)"]:::level2
     Vision --> V4["Version 4 (Hardware & Fleet)"]:::level2
 
-    %% Level 3 - Version 1
+    %% Level 3, 4, 5 - Version 1
     V1 --> V1Beta["Showcase & Beta Iteration"]:::level3
+    V1Beta --> LocalAI["Local Private AI (Ollama)"]:::level4
+    LocalAI --> NoLat["Zero Latency Generation"]:::level5
     V1 --> V1Db["Massive Recipe Database"]:::level3
+    V1Db --> SixSig["6-Signal Recommendation Engine"]:::level4
+    SixSig --> ExFlavor["Expiry, Flavor, Inventory Vectors"]:::level5
     V1 --> V1Groc["Seamless Grocery Delivery"]:::level3
+    V1Groc --> CartAPI["Supermarket APIs"]:::level4
+    CartAPI --> AutoCart["Auto-Cart Missing Items"]:::level5
 
-    %% Level 3 - Version 2
+    %% Level 3, 4, 5 - Version 2
     V2 --> V2Feed["Social Video Feeds"]:::level3
+    V2Feed --> VertVideo["TikTok-style Shorts"]:::level4
+    VertVideo --> OrderNow["Direct 'Order Now' Overlays"]:::level5
     V2 --> V2Ana["Creator Studio Analytics"]:::level3
+    V2Ana --> MetDash["Advanced Metrics Dashboard"]:::level4
+    MetDash --> RevEng["Revenue & Follower Tracking"]:::level5
     V2 --> V2Market["Premium Recipe Marketplace"]:::level3
+    V2Market --> PayWall["Monetized Chef Content"]:::level4
+    PayWall --> MicroTx["Micro-transaction Layer"]:::level5
 
-    %% Level 3 - Version 3
+    %% Level 3, 4, 5 - Version 3
     V3 --> V3POS["Mobile POS & Payments"]:::level3
+    V3POS --> LivePOS["Live Restaurant Dashboard"]:::level4
+    LivePOS --> WSSync["Real-Time WebSocket Sync"]:::level5
     V3 --> V3SaaS["Restaurant SaaS Websites"]:::level3
+    V3SaaS --> WhiteLab["White-Label Sites"]:::level4
+    WhiteLab --> AIMark["AI Social Media Manager"]:::level5
     V3 --> V3Book["Seat Booking System"]:::level3
+    V3Book --> PayGate["Payment Integration"]:::level4
+    PayGate --> StripeLoc["Stripe / Local Gateways"]:::level5
 
-    %% Level 3 - Version 4
+    %% Level 3, 4, 5 - Version 4
     V4 --> V4Log["Full Logistics Ecosystem"]:::level3
+    V4Log --> DispAI["Dispatch AI"]:::level4
+    DispAI --> RouteETA["Optimal Routing & ETA"]:::level5
     V4 --> V4Fleet["Delivery Fleet App"]:::level3
+    V4Fleet --> DriverApp["Standalone Driver App"]:::level4
+    DriverApp --> FlatFee["Flat-Fee Shared Network"]:::level5
     V4 --> V4Kiosk["Self-Service Kiosk Hardware"]:::level3
+    V4Kiosk --> TouchHW["Touchscreen Kiosks"]:::level4
+    TouchHW --> KDSPrint["KDS & Receipt Printers"]:::level5
 ```
