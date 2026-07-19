@@ -56,7 +56,6 @@ flowchart LR
     App --> Cook["Cook Mode"]:::level2
     App --> Shelf["Living Shelf"]:::level2
     App --> Scan["Scanning Suite"]:::level2
-    App --> Prep["Meal Prep & Health"]:::level2
     App --> Social["Social & Profile"]:::level2
 
     %% Level 3 - Cook
@@ -64,6 +63,7 @@ flowchart LR
     Cook --> Gen["AI Recipe Generator"]:::level3
     Cook --> Bulk["Bulk Cooking & Macros"]:::level3
     Cook --> Cuis["Cuisine Discovery"]:::level3
+    Cook --> Rcook["Recipe cooking"]:::level3
 
     %% Level 3 - Shelf
     Shelf --> Cat["Ingredient Categorization"]:::level3
@@ -71,8 +71,8 @@ flowchart LR
     Shelf --> Dep["Auto-Depletion"]:::level3
 
     %% Level 3 - Scan
-    Scan --> Ocr["Receipt OCR AI"]:::level3
-    Scan --> Cam["Camera & Gallery Import"]:::level3
+    Scan --> SFood["Scan recipe, food or barcode"]:::level3
+    Scan --> SCal["Camera & Gallery Import"]:::level3
 
     %% Level 3 - Prep
     Prep --> Mac["Macro Analytics"]:::level3
@@ -99,4 +99,16 @@ flowchart LR
     %% Level 3 - Vision -> Order
     Order --> Cart["Grocery Auto-Cart"]:::level3
     Order --> Res["Restaurant Discovery"]:::level3
+
+    %% Level 4 - SFood -> Receipt
+    
+    %% Level 4 - SFood -> Food
+
+    %% Level 4 - SFood -> Barcode
+
+    %% Level 4 - SCal -> Camera
+
+    %% Level 4 - SCal -> Gellery
+    
+    
 ```
