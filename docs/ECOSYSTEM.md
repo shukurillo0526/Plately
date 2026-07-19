@@ -171,8 +171,28 @@ flowchart LR
     %% ==========================================
     %% VISION BRANCH (Roadmap)
     %% ==========================================
-    Vision --> V1["Version 1"]:::level2
-    Vision --> V2["Version 2"]:::level2
-    Vision --> V3["Version 3"]:::level2
-    Vision --> V4["Version 4"]:::level2
+    Vision --> V1["Version 1 (Pre-Launch)"]:::level2
+    Vision --> V2["Version 2 (Creator & Social)"]:::level2
+    Vision --> V3["Version 3 (Restaurant SaaS)"]:::level2
+    Vision --> V4["Version 4 (Hardware & Fleet)"]:::level2
+
+    %% Level 3 - Version 1
+    V1 --> V1Beta["Showcase & Beta Iteration"]:::level3
+    V1 --> V1Db["Massive Recipe Database"]:::level3
+    V1 --> V1Groc["Seamless Grocery Delivery"]:::level3
+
+    %% Level 3 - Version 2
+    V2 --> V2Feed["Social Video Feeds"]:::level3
+    V2 --> V2Ana["Creator Studio Analytics"]:::level3
+    V2 --> V2Market["Premium Recipe Marketplace"]:::level3
+
+    %% Level 3 - Version 3
+    V3 --> V3POS["Mobile POS & Payments"]:::level3
+    V3 --> V3SaaS["Restaurant SaaS Websites"]:::level3
+    V3 --> V3Book["Seat Booking System"]:::level3
+
+    %% Level 3 - Version 4
+    V4 --> V4Log["Full Logistics Ecosystem"]:::level3
+    V4 --> V4Fleet["Delivery Fleet App"]:::level3
+    V4 --> V4Kiosk["Self-Service Kiosk Hardware"]:::level3
 ```
