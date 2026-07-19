@@ -45,7 +45,10 @@ This document reflects the exact feature set currently available in the Plately 
     *   **Feeds & Socialization:** A dedicated feeds section featuring video content, interactive chat, and community social engagement.
     *   **Profile & Creator Analytics:** Deep, data-driven analytics within user profiles (tracking flavor profiles, nutritional impact, and meal habits), alongside a dedicated **Creator Studio** providing advanced metrics on recipe engagement, follower growth, and monetization for creators.
     *   **Creator Marketplace:** Premium recipes created by top chefs/creators, which can be purchased by users, opening a monetization channel for the community.
-*   **Version 3:** Mid-term strategic additions.
+*   **Version 3 (Delivery, Booking & Restaurant SaaS):**
+    *   **Architecture Shift & Second Tab:** Introduction of a fundamentally new architecture to unlock the currently hidden "Delivery & Ordering" tab (the codebase foundation for this already exists).
+    *   **Business Creator (Restaurant SaaS):** A "Shopify for Restaurants" suite where eating place owners can easily spin up their own custom in-app websites and use AI to automatically manage their social media presence.
+    *   **Ordering & Seat Booking:** Plately contracts directly with eating places to manage their food delivery orders and table reservations seamlessly through their in-app sites.
 *   **Version 4:** Long-term ecosystem expansions.
 
 ---
