@@ -35,7 +35,10 @@ This document reflects the exact feature set currently available in the Plately 
 
 ### 🌐 Vision (Future Strategy)
 
-*   **Version 1:** Initial launch features and optimizations.
+*   **Version 1 (Pre-Launch & Funding Strategy):**
+    *   **Phase 1: Showcase & Advertise:** Delay public launch. Focus entirely on advertising and showcasing the deeply built current features.
+    *   **Phase 2: Prototype Furthest Milestones:** Fork into a new GitHub branch to rapidly build out the furthest possible technical milestones. The goal is to perfectly showcase the *flow* and vision, rather than achieving perfect, production-ready functionality.
+    *   **Phase 3: Beta Signups & Investment:** Leverage the showcase to capture massive beta sign-ups. Use this verified traction and technical demonstration to secure multi-million dollar seed investment before the actual working public launch.
 *   **Version 2:** Upcoming features and enhancements.
 *   **Version 3:** Mid-term strategic additions.
 *   **Version 4:** Long-term ecosystem expansions.
