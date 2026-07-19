@@ -33,6 +33,10 @@ class CookingRunScreen extends StatefulWidget {
   final int? fatG;
   final bool isBeginnerMode;
   final bool restoreFromSession;
+  final bool isBulkMode;
+  final String containerLabel;
+  final String storageZone;
+  final int portionsToEatNow;
 
   const CookingRunScreen({
     super.key,
@@ -53,6 +57,10 @@ class CookingRunScreen extends StatefulWidget {
     this.fatG,
     this.isBeginnerMode = false,
     this.restoreFromSession = false,
+    this.isBulkMode = false,
+    this.containerLabel = '',
+    this.storageZone = 'fridge',
+    this.portionsToEatNow = 1,
   });
 
   @override
@@ -326,6 +334,9 @@ class _CookingRunScreenState extends State<CookingRunScreen> {
       recipeId: widget.recipeId,
       recipeTitle: widget.title,
       initialServings: widget.servingsCooked,
+      initialPortionsEaten: widget.isBulkMode ? widget.portionsToEatNow : null,
+      initialContainerLabel: widget.isBulkMode ? widget.containerLabel : null,
+      initialStorageZone: widget.isBulkMode ? widget.storageZone : null,
       ingredients: portionIngredients,
       caloriesPerPortion: calPerPortion,
       proteinPerPortion: proteinPerPortion,

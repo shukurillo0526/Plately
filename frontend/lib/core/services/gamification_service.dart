@@ -110,7 +110,8 @@ class GamificationService {
   }
 
   static String _formatBadgeName(String id) {
-    return id.split('_').map((word) => word.substring(0, 1).toUpperCase() + word.substring(1)).join(' ');
+    if (id.isEmpty) return '';
+    return id.split('_').where((w) => w.isNotEmpty).map((word) => word.substring(0, 1).toUpperCase() + word.substring(1)).join(' ');
   }
 
   static String _formatStreakName(String type) {

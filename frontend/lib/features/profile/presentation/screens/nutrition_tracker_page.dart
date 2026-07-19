@@ -381,7 +381,7 @@ class _NutritionTrackerPageState extends State<NutritionTrackerPage> {
             children: [
               Text(emoji, style: TextStyle(fontSize: 24)),
               SizedBox(width: 12),
-              Expanded(child: Text('${type[0].toUpperCase()}${type.substring(1)}',
+              Expanded(child: Text('${type.isEmpty ? '' : type[0].toUpperCase()}${type.length > 1 ? type.substring(1) : ''}',
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w600))),
               Text('$cal cal', style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.w700)),
             ],

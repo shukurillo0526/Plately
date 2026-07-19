@@ -270,7 +270,7 @@ class _MealTypeRow extends StatelessWidget {
             children: [
               Icon(_icon, size: 18, color: c),
               SizedBox(width: 8),
-              Text(type[0].toUpperCase() + type.substring(1),
+              Text(type.isEmpty ? '' : type[0].toUpperCase() + type.substring(1),
                 style: TextStyle(color: c, fontSize: 14, fontWeight: FontWeight.w700)),
               Spacer(),
               GestureDetector(

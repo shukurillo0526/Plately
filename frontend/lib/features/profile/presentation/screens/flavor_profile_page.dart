@@ -93,7 +93,7 @@ class _FlavorProfilePageState extends State<FlavorProfilePage> {
                           children: [
                             Row(
                               children: [
-                                Text('$emoji  ${e.key[0].toUpperCase()}${e.key.substring(1)}',
+                                Text('$emoji  ${e.key.isEmpty ? '' : e.key[0].toUpperCase() + e.key.substring(1)}',
                                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
                                 Spacer(),
                                 Text('${e.value.toInt()}%',
@@ -190,7 +190,7 @@ class _RadarPainter extends CustomPainter {
       final pt = Offset(center.dx + labelRadius * math.cos(a), center.dy + labelRadius * math.sin(a));
       
       final label = keys[i];
-      final capitalized = label[0].toUpperCase() + label.substring(1);
+      final capitalized = label.isEmpty ? '' : label[0].toUpperCase() + label.substring(1);
       
       textPainter.text = TextSpan(
         text: capitalized,

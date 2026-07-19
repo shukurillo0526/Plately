@@ -2044,7 +2044,7 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
                       child: Column(
                         children: [
                           Text(_mealEmoji[type] ?? '🍽️', style: TextStyle(fontSize: 16)),
-                          Text(type[0].toUpperCase() + type.substring(1),
+                          Text(type.isEmpty ? '' : type[0].toUpperCase() + type.substring(1),
                             style: TextStyle(
                               color: _mealType == type ? Colors.orange : cs.onSurface.withValues(alpha: 0.38),
                               fontSize: 10, fontWeight: FontWeight.w600)),

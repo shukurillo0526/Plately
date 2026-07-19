@@ -428,7 +428,7 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                            ),
                                            SizedBox(height: 2),
                                            Text(
-                                             'Stored ${widget.prepResult!['portions_stored']} portion(s) of "${widget.title}" in your fridge.',
+                                             'Stored ${widget.prepResult!['portions_stored']} portion(s) of "${widget.title}" in your ${widget.prepResult!['storage_zone'] == 'freezer' ? 'freezer' : 'fridge'}.',
                                              style: TextStyle(
                                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                                fontSize: 13,
@@ -449,6 +449,28 @@ class _CookingRewardScreenState extends ConsumerState<CookingRewardScreen>
                                                      fontWeight: FontWeight.w600,
                                                    ),
                                                  ),
+                                                 if (widget.prepResult!['storage_zone'] != null) ...[
+                                                   SizedBox(width: 8),
+                                                   Container(
+                                                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                     decoration: BoxDecoration(
+                                                       color: widget.prepResult!['storage_zone'] == 'freezer'
+                                                           ? Colors.indigo.withValues(alpha: 0.1)
+                                                           : Colors.lightBlue.withValues(alpha: 0.1),
+                                                       borderRadius: BorderRadius.circular(4),
+                                                     ),
+                                                     child: Text(
+                                                       widget.prepResult!['storage_zone'] == 'freezer' ? '❄️ Freezer' : '🧊 Fridge',
+                                                       style: TextStyle(
+                                                         color: widget.prepResult!['storage_zone'] == 'freezer'
+                                                             ? Colors.indigo
+                                                             : Colors.lightBlue,
+                                                         fontSize: 10,
+                                                         fontWeight: FontWeight.bold,
+                                                       ),
+                                                     ),
+                                                   ),
+                                                 ],
                                                ],
                                              ),
                                            ],

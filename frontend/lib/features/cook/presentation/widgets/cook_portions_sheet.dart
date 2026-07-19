@@ -13,6 +13,9 @@ class CookPortionsSheet extends StatefulWidget {
   final double proteinPerPortion;
   final double carbsPerPortion;
   final double fatPerPortion;
+  final int? initialPortionsEaten;
+  final String? initialContainerLabel;
+  final String? initialStorageZone;
   final Function(Map<String, dynamic> result) onComplete;
 
   const CookPortionsSheet({
@@ -25,6 +28,9 @@ class CookPortionsSheet extends StatefulWidget {
     required this.proteinPerPortion,
     required this.carbsPerPortion,
     required this.fatPerPortion,
+    this.initialPortionsEaten,
+    this.initialContainerLabel,
+    this.initialStorageZone,
     required this.onComplete,
   });
 
@@ -38,6 +44,9 @@ class CookPortionsSheet extends StatefulWidget {
     required double proteinPerPortion,
     required double carbsPerPortion,
     required double fatPerPortion,
+    int? initialPortionsEaten,
+    String? initialContainerLabel,
+    String? initialStorageZone,
     required Function(Map<String, dynamic> result) onComplete,
   }) {
     return showModalBottomSheet(
@@ -53,6 +62,9 @@ class CookPortionsSheet extends StatefulWidget {
         proteinPerPortion: proteinPerPortion,
         carbsPerPortion: carbsPerPortion,
         fatPerPortion: fatPerPortion,
+        initialPortionsEaten: initialPortionsEaten,
+        initialContainerLabel: initialContainerLabel,
+        initialStorageZone: initialStorageZone,
         onComplete: onComplete,
       ),
     );
@@ -67,13 +79,20 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
   late int _portionsEaten;
   bool _submitting = false;
   String? _error;
-  String _containerLabel = '';
+  late String _containerLabel;
+  late String _storageZone;
 
   @override
   void initState() {
     super.initState();
     _portionsCooked = widget.initialServings.clamp(1, 12);
-    _portionsEaten = 1.clamp(0, _portionsCooked);
+    if (widget.initialPortionsEaten != null) {
+      _portionsEaten = widget.initialPortionsEaten!.clamp(0, _portionsCooked);
+    } else {
+      _portionsEaten = 1.clamp(0, _portionsCooked);
+    }
+    _containerLabel = widget.initialContainerLabel ?? '';
+    _storageZone = widget.initialStorageZone ?? 'fridge';
   }
 
   Future<void> _submit() async {
@@ -99,6 +118,7 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
           'calories_logged': (widget.caloriesPerPortion * _portionsEaten).round(),
           'deducted_count': 0,
           'container_label': _containerLabel,
+          'storage_zone': _storageZone,
         };
         if (mounted) {
           Navigator.pop(context);
@@ -130,10 +150,19 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
           'p_protein_per_portion': widget.proteinPerPortion,
           'p_carbs_per_portion': widget.carbsPerPortion,
           'p_fat_per_portion': widget.fatPerPortion,
+          'p_container_label': _containerLabel.isEmpty ? null : _containerLabel,
+          'p_storage_zone': _storageZone,
         },
       );
 
       final Map<String, dynamic> result = Map<String, dynamic>.from(response as Map);
+
+      // If the backend RPC was missing the new parameters, it won't return container_label/storage_zone,
+      // so we inject them into the result manually to ensure the UI updates correctly!
+      if (!result.containsKey('storage_zone')) {
+        result['storage_zone'] = _storageZone;
+        result['container_label'] = _containerLabel.isEmpty ? null : _containerLabel;
+      }
 
       if (mounted) {
         Navigator.pop(context); // Close bottom sheet
@@ -381,6 +410,26 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
                   ),
                   onChanged: (v) => _containerLabel = v,
                 ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _zoneButton(
+                      icon: Icons.ac_unit,
+                      label: 'Fridge',
+                      zone: 'fridge',
+                      color: Colors.lightBlue,
+                      theme: theme,
+                    ),
+                    const SizedBox(width: 10),
+                    _zoneButton(
+                      icon: Icons.severe_cold,
+                      label: 'Freezer',
+                      zone: 'freezer',
+                      color: Colors.indigo,
+                      theme: theme,
+                    ),
+                  ],
+                ),
               ],
               const SizedBox(height: 28),
 
@@ -425,19 +474,63 @@ class _CookPortionsSheetState extends State<CookPortionsSheet> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(width: 12),
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _zoneButton({
+    required IconData icon,
+    required String label,
+    required String zone,
+    required Color color,
+    required ThemeData theme,
+  }) {
+    final selected = _storageZone == zone;
+    final primary = theme.colorScheme.primary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _storageZone = zone);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? color.withValues(alpha: 0.1) : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.1),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: selected ? color : theme.colorScheme.onSurface.withValues(alpha: 0.4), size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

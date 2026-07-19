@@ -46,8 +46,8 @@ class _BulkCookingSectionState extends State<BulkCookingSection> {
   @override
   void didUpdateWidget(covariant BulkCookingSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_eatNow >= widget.servings) {
-      _eatNow = (widget.servings - 1).clamp(1, widget.servings);
+    if (_eatNow > widget.servings) {
+      _eatNow = widget.servings.clamp(1, widget.servings);
       widget.onPortionsToEatNowChanged(_eatNow);
     }
   }
@@ -204,7 +204,7 @@ class _BulkCookingSectionState extends State<BulkCookingSection> {
                             ),
                           ),
                           _miniButton(Icons.add, () {
-                            if (_eatNow < widget.servings - 1) {
+                            if (_eatNow < widget.servings) {
                               setState(() => _eatNow++);
                               widget.onPortionsToEatNowChanged(_eatNow);
                             }

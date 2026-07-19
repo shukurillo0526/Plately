@@ -398,6 +398,10 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
           proteinG: widget.proteinPerServing != null ? (widget.proteinPerServing! * _servings).round() : null,
           carbsG: widget.carbsPerServing != null ? (widget.carbsPerServing! * _servings).round() : null,
           fatG: widget.fatPerServing != null ? (widget.fatPerServing! * _servings).round() : null,
+          isBulkMode: _isBulkMode,
+          containerLabel: _containerLabel,
+          storageZone: _storageZone,
+          portionsToEatNow: _portionsToEatNow,
         ),
       ),
     );

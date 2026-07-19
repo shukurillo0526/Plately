@@ -92,9 +92,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     super.initState();
     // Pre-fill name from email
     final email = Supabase.instance.client.auth.currentUser?.email;
-    if (email != null) {
+    if (email != null && email.contains('@')) {
       final namePart = email.split('@').first;
-      _nameController.text = namePart[0].toUpperCase() + namePart.substring(1);
+      if (namePart.isNotEmpty) {
+        _nameController.text = namePart[0].toUpperCase() + namePart.substring(1);
+      }
     }
   }
 
