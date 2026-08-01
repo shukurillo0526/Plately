@@ -915,6 +915,7 @@ A series of rapid hotfixes resolving critical app store compliance issues and ze
 ### Highlights
 - **Google Play Media Policy Compliance**:
   - Removed overbroad `READ_EXTERNAL_STORAGE` and `READ_MEDIA_IMAGES` permissions from `AndroidManifest.xml` to comply with Google Play's strict photo/video permission policies. 
+  - Added `tools:node="remove"` overrides to explicitly force the Android compiler to strip these permissions from the final merged manifest, preventing third-party plugins (like `image_picker`) from secretly injecting them back in.
   - Relied entirely on the native Android Photo Picker via Flutter's `image_picker` for secure, permissionless media selection.
 - **Onboarding Flow Crash Resolution**:
   - Fixed a silent backend crash that blocked users from completing onboarding if they skipped setting a custom username.
@@ -922,4 +923,4 @@ A series of rapid hotfixes resolving critical app store compliance issues and ze
 - **API Payload Integrity**:
   - Resolved a Dart 3 map literal syntax error (`?displayName`) in `api_service.dart` for the `/init` endpoint, replacing it with the robust conditional spread `if (displayName != null)`.
 - **Release Automation**:
-  - Bumped version to `0.1.13+14` and successfully generated a clean release Android App Bundle (`app-release.aab`) ready for Google Play Console upload.
+  - Bumped version to `0.1.13+15` and successfully generated a clean release Android App Bundle (`app-release.aab`) ready for Google Play Console upload.
