@@ -551,7 +551,7 @@ class ApiService {
       body: jsonEncode({
         'user_id': userId,
         'email': email,
-        'display_name': ?displayName,
+        if (displayName != null) 'display_name': displayName,
       }),
     );
     return _handleResponse(response);
