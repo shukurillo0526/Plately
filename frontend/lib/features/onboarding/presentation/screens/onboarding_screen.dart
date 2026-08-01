@@ -114,8 +114,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     try {
       final client = Supabase.instance.client;
       final userId = currentUserId();
-      final displayName = _nameController.text.trim();
-      final username = _usernameController.text.trim().toLowerCase();
+      
+      final nameInput = _nameController.text.trim();
+      final usernameInput = _usernameController.text.trim().toLowerCase();
+      
+      final displayName = nameInput.isEmpty ? 'Chef' : nameInput;
+      final username = usernameInput.isEmpty ? 'user_${userId.substring(0, 8)}' : usernameInput;
 
       // Upsert user profile with dietary preferences
       await client.from('users').upsert({
