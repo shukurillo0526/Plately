@@ -906,5 +906,20 @@ This release resolves critical bulk meal prep generation bottlenecks, hardens th
 - **Verification**:
   - All flutter analysis and python syntax checks pass cleanly.
 
+---
 
+# 🚀 v0.1.11 — v0.1.13: Google Play Policy Compliance & Flow Hardening
 
+A series of rapid hotfixes resolving critical app store compliance issues and zero-day flow blockers for new users.
+
+### Highlights
+- **Google Play Media Policy Compliance**:
+  - Removed overbroad `READ_EXTERNAL_STORAGE` and `READ_MEDIA_IMAGES` permissions from `AndroidManifest.xml` to comply with Google Play's strict photo/video permission policies. 
+  - Relied entirely on the native Android Photo Picker via Flutter's `image_picker` for secure, permissionless media selection.
+- **Onboarding Flow Crash Resolution**:
+  - Fixed a silent backend crash that blocked users from completing onboarding if they skipped setting a custom username.
+  - Supabase `users` table was throwing a unique constraint violation (`users_username_key`) on empty strings (`""`). Refactored frontend and backend logic to automatically fallback to `user_{userId}` ensuring the upsert never fails and the flow continues seamlessly.
+- **API Payload Integrity**:
+  - Resolved a Dart 3 map literal syntax error (`?displayName`) in `api_service.dart` for the `/init` endpoint, replacing it with the robust conditional spread `if (displayName != null)`.
+- **Release Automation**:
+  - Bumped version to `0.1.13+14` and successfully generated a clean release Android App Bundle (`app-release.aab`) ready for Google Play Console upload.
