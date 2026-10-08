@@ -308,7 +308,7 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
         debugPrint('Failed to load full inventory for AI chat context: $e');
       }
 
-      final contextText = 'Recipe: ${widget.title} (${_servings} servings)\n'
+      final contextText = 'Recipe: ${widget.title} ($_servings servings)\n'
           'Ingredients:\n$ingLines$fullInventoryText';
 
       final result = await _api.getCookingTip(
@@ -361,7 +361,7 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
       }).where((s) => s.isNotEmpty).toList();
       
       if (items.isNotEmpty) {
-        fullInventory = '\n\nENTIRE INVENTORY: ' + items.join(', ');
+        fullInventory = '\n\nENTIRE INVENTORY: ${items.join(', ')}';
       }
     } catch (e) {
       debugPrint('Error getting full inventory for run screen: $e');

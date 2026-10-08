@@ -84,7 +84,7 @@ class CookingSession {
   String get timerDisplayString {
     final mins = timerRemainingSeconds ~/ 60;
     final secs = timerRemainingSeconds % 60;
-    return '${mins}:${secs.toString().padLeft(2, '0')}';
+    return '$mins:${secs.toString().padLeft(2, '0')}';
   }
 
   /// Create a copy with modified fields

@@ -122,7 +122,7 @@ class RecipeMonetizationService {
       final jsonSteps = steps?.asMap().entries.map((e) => {
         'step_number': e.key + 1,
         'text': e.value['text'] ?? '',
-        'timer_seconds': e.value['seconds'] ?? null,
+        'timer_seconds': e.value['seconds'],
       }).toList() ?? [];
 
       final recipeData = await _client.from('recipes').insert({

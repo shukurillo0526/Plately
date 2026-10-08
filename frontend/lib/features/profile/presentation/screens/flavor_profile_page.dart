@@ -5,7 +5,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 
 class FlavorProfilePage extends StatefulWidget {

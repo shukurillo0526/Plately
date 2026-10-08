@@ -29,3 +29,8 @@ build_output.txt
 # Generated
 *.g.dart
 *.freezed.dart
+
+# Logs & Kotlin
+*.log
+.kotlin/
+android/.kotlin/

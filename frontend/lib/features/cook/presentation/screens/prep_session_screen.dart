@@ -222,7 +222,7 @@ class _PrepSessionScreenState extends ConsumerState<PrepSessionScreen>
             ),
             child: StreamBuilder(
               stream: Stream.periodic(const Duration(seconds: 1)),
-              builder: (_, __) {
+              builder: (_, _) {
                 final elapsed = DateTime.now().difference(_overallStartTime);
                 final h = elapsed.inHours;
                 final m = elapsed.inMinutes % 60;

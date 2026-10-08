@@ -9,9 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/utils/category_images.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/shelf/domain/inventory_item.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/analytics_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class InventoryDetailSheet extends StatefulWidget {
   final InventoryItem item;

@@ -85,10 +85,12 @@ Set<WasteBadge> computeEarnedBadges(Map<String, dynamic>? stats) {
 
   final earned = <WasteBadge>{};
   if (meals >= 1) earned.add(WasteBadge.firstMeal);
-  if (tier1 >= WasteBadge.wasteFighter.threshold)
+  if (tier1 >= WasteBadge.wasteFighter.threshold) {
     earned.add(WasteBadge.wasteFighter);
-  if (tier1 >= WasteBadge.wasteWarrior.threshold)
+  }
+  if (tier1 >= WasteBadge.wasteWarrior.threshold) {
     earned.add(WasteBadge.wasteWarrior);
+  }
   if (streak >= WasteBadge.streak67.threshold) earned.add(WasteBadge.streak67);
   if (streak >= WasteBadge.streak15.threshold) earned.add(WasteBadge.streak15);
   if (streak >= WasteBadge.streak30.threshold) earned.add(WasteBadge.streak30);

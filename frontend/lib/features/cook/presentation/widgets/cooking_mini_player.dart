@@ -165,9 +165,9 @@ class CookingMiniPlayer extends ConsumerWidget {
           ? CachedNetworkImage(
               imageUrl: session.imageUrl!,
               fit: BoxFit.cover,
-              placeholder: (_, __) => Icon(Icons.restaurant,
+              placeholder: (_, _) => Icon(Icons.restaurant,
                   color: cs.primary.withValues(alpha: 0.5), size: 20),
-              errorWidget: (_, __, ___) => Icon(Icons.restaurant,
+              errorWidget: (_, _, _) => Icon(Icons.restaurant,
                   color: cs.primary.withValues(alpha: 0.5), size: 20),
             )
           : Icon(Icons.restaurant,

@@ -18,7 +18,7 @@ class MealPrepPlanSheet extends StatefulWidget {
 }
 
 class _MealPrepPlanSheetState extends State<MealPrepPlanSheet> {
-  bool _saving = false;
+  final bool _saving = false;
   bool _shoppingExpanded = true;
   final Set<int> _expandedRecipes = {};
 

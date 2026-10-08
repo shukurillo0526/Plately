@@ -139,12 +139,12 @@ class ApiService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/ai/generate-recipe');
     final body = {
       'ingredients': ingredients,
-      if (cuisine != null) 'cuisine': cuisine,
-      if (maxTimeMinutes != null) 'max_time_minutes': maxTimeMinutes,
-      if (difficulty != null) 'difficulty': difficulty,
+      'cuisine': ?cuisine,
+      'max_time_minutes': ?maxTimeMinutes,
+      'difficulty': ?difficulty,
       'servings': servings,
       'shelf_only': shelfOnly,
-      if (locale != null) 'locale': locale,
+      'locale': ?locale,
     };
     final response = await _client.post(
       uri,
@@ -166,7 +166,7 @@ class ApiService {
       'ingredient': ingredient,
       'recipe_context': ?recipeContext,
       'locale': ?locale,
-      if (inventoryIngredients != null) 'inventory_ingredients': inventoryIngredients,
+      'inventory_ingredients': ?inventoryIngredients,
     };
     final response = await _client.post(
       uri,
@@ -258,7 +258,7 @@ class ApiService {
     final body = {
       'name': name,
       'category': category,
-      if (userId != null) 'user_id': userId,
+      'user_id': ?userId,
     };
     final response = await _client.post(
       uri,
@@ -551,7 +551,7 @@ class ApiService {
       body: jsonEncode({
         'user_id': userId,
         'email': email,
-        if (displayName != null) 'display_name': displayName,
+        'display_name': ?displayName,
       }),
     );
     return _handleResponse(response);
@@ -675,7 +675,7 @@ class ApiService {
       body: jsonEncode({
         'ingredient': ingredient,
         'recipe_context': recipeContext,
-        if (inventoryIngredients != null) 'inventory_ingredients': inventoryIngredients,
+        'inventory_ingredients': ?inventoryIngredients,
       }),
     );
     return _handleResponse(response);
@@ -860,9 +860,9 @@ class ApiService {
         'user_id': userId,
         'feedback_type': feedbackType,
         'locale': locale,
-        if (rating != null) 'rating': rating,
-        if (comment != null) 'comment': comment,
-        if (metaData != null) 'meta_data': metaData,
+        'rating': ?rating,
+        'comment': ?comment,
+        'meta_data': ?metaData,
       }),
     );
     return _handleResponse(response);

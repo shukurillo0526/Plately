@@ -231,7 +231,7 @@ class _StepTimerWidgetState extends ConsumerState<StepTimerWidget>
   String _formatTime(int totalSeconds) {
     final mins = totalSeconds ~/ 60;
     final secs = totalSeconds % 60;
-    return '${mins}:${secs.toString().padLeft(2, '0')}';
+    return '$mins:${secs.toString().padLeft(2, '0')}';
   }
 }
 

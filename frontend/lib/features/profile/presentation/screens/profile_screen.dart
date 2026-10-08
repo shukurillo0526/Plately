@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/constants/app_info.dart';
 import 'package:plately_app/core/widgets/shimmer_loading.dart';
 import 'package:plately_app/core/widgets/slide_in_item.dart';
