@@ -152,7 +152,6 @@ class _ReelsFeedState extends State<_ReelsFeed> {
   List<VideoFeed> _videos = [];
   int _current = 0;
   bool _loading = true;
-  final Set<String> _registered = {};
 
   @override
   void initState() { super.initState(); _load(); }
@@ -218,7 +217,6 @@ class _YTReelCardState extends State<_YTReelCard> {
   Widget build(BuildContext context) {
     final v = widget.video;
     const green = Color(0xFF4CAF50);
-    final viewKey = 'yt-reel-${v.youtubeId}';
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,

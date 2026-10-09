@@ -17,6 +17,7 @@ import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_detail_screen.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_import_screen.dart';
 import 'package:plately_app/features/cook/presentation/screens/my_recipes_screen.dart';
+import 'package:plately_app/features/cook/presentation/screens/cook_feeds_screen.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_prep_screen.dart';
 import 'package:plately_app/core/services/cache_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
@@ -919,28 +920,61 @@ class _CookScreenState extends ConsumerState<CookScreen>
             tooltip: 'Search recipes',
           ),
           IconButton(
+            icon: Icon(Icons.play_circle_outline),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const CookFeedsScreen()));
+            },
+            tooltip: 'Cooking Reels & Videos',
+          ),
+          IconButton(
             icon: Icon(Icons.auto_awesome),
             onPressed: () => _openAiGenerate(context),
             tooltip: 'AI Generate',
           ),
-          IconButton(
-            icon: Icon(Icons.post_add),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const RecipeImportScreen()));
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
+            tooltip: 'More actions',
+            onSelected: (val) {
+              if (val == 'import') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const RecipeImportScreen()));
+              } else if (val == 'my_recipes') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRecipesScreen()));
+              } else if (val == 'refresh') {
+                _fetchRecipes();
+              }
             },
-            tooltip: AppLocalizations.of(context)?.auto_importRecipe ?? 'Import Recipe',
-          ),
-          IconButton(
-            icon: Icon(Icons.menu_book),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRecipesScreen()));
-            },
-            tooltip: 'My Recipes',
-          ),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _fetchRecipes,
-            tooltip: 'Refresh',
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    Icon(Icons.post_add, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text(AppLocalizations.of(context)?.auto_importRecipe ?? 'Import Recipe'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'my_recipes',
+                child: Row(
+                  children: [
+                    Icon(Icons.menu_book, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('My Recipes'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                    const SizedBox(width: 12),
+                    const Text('Refresh'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(

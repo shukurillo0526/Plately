@@ -482,7 +482,6 @@ class _LocationHeader extends StatelessWidget {
   }
 
   void _showRadiusPicker(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final radiusOptions = [1000, 2000, 5000, 10000];
     final labels = ['1 km', '2 km', '5 km', '10 km'];
 
@@ -1152,8 +1151,6 @@ class _SmartActionBar extends StatelessWidget {
     required VoidCallback onTap,
     required bool isPrimary,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(

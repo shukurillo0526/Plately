@@ -246,7 +246,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
-                        '$cuisine • ${recipe['ingredients']?.length ?? 0} ingredients',
+                        '$cuisine • ${recipe['ingredients']?.length ?? 0} ingredients${calories > 0 ? ' • $calories kcal' : ''}',
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                       ),
                     ),

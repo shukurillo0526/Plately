@@ -11,6 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:plately_app/core/widgets/dual_mode_nav_bar.dart';
+import 'package:plately_app/core/widgets/mode_switch.dart';
 import 'package:plately_app/features/cook/presentation/widgets/cooking_mini_player.dart';
 import 'package:plately_app/core/services/cooking_notification_service.dart';
 import 'package:plately_app/features/cook/providers/cooking_session_provider.dart';
@@ -25,6 +26,7 @@ import 'package:plately_app/features/profile/presentation/screens/profile_screen
 // Order mode screens (new)
 import 'package:plately_app/features/order/presentation/screens/order_screen.dart';
 import 'package:plately_app/features/order/presentation/screens/order_feeds_screen.dart';
+import 'package:plately_app/features/explore/presentation/screens/explore_screen.dart';
 
 // Auth
 import 'package:plately_app/features/auth/presentation/screens/auth_screen.dart';
@@ -528,8 +530,9 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
 
   // ── Order mode screens ─────────────────────────────
   static const List<Widget> _orderScreens = [
-    OrderScreen(),         // Order
+    OrderScreen(),         // Order (left)
     OrderFeedsScreen(),    // Feeds (center)
+    ExploreScreen(),       // Explore / Community (right)
   ];
 
   // ── Cook mode nav items ────────────────────────────
@@ -552,6 +555,25 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     ),
   ];
 
+  // ── Order mode nav items ───────────────────────────
+  List<NavItem> _orderNavItems(AppLocalizations? l10n) => [
+    NavItem(
+      icon: Icons.storefront_outlined,
+      activeIcon: Icons.storefront,
+      label: 'Order',
+    ),
+    NavItem(
+      icon: Icons.play_circle_outline,
+      activeIcon: Icons.play_circle_filled,
+      label: 'Feeds',
+      isCenter: true,
+    ),
+    NavItem(
+      icon: Icons.explore_outlined,
+      activeIcon: Icons.explore,
+      label: l10n?.tabExplore ?? l10n?.auto_explore ?? 'Explore',
+    ),
+  ];
 
   @override
   void initState() {
@@ -576,7 +598,6 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
           break;
       }
     };
-
   }
 
   @override
@@ -600,13 +621,15 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     if (_settings.appMode == mode) return;
     _currentIndex = 0; // Reset to first tab on mode switch
     _settings.setAppMode(mode);
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final screens = _cookScreens;
-    final navItems = _cookNavItems(l10n);
+    final isCook = _settings.appMode == AppMode.cook;
+    final screens = isCook ? _cookScreens : _orderScreens;
+    final navItems = isCook ? _cookNavItems(l10n) : _orderNavItems(l10n);
 
     // Reactively listen to tutorial state transitions to auto-navigate tabs
     ref.listen<TutorialState>(tutorialControllerProvider, (previous, next) {
@@ -642,7 +665,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
                     child: child,
                   ),
                   child: KeyedSubtree(
-                    key: ValueKey('${AppMode.cook}_$_currentIndex'),
+                    key: ValueKey('${_settings.appMode}_$_currentIndex'),
                     child: screens[_currentIndex],
                   ),
                 ),
@@ -660,10 +683,10 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
       bottomNavigationBar: DualModeNavBar(
         currentIndex: _currentIndex,
         items: navItems,
-        mode: AppMode.cook,
+        mode: _settings.appMode,
         onTap: (i) {
           final tutorialState = ref.read(tutorialControllerProvider);
-          if (tutorialState == TutorialState.none) {
+          if (tutorialState == TutorialState.none || !isCook) {
             setState(() => _currentIndex = i);
             return;
           }
@@ -714,7 +737,16 @@ class _ModeSwitchBar extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          Spacer(),
+          const Spacer(),
+          // Mode toggle — constrained to fit narrow screens
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 164),
+            child: ModeSwitch(
+              currentMode: currentMode,
+              onModeChanged: onModeChanged,
+            ),
+          ),
+          const SizedBox(width: 12),
           // Profile / Manage button
           GestureDetector(
             onTap: () {

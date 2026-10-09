@@ -42,7 +42,6 @@ class DualModeNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = Theme.of(context).colorScheme.primary;
 
     final bottomPad = MediaQuery.of(context).padding.bottom;
@@ -271,8 +270,6 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();

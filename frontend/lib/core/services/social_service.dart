@@ -324,8 +324,6 @@ class SocialService {
   /// Get community feed posts (friends first, then public).
   static Future<List<Map<String, dynamic>>> getCommunityFeed({int limit = 30}) async {
     try {
-      final uid = currentUserId();
-
       // Get posts — friends' posts + public posts, most recent first
       final data = await _client
           .from('posts')

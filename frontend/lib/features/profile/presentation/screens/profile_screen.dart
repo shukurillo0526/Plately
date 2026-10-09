@@ -25,6 +25,10 @@ import 'package:plately_app/core/services/tutorial_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:plately_app/features/profile/presentation/screens/creator_dashboard_page.dart';
+import 'package:plately_app/features/profile/presentation/screens/restaurant_dashboard_page.dart';
+import 'package:plately_app/features/order/presentation/screens/order_history_screen.dart';
+import 'package:plately_app/features/social/presentation/screens/squad_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -172,7 +176,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                          (statsData?['current_streak'] as int?) ?? 0;
 
         // Badges from JSONB
-        final rawBadges = statsData?['badges'];
         _earnedBadges = computeEarnedBadges(statsData);
 
         // Flavor profile
@@ -298,7 +301,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         slivers: [
           // ── Header ─────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 280,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -394,6 +397,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ],
+                      if (_userLocation.isNotEmpty) ...[
+                        SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.location_on_outlined, size: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                            SizedBox(width: 4),
+                            Text(
+                              _userLocation,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       SizedBox(height: 4),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -413,7 +433,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ),
-
+                      SizedBox(height: 8),
+                      // ── Social Stats Row ──
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _SocialStat(value: '$_postCount', label: 'Recipes'),
+                          Container(
+                            width: 1,
+                            height: 20,
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                          ),
+                          _SocialStat(value: '$_followerCount', label: 'Followers'),
+                          Container(
+                            width: 1,
+                            height: 20,
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                          ),
+                          _SocialStat(value: '$_followingCount', label: 'Following'),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -739,6 +780,153 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                 SizedBox(height: 12),
 
+                // ── Order History Section ──────────────────────────────────
+                SlideInItem(
+                  delay: 320,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
+                    child: _SectionCard(
+                      title: l10n?.auto_myOrders ?? 'My Orders',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Order History & Tracking', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('View past orders, track active orders, and reorder', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Creator Studio Section ───────────────────────────────────
+                SlideInItem(
+                  delay: 330,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatorDashboardPage())),
+                    child: _SectionCard(
+                      title: 'Creator Studio',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.video_call, color: Theme.of(context).colorScheme.secondary, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Publish & Analyze', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('Upload reels, share recipes, and track your views', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Restaurant Dashboard Section ──────────────────────────
+                SlideInItem(
+                  delay: 340,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RestaurantDashboardPage())),
+                    child: _SectionCard(
+                      title: 'Restaurant Dashboard',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.storefront, color: Theme.of(context).colorScheme.primary, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('For Business Owners', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('Manage incoming orders, menus, and merchant presence', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Squads & Leaderboard Section ───────────
+                SlideInItem(
+                  delay: 345,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SquadScreen())),
+                    child: _SectionCard(
+                      title: 'Cooking Squads',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.groups_outlined, color: Theme.of(context).colorScheme.secondary, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Squads & Leaderboards', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('Join or create cooking squads with friends and family', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
 
                 SlideInItem(
                   delay: 350,

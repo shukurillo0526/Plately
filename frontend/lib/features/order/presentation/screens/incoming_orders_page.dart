@@ -50,7 +50,7 @@ class _IncomingOrdersPageState extends State<IncomingOrdersPage>
 
       if (mounted) {
         setState(() {
-          _orders = List<Map<String, dynamic>>.from(data ?? []);
+          _orders = List<Map<String, dynamic>>.from(data);
           _loading = false;
         });
       }

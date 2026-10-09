@@ -20,7 +20,6 @@ class ModeSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOrder = currentMode == AppMode.order;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       height: 40,

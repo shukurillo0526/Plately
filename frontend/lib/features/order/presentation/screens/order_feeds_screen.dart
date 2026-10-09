@@ -177,12 +177,10 @@ class _OrderVideoCardState extends State<_OrderVideoCard> {
   bool _liked = false;
   bool _saved = false;
   bool _playing = false;
-  String? _viewKey;
 
   @override
   void initState() {
     super.initState();
-    _viewKey = 'yt-order-${widget.feed.video.youtubeId}';
     _registerView();
   }
 

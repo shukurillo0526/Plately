@@ -54,7 +54,6 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   bool _loading = true;
-  bool _isTranslated = false;
   List<Map<String, dynamic>> _ingredients = [];
   List<Map<String, dynamic>> _steps = [];
   String _displayTitle = '';
@@ -292,7 +291,6 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                 }
               }
             }
-            _isTranslated = true;
           } else {
             _triggerBackgroundTranslation(userLanguage);
           }
@@ -670,7 +668,6 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         final data = result['data'] as Map<String, dynamic>?;
         if (data != null) {
           _applyTranslation(data);
-          setState(() => _isTranslated = true);
         }
       }
     } catch (e) {

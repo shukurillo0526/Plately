@@ -585,7 +585,6 @@ class _RecipePrepScreenState extends ConsumerState<RecipePrepScreen> {
                     final ingId = ing['ingredient_id'] ?? ing['id'] ?? '';
                     final rawQty = ing['quantity'];
                     final unit = ing['unit'] ?? '';
-                    final translatedUnit = L10nHelper.translateUnit(unit, Localizations.localeOf(context).languageCode);
                     final isOwned = widget.recipeId == 'tutorial-stir-fry' || widget.ownedIngredientIds.contains(ingId);
                     final scaledQty = _scaleQuantity(rawQty);
                     final emoji = IngredientIcons.getEmoji(name, category: ing['category']);

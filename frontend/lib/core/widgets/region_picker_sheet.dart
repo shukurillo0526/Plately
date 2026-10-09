@@ -37,7 +37,6 @@ class _RegionPickerSheetState extends State<RegionPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = Theme.of(context).colorScheme.primary;
     final loc = widget.location;
 

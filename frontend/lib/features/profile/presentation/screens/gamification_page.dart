@@ -51,7 +51,6 @@ class _GamificationPageState extends State<GamificationPage> {
   Widget build(BuildContext context) {
     final xp = _stats?['total_xp'] ?? 0;
     final level = levelFromXp(xp);
-    final nextLevelXp = (level + 1) * 100;
     final levelProgress = (xp % 100) / 100.0;
     final earnedIds = _earnedBadgeIds;
 
