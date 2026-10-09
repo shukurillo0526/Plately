@@ -14,6 +14,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:plately_app/core/services/social_service.dart';
 import 'package:plately_app/core/widgets/comment_sheet.dart';
 import 'package:plately_app/features/explore/presentation/screens/creator_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:plately_app/core/services/restaurant_service.dart';
+import 'package:plately_app/features/order/presentation/screens/restaurant_detail_page.dart';
 
 class CommunityPostCard extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -112,6 +115,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
     final locationName = widget.post['location_name'] as String?;
     final postType = widget.post['post_type'] ?? 'photo';
     final createdAt = widget.post['created_at'] as String?;
+    final restaurantId = widget.post['restaurant_id'] as String?;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -160,8 +164,26 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
                             ));
                           }
                         },
-                        child: Text(authorName,
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(authorName,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                            if (restaurantId != null) ...[
+                              SizedBox(width: 4),
+                              Icon(Icons.verified, size: 14, color: Theme.of(context).colorScheme.primary),
+                              SizedBox(width: 4),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text('BRAND', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 9, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                       if (locationName != null) ...[
                         SizedBox(height: 1),
@@ -392,6 +414,57 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
                   ),
                   Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), size: 18),
                 ],
+              ),
+            ),
+
+          // ═══════════════════════════════════════════
+          //  RESTAURANT BRAND ORDER ACTION
+          // ═══════════════════════════════════════════
+          if (restaurantId != null)
+            Padding(
+              padding: EdgeInsets.fromLTRB(14, 10, 14, 4),
+              child: InkWell(
+                onTap: () async {
+                  try {
+                    final restData = await Supabase.instance.client
+                        .from('restaurants')
+                        .select()
+                        .eq('id', restaurantId)
+                        .maybeSingle();
+                    if (restData != null && context.mounted) {
+                      final rest = Restaurant.fromJson(restData);
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => RestaurantDetailPage(restaurant: rest),
+                      ));
+                    }
+                  } catch (_) {}
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.restaurant_menu, size: 16, color: Theme.of(context).colorScheme.primary),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'View Restaurant Menu & Order Delivery',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios, size: 12, color: Theme.of(context).colorScheme.primary),
+                    ],
+                  ),
+                ),
               ),
             ),
 

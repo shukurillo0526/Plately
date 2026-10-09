@@ -11,7 +11,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/location_service.dart';
 
-/// A restaurant returned from the nearby_restaurants RPC.
+/// A restaurant or branch outlet returned from the nearby_restaurants RPC or listing.
 class Restaurant {
   final String id;
   final String name;
@@ -35,6 +35,13 @@ class Restaurant {
   final bool hasReservation;
   final bool hasDineIn;
 
+  // ── Branch & Workshop Website Links ────────────────
+  final String? slug;
+  final String? branchId;
+  final String? branchName;
+  final String? storefrontUrl;
+  final String? phone;
+
   Restaurant({
     required this.id,
     required this.name,
@@ -55,9 +62,22 @@ class Restaurant {
     this.hasDelivery = true,
     this.hasReservation = false,
     this.hasDineIn = true,
+    this.slug,
+    this.branchId,
+    this.branchName,
+    this.storefrontUrl,
+    this.phone,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
+    final slug = json['slug'] as String?;
+    final branchId = json['branch_id'] as String?;
+    final branchName = json['branch_name'] as String?;
+    final phone = json['phone'] as String?;
+    final rawStorefrontUrl = json['storefront_url'] as String?;
+    final storefrontUrl = rawStorefrontUrl ??
+        (slug != null && slug.isNotEmpty ? 'https://workshop.plately.uz/store/$slug' : null);
+
     return Restaurant(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -78,6 +98,11 @@ class Restaurant {
       hasDelivery: json['has_delivery'] as bool? ?? true,
       hasReservation: json['has_reservation'] as bool? ?? false,
       hasDineIn: json['has_dine_in'] as bool? ?? true,
+      slug: slug,
+      branchId: branchId,
+      branchName: branchName,
+      storefrontUrl: storefrontUrl,
+      phone: phone,
     );
   }
 
@@ -159,6 +184,7 @@ class RestaurantService {
   static final _client = Supabase.instance.client;
 
   /// Fetch restaurants within radius of user's location, sorted by distance.
+  /// Also expands branches so each branch outlet appears in the Order page.
   static Future<List<Restaurant>> getNearbyRestaurants({
     required double lat,
     required double lng,
@@ -176,12 +202,79 @@ class RestaurantService {
       });
 
       final data = response as List<dynamic>;
-      return data
-          .map((json) => Restaurant.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (data.isEmpty) {
+        return getAllRestaurants();
+      }
+
+      // Collect IDs to attach slug and branch info
+      final ids = data.map((e) => e['id'] as String).toList();
+      final Map<String, Map<String, dynamic>> extraInfo = {};
+      try {
+        final extras = await _client
+            .from('restaurants')
+            .select('id, slug, branches(*)')
+            .inFilter('id', ids);
+        for (final item in (extras as List<dynamic>)) {
+          extraInfo[item['id'] as String] = item as Map<String, dynamic>;
+        }
+      } catch (_) {}
+
+      final List<Restaurant> results = [];
+      for (final json in data) {
+        final map = Map<String, dynamic>.from(json as Map<String, dynamic>);
+        final restId = map['id'] as String;
+        final extra = extraInfo[restId];
+        final slug = extra?['slug'] as String?;
+        final rawBranches = (extra?['branches'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+        final activeBranches = rawBranches.where((b) => b['is_active'] != false).toList();
+        final storefrontUrl = (slug != null && slug.isNotEmpty)
+            ? 'https://workshop.plately.uz/store/$slug'
+            : null;
+
+        if (activeBranches.isNotEmpty) {
+          for (final b in activeBranches) {
+            final bName = b['name'] as String?;
+            final displayName = (bName != null && bName.isNotEmpty && bName != 'Main Branch')
+                ? '${map['name']} · $bName'
+                : (map['name'] as String);
+
+            results.add(Restaurant(
+              id: restId,
+              name: displayName,
+              description: map['description'] as String?,
+              cuisineType: List<String>.from(map['cuisine_type'] ?? []),
+              priceRange: (map['price_range'] as num?)?.toInt() ?? 1,
+              rating: (map['rating'] as num?)?.toDouble() ?? 0,
+              reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
+              address: (b['address'] as String?) ?? (map['address'] as String?),
+              imageUrl: map['image_url'] as String?,
+              isOpen: map['is_open'] as bool? ?? true,
+              avgPrepMinutes: (b['default_prep_time_minutes'] as num?)?.toInt() ??
+                  (map['avg_prep_minutes'] as num?)?.toInt() ?? 20,
+              deliveryFee: (map['delivery_fee'] as num?)?.toDouble() ?? 0,
+              tags: List<String>.from(map['tags'] ?? []),
+              distMeters: (map['dist_meters'] as num?)?.toDouble() ?? 0,
+              latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
+              longitude: (map['longitude'] as num?)?.toDouble() ?? 0,
+              hasDelivery: (b['accepts_delivery'] as bool?) ?? (map['has_delivery'] as bool?) ?? true,
+              hasReservation: map['has_reservation'] as bool? ?? false,
+              hasDineIn: (b['accepts_dine_in'] as bool?) ?? (map['has_dine_in'] as bool?) ?? true,
+              slug: slug,
+              branchId: b['id'] as String?,
+              branchName: bName,
+              storefrontUrl: storefrontUrl,
+              phone: (b['phone'] as String?) ?? (map['phone'] as String?),
+            ));
+          }
+        } else {
+          map['slug'] = slug;
+          map['storefront_url'] = storefrontUrl;
+          results.add(Restaurant.fromJson(map));
+        }
+      }
+      return results;
     } catch (e) {
-      // If RPC doesn't exist yet or PostGIS not enabled, return empty
-      return [];
+      return getAllRestaurants();
     }
   }
 
@@ -203,40 +296,91 @@ class RestaurantService {
     }
   }
 
-  /// Fetch all restaurants (fallback when PostGIS is not available).
+  /// Fetch all restaurants with branch expansions and storefront URLs.
   static Future<List<Restaurant>> getAllRestaurants() async {
     try {
       final data = await _client
           .from('restaurants')
-          .select()
+          .select('*, branches(*)')
           .eq('is_open', true)
           .order('rating', ascending: false)
           .limit(50);
 
-      return (data as List<dynamic>).map((json) {
+      final List<Restaurant> results = [];
+      for (final json in (data as List<dynamic>)) {
         final map = json as Map<String, dynamic>;
-        return Restaurant(
-          id: map['id'] as String,
-          name: map['name'] as String,
-          description: map['description'] as String?,
-          cuisineType: List<String>.from(map['cuisine_type'] ?? []),
-          priceRange: (map['price_range'] as num?)?.toInt() ?? 1,
-          rating: (map['rating'] as num?)?.toDouble() ?? 0,
-          reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
-          address: map['address'] as String?,
-          imageUrl: map['image_url'] as String?,
-          isOpen: map['is_open'] as bool? ?? true,
-          avgPrepMinutes: (map['avg_prep_minutes'] as num?)?.toInt() ?? 20,
-          deliveryFee: (map['delivery_fee'] as num?)?.toDouble() ?? 0,
-          tags: List<String>.from(map['tags'] ?? []),
-          distMeters: 0,
-          latitude: 0,
-          longitude: 0,
-          hasDelivery: map['has_delivery'] as bool? ?? true,
-          hasReservation: map['has_reservation'] as bool? ?? false,
-          hasDineIn: map['has_dine_in'] as bool? ?? true,
-        );
-      }).toList();
+        final rawBranches = (map['branches'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+        final activeBranches = rawBranches.where((b) => b['is_active'] != false).toList();
+        final slug = map['slug'] as String?;
+        final storefrontUrl = (slug != null && slug.isNotEmpty)
+            ? 'https://workshop.plately.uz/store/$slug'
+            : null;
+
+        if (activeBranches.isNotEmpty) {
+          for (final b in activeBranches) {
+            final bName = b['name'] as String?;
+            final displayName = (bName != null && bName.isNotEmpty && bName != 'Main Branch')
+                ? '${map['name']} · $bName'
+                : (map['name'] as String);
+
+            results.add(Restaurant(
+              id: map['id'] as String,
+              name: displayName,
+              description: map['description'] as String?,
+              cuisineType: List<String>.from(map['cuisine_type'] ?? []),
+              priceRange: (map['price_range'] as num?)?.toInt() ?? 1,
+              rating: (map['rating'] as num?)?.toDouble() ?? 0,
+              reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
+              address: (b['address'] as String?) ?? (map['address'] as String?),
+              imageUrl: map['image_url'] as String?,
+              isOpen: map['is_open'] as bool? ?? true,
+              avgPrepMinutes: (b['default_prep_time_minutes'] as num?)?.toInt() ??
+                  (map['avg_prep_minutes'] as num?)?.toInt() ?? 20,
+              deliveryFee: (map['delivery_fee'] as num?)?.toDouble() ?? 0,
+              tags: List<String>.from(map['tags'] ?? []),
+              distMeters: 0,
+              latitude: 0,
+              longitude: 0,
+              hasDelivery: (b['accepts_delivery'] as bool?) ?? (map['has_delivery'] as bool?) ?? true,
+              hasReservation: map['has_reservation'] as bool? ?? false,
+              hasDineIn: (b['accepts_dine_in'] as bool?) ?? (map['has_dine_in'] as bool?) ?? true,
+              slug: slug,
+              branchId: b['id'] as String?,
+              branchName: bName,
+              storefrontUrl: storefrontUrl,
+              phone: (b['phone'] as String?) ?? (map['phone'] as String?),
+            ));
+          }
+        } else {
+          results.add(Restaurant(
+            id: map['id'] as String,
+            name: map['name'] as String,
+            description: map['description'] as String?,
+            cuisineType: List<String>.from(map['cuisine_type'] ?? []),
+            priceRange: (map['price_range'] as num?)?.toInt() ?? 1,
+            rating: (map['rating'] as num?)?.toDouble() ?? 0,
+            reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
+            address: map['address'] as String?,
+            imageUrl: map['image_url'] as String?,
+            isOpen: map['is_open'] as bool? ?? true,
+            avgPrepMinutes: (map['avg_prep_minutes'] as num?)?.toInt() ?? 20,
+            deliveryFee: (map['delivery_fee'] as num?)?.toDouble() ?? 0,
+            tags: List<String>.from(map['tags'] ?? []),
+            distMeters: 0,
+            latitude: 0,
+            longitude: 0,
+            hasDelivery: map['has_delivery'] as bool? ?? true,
+            hasReservation: map['has_reservation'] as bool? ?? false,
+            hasDineIn: map['has_dine_in'] as bool? ?? true,
+            slug: slug,
+            branchId: null,
+            branchName: null,
+            storefrontUrl: storefrontUrl,
+            phone: map['phone'] as String?,
+          ));
+        }
+      }
+      return results;
     } catch (e) {
       return [];
     }

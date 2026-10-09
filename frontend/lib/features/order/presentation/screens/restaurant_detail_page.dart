@@ -13,6 +13,7 @@ import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/core/services/restaurant_service.dart';
 import 'package:plately_app/core/services/cart_service.dart';
 import 'package:plately_app/features/order/presentation/screens/checkout_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Which section to auto-scroll to when opening
 enum RestaurantSection { menu, reserve, location, reviews }
@@ -238,6 +239,59 @@ class _RestaurantDetailPageState extends State<RestaurantDetailPage>
                         ),
                       ],
                     ),
+
+                  if (r.branchName != null) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: accent.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.storefront, size: 14, color: accent),
+                          SizedBox(width: 5),
+                          Text('Branch: ${r.branchName}',
+                            style: TextStyle(color: accent, fontSize: 12, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (r.storefrontUrl != null) ...[
+                    SizedBox(height: 10),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.parse(r.storefrontUrl!);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: accent.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.language, size: 16, color: accent),
+                            SizedBox(width: 6),
+                            Text('Visit Official Branch Website',
+                              style: TextStyle(color: accent, fontSize: 13, fontWeight: FontWeight.bold)),
+                            SizedBox(width: 6),
+                            Icon(Icons.open_in_new, size: 13, color: accent),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -19,6 +19,8 @@ import 'package:plately_app/core/services/social_service.dart';
 import 'package:plately_app/features/profile/presentation/screens/post_upload_form.dart';
 import 'package:plately_app/core/widgets/story_ring.dart';
 import 'package:plately_app/features/explore/presentation/screens/social_search_page.dart';
+import 'package:plately_app/core/services/restaurant_service.dart';
+import 'package:plately_app/features/order/presentation/screens/restaurant_detail_page.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -284,8 +286,31 @@ class _YTReelCardState extends State<_YTReelCard> {
           if (!_showRecipe && !_playing)
             Positioned(left: 16, right: 70, bottom: 12, child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('@${v.authorName.replaceAll(' ', '_').toLowerCase()}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
+                Row(
+                  children: [
+                    Text('@${v.authorName.replaceAll(' ', '_').toLowerCase()}',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
+                    if (v.restaurantId != null) ...[
+                      SizedBox(width: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified, size: 10, color: Colors.amber),
+                            SizedBox(width: 2),
+                            Text('RESTAURANT', style: TextStyle(color: Colors.amber, fontSize: 9, fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 SizedBox(height: 4),
                 Text(v.title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -297,6 +322,45 @@ class _YTReelCardState extends State<_YTReelCard> {
                 SizedBox(height: 4),
                 if (v.tags.isNotEmpty) Wrap(spacing: 5, children: v.tags.take(3).map((t) =>
                   Text('#$t', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w600))).toList()),
+                if (v.restaurantId != null) ...[
+                  SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      try {
+                        final restData = await Supabase.instance.client
+                            .from('restaurants')
+                            .select()
+                            .eq('id', v.restaurantId!)
+                            .maybeSingle();
+                        if (restData != null && context.mounted) {
+                          final rest = Restaurant.fromJson(restData);
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => RestaurantDetailPage(restaurant: rest),
+                          ));
+                        }
+                      } catch (_) {}
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.restaurant, size: 13, color: Colors.amber),
+                          SizedBox(width: 5),
+                          Text('Order from Restaurant',
+                            style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
+                          SizedBox(width: 3),
+                          Icon(Icons.chevron_right, size: 14, color: Colors.amber),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ])),
         ],
       ),

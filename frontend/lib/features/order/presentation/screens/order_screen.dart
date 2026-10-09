@@ -829,6 +829,19 @@ class _RestaurantTile extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (restaurant.branchName != null) ...[
+                    SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.storefront, size: 11, color: accent),
+                        SizedBox(width: 3),
+                        Text(
+                          'Branch: ${restaurant.branchName}',
+                          style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
                   SizedBox(height: 3),
                   Text(
                     restaurant.cuisineLabel,
@@ -854,6 +867,35 @@ class _RestaurantTile extends StatelessWidget {
                           style: TextStyle(color: accent, fontSize: 12, fontWeight: FontWeight.w700)),
                     ],
                   ),
+                  if (restaurant.storefrontUrl != null) ...[
+                    SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () async {
+                        final uri = Uri.parse(restaurant.storefrontUrl!);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: accent.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.language, size: 12, color: accent),
+                            SizedBox(width: 4),
+                            Text('Branch Website', style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.w700)),
+                            SizedBox(width: 3),
+                            Icon(Icons.open_in_new, size: 10, color: accent),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
