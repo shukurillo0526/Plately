@@ -110,6 +110,7 @@ class OrderService {
   static Future<Map<String, dynamic>> placeOrder({
     required String userId,
     required String restaurantId,
+    String? branchId,
     required String type,
     required List<Map<String, dynamic>> items,
     String? deliveryAddress,
@@ -126,6 +127,7 @@ class OrderService {
         body: jsonEncode({
           'user_id': userId,
           'restaurant_id': restaurantId,
+          'branch_id': branchId,
           'type': type,
           'items': items,
           'delivery_address': deliveryAddress,
@@ -146,6 +148,7 @@ class OrderService {
       final result = await _client.from('orders').insert({
         'user_id': userId,
         'restaurant_id': restaurantId,
+        'branch_id': branchId,
         'type': type,
         'status': 'confirmed',
         'items': items,

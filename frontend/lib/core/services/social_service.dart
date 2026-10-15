@@ -328,7 +328,7 @@ class SocialService {
       final data = await _client
           .from('posts')
           .select('*, users!posts_author_id_fkey(display_name, avatar_url)')
-          .inFilter('post_type', ['photo', 'restaurant_visit', 'food_tip', 'recipe'])
+          .inFilter('post_type', ['photo', 'restaurant_visit', 'food_tip', 'recipe', 'reel'])
           .order('created_at', ascending: false)
           .limit(limit);
 

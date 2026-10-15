@@ -1034,16 +1034,28 @@ class _BookmarksSheetState extends State<_BookmarksSheet> {
                   final bm = _bookmarks[i];
                   final post = bm['posts'] as Map<String, dynamic>?;
                   final caption = post?['caption'] ?? 'Saved post';
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 8),
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(12),
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      if (post != null) {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('📖 ${post['caption'] ?? 'Viewing saved post'}'),
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                      }
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(caption,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 14),
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
                     ),
-                    child: Text(caption,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 14),
-                      maxLines: 2, overflow: TextOverflow.ellipsis),
                   );
                 },
               ),

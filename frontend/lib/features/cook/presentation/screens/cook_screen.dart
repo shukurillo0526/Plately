@@ -27,6 +27,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
 import 'package:plately_app/features/cook/presentation/widgets/meal_prep_config_panel.dart';
 import 'package:plately_app/features/cook/presentation/widgets/meal_prep_plan_sheet.dart';
+import 'package:plately_app/core/widgets/voice_command_fab.dart';
 
 class CookScreen extends ConsumerStatefulWidget {
   const CookScreen({super.key});
@@ -908,6 +909,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: VoiceCommandFab(userId: currentUserId()),
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)?.whatToCook ?? 'What to Cook?',

@@ -35,6 +35,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final orderData = await OrderService.placeOrder(
         userId: userId,
         restaurantId: _cart.restaurant!.id,
+        branchId: _cart.restaurant?.branchId,
         type: _cart.orderType == OrderType.pickup ? 'pickup' : 'delivery',
         items: _cart.items.map((ci) => {
           'menu_item_id': ci.menuItem.id,

@@ -13,6 +13,7 @@ import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/core/services/restaurant_service.dart';
 import 'package:plately_app/core/services/cart_service.dart';
 import 'package:plately_app/features/order/presentation/screens/checkout_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Which section to auto-scroll to when opening
@@ -840,14 +841,38 @@ class _ReserveTab extends StatelessWidget {
 
         // ── Confirm Button ───────────────────────
         GestureDetector(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('🪑 Table reserved at ${restaurant.name}\n${date.day}/${date.month} at ${time.format(context)} for $guests guests'),
-              backgroundColor: accent,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 3),
-            ));
+          onTap: () async {
+            final reservationDateTime = DateTime(
+              date.year,
+              date.month,
+              date.day,
+              time.hour,
+              time.minute,
+            );
+
+            try {
+              final user = Supabase.instance.client.auth.currentUser;
+              await Supabase.instance.client.from('reservations').insert({
+                'restaurant_id': restaurant.id,
+                'branch_id': restaurant.branchId,
+                'customer_name': user?.userMetadata?['display_name'] ?? 'Plately App Guest',
+                'customer_phone': user?.phone ?? '+998 90 000 00 00',
+                'party_size': guests,
+                'reservation_time': reservationDateTime.toIso8601String(),
+                'status': 'pending',
+                'special_requests': 'Reserved via Plately Mobile App',
+              });
+            } catch (_) {}
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('🪑 Table reserved at ${restaurant.name}\n${date.day}/${date.month} at ${time.format(context)} for $guests guests'),
+                backgroundColor: accent,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                duration: const Duration(seconds: 3),
+              ));
+            }
           },
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -1036,14 +1061,23 @@ class _LocationTab extends StatelessWidget {
 
         // Navigate button
         GestureDetector(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('🧭 Opening Google Maps for ${r.name}...\n${r.mapsUrl}'),
-              backgroundColor: accent,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 3),
-            ));
+          onTap: () async {
+            final url = r.mapsUrl;
+            if (url.isNotEmpty) {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                return;
+              }
+            }
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('🧭 Could not open maps URL: ${r.address ?? r.name}'),
+                backgroundColor: accent,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ));
+            }
           },
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16),

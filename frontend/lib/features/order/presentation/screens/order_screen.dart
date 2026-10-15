@@ -8,6 +8,7 @@
 // - Category filtering, search, and deals section
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:plately_app/core/services/location_service.dart';
@@ -29,6 +30,7 @@ class _OrderScreenState extends State<OrderScreen> {
   List<Restaurant> _restaurants = [];
   bool _loading = true;
   String? _searchQuery;
+  RealtimeChannel? _branchChannel;
 
   static const List<Map<String, dynamic>> _categories = [
     {'label': 'All', 'icon': '🍽️'},
@@ -48,10 +50,36 @@ class _OrderScreenState extends State<OrderScreen> {
     super.initState();
     _location.addListener(_onLocationChanged);
     _initLocation();
+    _subscribeToRealtimeBranches();
+  }
+
+  void _subscribeToRealtimeBranches() {
+    try {
+      _branchChannel = Supabase.instance.client
+          .channel('public:branches_and_restaurants')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'branches',
+            callback: (payload) {
+              if (mounted) _loadRestaurants();
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'restaurants',
+            callback: (payload) {
+              if (mounted) _loadRestaurants();
+            },
+          )
+          .subscribe();
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _branchChannel?.unsubscribe();
     _location.removeListener(_onLocationChanged);
     _searchController.dispose();
     super.dispose();
@@ -673,23 +701,31 @@ class _DealCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 200,
-      padding: EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: 0.15),
-            Theme.of(context).colorScheme.surface,
-          ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RestaurantDetailPage(restaurant: restaurant),
+          ),
+        );
+      },
+      child: Container(
+        width: 200,
+        padding: EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accent.withValues(alpha: 0.15),
+              Theme.of(context).colorScheme.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: accent.withValues(alpha: 0.15),
+          ),
         ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.15),
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -749,8 +785,9 @@ class _DealCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ── Restaurant Tile (vertical list) ─────────────────────────────
@@ -1236,34 +1273,34 @@ class _SmartActionBar extends StatelessWidget {
   }
 
   void _handleOrder(BuildContext context, Restaurant r) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('🛒 Starting order from ${r.name}...'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RestaurantDetailPage(
+          restaurant: r,
+          initialSection: RestaurantSection.menu,
+        ),
       ),
     );
   }
 
   void _handleReserve(BuildContext context, Restaurant r) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('🪑 Booking a seat at ${r.name}...'),
-        backgroundColor: Colors.blue.shade700,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RestaurantDetailPage(
+          restaurant: r,
+          initialSection: RestaurantSection.reserve,
+        ),
       ),
     );
   }
 
   void _handleMap(BuildContext context, Restaurant r) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('📍 Showing ${r.name} on map...'),
-        backgroundColor: Colors.teal.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RestaurantDetailPage(
+          restaurant: r,
+          initialSection: RestaurantSection.location,
+        ),
       ),
     );
   }

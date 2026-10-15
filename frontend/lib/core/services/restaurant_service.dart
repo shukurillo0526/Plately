@@ -272,6 +272,68 @@ class RestaurantService {
           results.add(Restaurant.fromJson(map));
         }
       }
+
+      // Merge all active branches from branches table to catch newly created Workshop branches
+      try {
+        final branchRes = await _client
+            .from('branches')
+            .select('*, restaurants(*)')
+            .eq('is_active', true)
+            .order('created_at', ascending: false);
+
+        final existingBranchIds = results.map((r) => r.branchId).toSet();
+
+        for (final b in (branchRes as List<dynamic>)) {
+          final bMap = b as Map<String, dynamic>;
+          final branchId = bMap['id'] as String;
+          if (existingBranchIds.contains(branchId)) continue;
+
+          final rMap = bMap['restaurants'] as Map<String, dynamic>?;
+          if (rMap == null || rMap['is_open'] == false) continue;
+
+          final bName = bMap['name'] as String?;
+          final displayName = (bName != null && bName.isNotEmpty && bName != 'Main Branch')
+              ? '${rMap['name']} · $bName'
+              : (rMap['name'] as String);
+
+          final slug = rMap['slug'] as String?;
+          final storefrontUrl = (slug != null && slug.isNotEmpty)
+              ? 'https://workshop.plately.uz/store/$slug'
+              : null;
+
+          results.add(Restaurant(
+            id: rMap['id'] as String,
+            name: displayName,
+            description: rMap['description'] as String?,
+            cuisineType: List<String>.from(rMap['cuisine_type'] ?? []),
+            priceRange: (rMap['price_range'] as num?)?.toInt() ?? 1,
+            rating: (rMap['rating'] as num?)?.toDouble() ?? 0,
+            reviewCount: (rMap['review_count'] as num?)?.toInt() ?? 0,
+            address: (bMap['address'] as String?) ?? (rMap['address'] as String?),
+            imageUrl: rMap['image_url'] as String?,
+            isOpen: rMap['is_open'] as bool? ?? true,
+            avgPrepMinutes: (bMap['default_prep_time_minutes'] as num?)?.toInt() ??
+                (rMap['avg_prep_minutes'] as num?)?.toInt() ?? 20,
+            deliveryFee: (rMap['delivery_fee'] as num?)?.toDouble() ?? 0,
+            tags: List<String>.from(rMap['tags'] ?? []),
+            distMeters: 0,
+            latitude: (rMap['latitude'] as num?)?.toDouble() ?? 0,
+            longitude: (rMap['longitude'] as num?)?.toDouble() ?? 0,
+            hasDelivery: (bMap['accepts_delivery'] as bool?) ?? (rMap['has_delivery'] as bool?) ?? true,
+            hasReservation: rMap['has_reservation'] as bool? ?? false,
+            hasDineIn: (bMap['accepts_dine_in'] as bool?) ?? (rMap['has_dine_in'] as bool?) ?? true,
+            slug: slug,
+            branchId: branchId,
+            branchName: bName,
+            storefrontUrl: storefrontUrl,
+            phone: (bMap['phone'] as String?) ?? (rMap['phone'] as String?),
+          ));
+          existingBranchIds.add(branchId);
+        }
+      } catch (mergeErr) {
+        // Fallback silently if merge fails
+      }
+
       return results;
     } catch (e) {
       return getAllRestaurants();
@@ -303,8 +365,8 @@ class RestaurantService {
           .from('restaurants')
           .select('*, branches(*)')
           .eq('is_open', true)
-          .order('rating', ascending: false)
-          .limit(50);
+          .order('created_at', ascending: false)
+          .limit(100);
 
       final List<Restaurant> results = [];
       for (final json in (data as List<dynamic>)) {

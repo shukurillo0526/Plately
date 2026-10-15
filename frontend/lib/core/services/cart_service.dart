@@ -161,6 +161,7 @@ class CartService extends ChangeNotifier {
     return {
       'user_id': userId,
       'restaurant_id': _restaurant?.id,
+      'branch_id': _restaurant?.branchId,
       'type': _orderType == OrderType.pickup ? 'pickup' : 'delivery',
       'items': _items.map((ci) => {
         'menu_item_id': ci.menuItem.id,
