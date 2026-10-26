@@ -1,222 +1,277 @@
-# Plately Smart Kitchen Ecosystem
+# 🍽️ Plately Ecosystem — Comprehensive Architecture & Technical Blueprint
 
-This document reflects the exact feature set currently available in the Plately consumer app across the 4 primary launch tabs, alongside the broader strategic vision for the platform.
-
-## Flow & Detailed Feature Breakdown
-
-### 📱 Consumer App (Existing Features)
-
-*   **🍳 Cook Mode**
-    *   **5-Tier Recommendation Engine:** Tailored algorithms for *Perfect Match*, *For You*, *Use It Up*, *Almost There*, and *Explore*.
-    *   **Gemini AI Recipe Generator:** Generates recipes strictly from inventory constraints or entirely freeform.
-    *   **Cuisine Discovery & Sorting:** Dynamic filtering by global cuisines.
-    *   **Interactive Recipe Execution:** Step-by-step cooking interface with automated ingredient portioning.
-    *   **Vertical Recipe Feeds:** Swipeable video-style feeds for recipe discovery.
-    *   **Post-Cook Rewards:** Gamified XP drops upon completing a cooking session.
-
-*   **🥫 Shelf (Living Shelf)**
-    *   **Smart Ingredient Tracking:** Categorized storage (Produce, Meat, Dairy, Pantry, etc.) with visual expiration monitoring.
-    *   **Automated Lifecycle:** Auto-depletion of ingredients from the shelf upon finishing a recipe.
-    *   **Manual Management:** Add, edit, and delete functionality with smart icon/emoji pairing.
-
-*   **📸 Scanning Suite**
-    *   **AI Receipt Parsing:** Extracts and categorizes items from grocery receipts via camera or gallery import.
-    *   **Live Barcode Scanner:** Real-time UPC barcode scanning for instant item identification.
-    *   **Food Photo Recognition:** Direct AI recognition of loose ingredients (e.g., loose vegetables).
-    *   **Audit Flow:** Manual review screen to confirm or correct AI-extracted items before adding to the shelf.
-
-*   **👤 Profile (Health & Social)**
-    *   **Gamification Dashboard:** Visual XP progress, level progression, activity streaks, and unlockable badges.
-    *   **Flavor Profile Analytics:** Radar matrix plotting taste preferences (Sweet, Salty, Sour, Bitter, Umami, Spicy).
-    *   **Nutrition Tracker:** Macro-nutrient and caloric tracking against user health goals.
-    *   **Meal Planner:** 7-day calendar view for scheduling upcoming recipes.
-    *   **Smart Shopping List:** Interactive checklist that auto-syncs across devices.
-    *   **Social & Creator Hub:** Follower tracking, user-generated post uploads, and creator/restaurant dashboards.
-
-### 🌐 Vision (Future Strategy)
-
-*   **Version 1 (Pre-Launch, Beta Iteration & Funding Strategy):**
-    *   **Phase 1: Showcase & Advertise:** Delay public launch. Focus entirely on advertising and showcasing the deeply built current features to generate hype.
-    *   **Phase 2: Prototype Furthest Milestones:** Fork into a new GitHub branch to rapidly build out the furthest possible technical milestones. The goal is to perfectly showcase the *flow* and vision to investors and early adopters.
-    *   **Phase 3: Beta Signups & Investment:** Leverage the showcase to capture massive beta sign-ups and secure multi-million dollar seed investment.
-    *   **Phase 4: Beta Iteration to Perfection:** Work closely with beta testers to iteratively refine and fix the app until the UX and features are flawlessly perfect for the official public launch.
-    *   **Phase 5: Massive Recipe Database:** Build and ingest a highly usable, structured recipe database containing tens of thousands of actual recipes ready for launch.
-    *   **Phase 6: Seamless Grocery Integration:** Integrate with online grocery delivery stores natively, allowing users to instantly order missing ingredients directly from a recipe, flawlessly interacting with the Living Shelf.
-*   **Version 2 (Social, Analytics & Creator Monetization):**
-    *   **Feeds & Socialization:** A dedicated feeds section featuring video content, interactive chat, and community social engagement.
-    *   **Profile & Creator Analytics:** Deep, data-driven analytics within user profiles (tracking flavor profiles, nutritional impact, and meal habits), alongside a dedicated **Creator Studio** providing advanced metrics on recipe engagement, follower growth, and monetization for creators.
-    *   **Creator Marketplace:** Premium recipes created by top chefs/creators, which can be purchased by users, opening a monetization channel for the community.
-*   **Version 3 (Mobile POS, Booking & Restaurant SaaS):**
-    *   **Architecture Shift & Second Tab:** Introduction of a fundamentally new architecture to unlock the currently hidden "Ordering" tab (the codebase foundation for this already exists).
-    *   **Business Creator (Restaurant SaaS):** A "Shopify for Restaurants" suite where eating place owners can easily spin up their own custom in-app websites and use AI to automatically manage their social media presence.
-    *   **In-App Ordering, Payments & Seat Booking:** Plately manages the entire transaction layer, functioning as a mobile POS (similar to modern digital-only cafes). Users can order their food, pay digitally, and book seats directly through the app without external platforms.
-*   **Version 4 (Full Vertical Integration & Hardware):**
-    *   **Full-In Ordering Ecosystem:** Scaling the ordering architecture to handle complete, end-to-end logistics for both diners and restaurants.
-    *   **Shared Delivery Network (Fleet App):** Launching a dedicated courier fleet application to power a shared, optimized delivery network for all contracted eating places.
-    *   **Self-Service Kiosk Hardware:** Deploying proprietary physical ordering kiosks to partnered restaurants, perfectly syncing their physical storefront operations with the Plately digital ecosystem.
+> **Complete architectural breakdown of the Plately smart kitchen, merchant commerce, and food intelligence platform.**  
+> *Last updated: October 2026 | System Version: v0.1.14 / Workshop v0.2.0*
 
 ---
 
-## Ecosystem Map
+## 1. Executive Overview & Value Proposition
+
+**Plately** is a vertically integrated culinary and restaurant operating system designed to bridge consumer kitchen management with B2B restaurant commerce. Originally conceived as an inventory tracker, Plately has evolved into a two-sided network:
 
 ```mermaid
-flowchart LR
-    %% Styling to match the dark aesthetic
-    classDef root fill:#444b5a,color:#fff,stroke:none,rx:5,ry:5,padding:20px;
-    classDef level1 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
-    classDef level2 fill:#374149,color:#fff,stroke:none,rx:5,ry:5;
-    classDef level3 fill:#344e41,color:#fff,stroke:none,rx:5,ry:5;
-    classDef level4 fill:#2d4036,color:#fff,stroke:none,rx:5,ry:5;
-    classDef level5 fill:#233329,color:#fff,stroke:none,rx:5,ry:5;
+graph LR
+    subgraph Diners["Diner & Home Cook Layer"]
+        C1["Smart Pantry (Living Shelf)"]
+        C2["6-Signal AI Recipe Recommendation"]
+        C3["Multimodal Vision Ingestion"]
+        C4["Hands-Free Cook Mode"]
+    end
 
-    Root["Plately"]:::root
+    subgraph DataPlane["Unified Intelligence & Data Plane"]
+        DP1["Supabase Multi-Tenant Engine"]
+        DP2["FastAPI AI & Translation Core"]
+        DP3["Google Gemini & Local Ollama Models"]
+    end
 
-    %% Level 1
-    Root --> App["Consumer App"]:::level1
-    Root --> Vision["Vision"]:::level1
+    subgraph Merchants["Merchant & Restaurant Layer"]
+        M1["Plately Workshop B2B Portal"]
+        M2["Realtime Kitchen Display System (KDS)"]
+        M3["Dynamic Menu & 86-ing Inventory"]
+        M4["Fleet & Dispatch Logistics"]
+    end
 
-    %% ==========================================
-    %% CONSUMER APP BRANCH (Deeply Detailed)
-    %% ==========================================
-    
-    %% Level 2 - App Modules
-    App --> Cook["Cook Mode"]:::level2
-    App --> Shelf["Living Shelf"]:::level2
-    App --> Scan["Scanning Suite"]:::level2
-    App --> Profile["Social & Profile"]:::level2
-
-    %% ------------------------------------------
-    %% COOK MODE (Levels 3, 4, 5)
-    %% ------------------------------------------
-    Cook --> CookDisc["Recipe Discovery"]:::level3
-    CookDisc --> Tiers["5 Match Tiers"]:::level4
-    Tiers --> T1["Perfect (100% Match)"]:::level5
-    Tiers --> T2["For You (AI Pick)"]:::level5
-    Tiers --> T3["Use It Up (Expiring)"]:::level5
-    Tiers --> T4["Almost (Missing 1-2)"]:::level5
-    Tiers --> T5["Explore (All)"]:::level5
-    
-    CookDisc --> AIGen["AI Recipe Generator"]:::level4
-    AIGen --> Constraint["Inventory Constrained"]:::level5
-    AIGen --> Freeform["Freeform Generation"]:::level5
-
-    CookDisc --> CookFeed["Video Recipe Feeds"]:::level4
-
-    Cook --> CookRun["Active Cooking Execution"]:::level3
-    CookRun --> CSteps["Interactive Steps"]:::level4
-    CookRun --> CTimer["Visual Step Timer"]:::level4
-    CookRun --> CAssist["AI Chat Assistant"]:::level4
-    CookRun --> CMini["Floating Mini-Player"]:::level4
-
-    Cook --> CookPost["Post-Cook Flow"]:::level3
-    CookPost --> CReward["Gamified Rewards (XP)"]:::level4
-    CookPost --> CPortion["Portions Logging Sheet"]:::level4
-    CPortion --> LogEat["Log Eaten Macros"]:::level5
-    CPortion --> StoreLeft["Store Leftovers to Shelf"]:::level5
-
-    Cook --> CookBulk["Bulk Meal Prep"]:::level3
-    CookBulk --> PrepPlan["Multi-Day Plan Sheet"]:::level4
-    CookBulk --> PrepShop["Aggregated Batch Shopping"]:::level4
-
-    %% ------------------------------------------
-    %% SHELF MODE (Levels 3, 4, 5)
-    %% ------------------------------------------
-    Shelf --> SZone["Zone Tracking"]:::level3
-    SZone --> ZFridge["Fridge"]:::level4
-    SZone --> ZFreezer["Freezer"]:::level4
-    SZone --> ZPantry["Pantry"]:::level4
-
-    Shelf --> SFresh["Freshness System"]:::level3
-    SFresh --> FPredict["AI Expiry Predictions"]:::level4
-    SFresh --> FPulse["Visual Urgency Pulses"]:::level4
-
-    Shelf --> SAction["Inventory Actions"]:::level3
-    SAction --> SSwipeR["Swipe Right (Consume)"]:::level4
-    SSwipeR --> SLogMac["Logs Macros to Diary"]:::level5
-    SAction --> SSwipeL["Swipe Left (Discard)"]:::level4
-    SAction --> SMan["Manual Detail Editor"]:::level4
-
-    %% ------------------------------------------
-    %% SCAN SUITE (Levels 3, 4, 5)
-    %% ------------------------------------------
-    Scan --> ScanMode["Scan Modes"]:::level3
-    ScanMode --> MRec["AI Receipt Parsing (OCR)"]:::level4
-    ScanMode --> MPhoto["Loose Food Photo Recognition"]:::level4
-    ScanMode --> MBar["Live Barcode Scanner"]:::level4
-    ScanMode --> MCal["Visual Plate Calorie Scanner"]:::level4
-
-    Scan --> ScanAud["Audit Flow"]:::level3
-    ScanAud --> AConf["Confidence Indicators"]:::level4
-    ScanAud --> AEdit["Manual Correction"]:::level4
-    ScanAud --> ABulk["Bulk Add to Shelf"]:::level4
-
-    %% ------------------------------------------
-    %% PROFILE MODE (Levels 3, 4, 5)
-    %% ------------------------------------------
-    Profile --> PGam["Gamification"]:::level3
-    PGam --> GProg["XP & Level Progress"]:::level4
-    PGam --> GBadge["Unlockable Badges"]:::level4
-    PGam --> GStreak["Cooking Streaks"]:::level4
-
-    Profile --> PHealth["Health & Diet"]:::level3
-    PHealth --> HFlav["Flavor Profile Radar Matrix"]:::level4
-    PHealth --> HNut["Macro & Nutrition Tracker"]:::level4
-    PHealth --> HPlan["7-Day Calendar Meal Planner"]:::level4
-    PHealth --> HShop["Smart Syncing Shopping List"]:::level4
-
-    Profile --> PSoc["Social Hub"]:::level3
-    PSoc --> SFeed["Community Feed"]:::level4
-    PSoc --> SCreate["Creator Dashboard"]:::level4
-
-    %% ==========================================
-    %% VISION BRANCH (Roadmap)
-    %% ==========================================
-    Vision --> V1["Version 1 (Pre-Launch)"]:::level2
-    Vision --> V2["Version 2 (Creator & Social)"]:::level2
-    Vision --> V3["Version 3 (Restaurant SaaS)"]:::level2
-    Vision --> V4["Version 4 (Hardware & Fleet)"]:::level2
-
-    %% Level 3, 4, 5 - Version 1
-    V1 --> V1Beta["Showcase & Beta Iteration"]:::level3
-    V1Beta --> LocalAI["Local Private AI (Ollama)"]:::level4
-    LocalAI --> NoLat["Zero Latency Generation"]:::level5
-    V1 --> V1Db["Massive Recipe Database"]:::level3
-    V1Db --> SixSig["6-Signal Recommendation Engine"]:::level4
-    SixSig --> ExFlavor["Expiry, Flavor, Inventory Vectors"]:::level5
-    V1 --> V1Groc["Seamless Grocery Delivery"]:::level3
-    V1Groc --> CartAPI["Supermarket APIs"]:::level4
-    CartAPI --> AutoCart["Auto-Cart Missing Items"]:::level5
-
-    %% Level 3, 4, 5 - Version 2
-    V2 --> V2Feed["Social Video Feeds"]:::level3
-    V2Feed --> VertVideo["TikTok-style Shorts"]:::level4
-    VertVideo --> OrderNow["Direct 'Order Now' Overlays"]:::level5
-    V2 --> V2Ana["Creator Studio Analytics"]:::level3
-    V2Ana --> MetDash["Advanced Metrics Dashboard"]:::level4
-    MetDash --> RevEng["Revenue & Follower Tracking"]:::level5
-    V2 --> V2Market["Premium Recipe Marketplace"]:::level3
-    V2Market --> PayWall["Monetized Chef Content"]:::level4
-    PayWall --> MicroTx["Micro-transaction Layer"]:::level5
-
-    %% Level 3, 4, 5 - Version 3
-    V3 --> V3POS["Mobile POS & Payments"]:::level3
-    V3POS --> LivePOS["Live Restaurant Dashboard"]:::level4
-    LivePOS --> WSSync["Real-Time WebSocket Sync"]:::level5
-    V3 --> V3SaaS["Restaurant SaaS Websites"]:::level3
-    V3SaaS --> WhiteLab["White-Label Sites"]:::level4
-    WhiteLab --> AIMark["AI Social Media Manager"]:::level5
-    V3 --> V3Book["Seat Booking System"]:::level3
-    V3Book --> PayGate["Payment Integration"]:::level4
-    PayGate --> StripeLoc["Stripe / Local Gateways"]:::level5
-
-    %% Level 3, 4, 5 - Version 4
-    V4 --> V4Log["Full Logistics Ecosystem"]:::level3
-    V4Log --> DispAI["Dispatch AI"]:::level4
-    DispAI --> RouteETA["Optimal Routing & ETA"]:::level5
-    V4 --> V4Fleet["Delivery Fleet App"]:::level3
-    V4Fleet --> DriverApp["Standalone Driver App"]:::level4
-    DriverApp --> FlatFee["Flat-Fee Shared Network"]:::level5
-    V4 --> V4Kiosk["Self-Service Kiosk Hardware"]:::level3
-    V4Kiosk --> TouchHW["Touchscreen Kiosks"]:::level4
-    TouchHW --> KDSPrint["KDS & Receipt Printers"]:::level5
+    Diners <--> DataPlane
+    Merchants <--> DataPlane
 ```
+
+### Core Value Drivers:
+1. **Zero Food Waste (Diner):** Algorithmic recipe ranking prioritizing ingredients nearing their expiration date.
+2. **Frictionless Ingestion (Diner):** Instant conversion of physical receipts, barcode scans, and loose refrigerator photos into structured digital pantries.
+3. **High-Margin Operations (Merchant):** Complete bypass of aggregator commission fees through self-managed mobile ordering, direct-table QR codes, and integrated kitchen display operations.
+4. **Resilience & Continuity (Ecosystem):** Offline-first architecture across mobile (Hive) and merchant web (Dexie/IndexedDB) guaranteeing uninterrupted service even during network dropouts.
+
+---
+
+## 2. Multi-Repository Topology
+
+The codebase is organized into three specialized repositories residing under the Plately root:
+
+| Repository | Tech Stack | Role & Target Audience | State / Ports |
+| :--- | :--- | :--- | :--- |
+| [`Plately.app`](./Plately.app) | **Frontend:** Flutter 3, Riverpod, Hive<br/>**Backend:** FastAPI, Python 3.10+, Gemini 2.5/Ollama | Consumer mobile app (iOS / Android) and centralized AI microservice layer. | Port `8000` (API)<br/>Mobile Bundle `0.1.14+16` |
+| [`Plately.workshop`](./Plately.workshop) | Next.js 16 (Turbopack, App Router), React 19, TypeScript, Tailwind CSS v4, Zustand | Merchant B2B operating system: Multi-tenant custom domains, KDS, AI website studio, dispatch, and analytics. | Port `3000` (Web / Docker Standalone) |
+| [`Plately.web`](./Plately.web) | React 19, Vite, Tailwind CSS, Framer Motion | Brand marketing, interactive dual-platform simulator, investor demos, and customer onboarding. | Port `5173` (Vite) / Live at [theplately.com](https://theplately.com) |
+
+---
+
+## 3. Subsystem Breakdown
+
+### 3.1 Plately.app (Consumer Mobile Client)
+
+Built on Flutter using **Clean Architecture** principles (Presentation, Domain, and Data layers) separated into modular feature domains:
+
+```mermaid
+flowchart TD
+    AppShell["lib/main.dart (AppShell)"]
+    AppShell --> Cook["features/cook"]
+    AppShell --> Shelf["features/shelf"]
+    AppShell --> Scan["features/scan"]
+    AppShell --> Profile["features/profile"]
+    AppShell --> Order["features/order (V3 Foundation)"]
+
+    Cook --> MiniPlayer["CookingMiniPlayer (Persistent)"]
+    Cook --> CookRun["CookingRunScreen (Interactive Tutorial)"]
+    Shelf --> Freshness["Freshness Overlay & Auto-Depletion"]
+    Scan --> ReceiptOCR["Receipt OCR & Loose Item Vision"]
+    Profile --> FlavorRadar["Flavor Radar Matrix (Spider Chart)"]
+    Profile --> MacroTracker["Macro Nutrition & 7-Day Meal Planner"]
+```
+
+#### Key Modules:
+* **The Living Shelf (`features/shelf`):**
+  * Categorizes inventory into Produce, Meat, Seafood, Dairy, Pantry, Frozen, and Bakery.
+  * Visual expiration degradation with automated freshness overlays.
+  * Auto-depletes ingredients from local Hive cache and remote Supabase tables once a meal is marked complete in Cook Mode.
+* **Scan Suite (`features/scan`):**
+  * **Receipt Parser:** Scans printed grocery receipts (e.g., Korean mart receipts, Western supermarkets) via Gemini Vision OCR, parsing item lines, quantity, origin, and tax exemptions.
+  * **Loose Ingredient Scanner:** Direct visual segmentation of items laid out on a kitchen counter.
+  * **Barcode Scanner:** Real-time UPC lookup with fallback to Open Food Facts API.
+  * **Audit Review Flow:** Intermediate validation interface allowing users to review, correct, or discard AI classifications prior to committing to the pantry.
+* **Cook Mode & Tutorial (`features/cook`):**
+  * **6-Signal Recommendation Engine:** Weights Expiry Urgency ($45\%$), Flavor Profile Match ($35\%$), and Familiarity/Simplicity ($20\%$).
+  * **Hands-Free Cooking Guidance:** Step-by-step swipeable UI with automated contextual action badges (🔥 heat, ✂️ slice, 🍳 sauté).
+  * **Interactive Inline Timers:** Embedded timers within recipe steps that run concurrently and integrate with a background mini-player.
+* **Health & Gamification (`features/profile`, `features/gamification`):**
+  * **Flavor Radar:** 6-axis spider chart plotting Sweet, Salty, Sour, Bitter, Umami, and Spicy preferences.
+  * **Gamification Engine:** Grants XP drops, awards achievement badges, and tracks streaks to incentivize home cooking and waste elimination.
+* **Android Compliance:** Stripped legacy media storage permissions (`READ_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`) using `tools:node="remove"`, integrating natively with the Android 14+ Photo Picker.
+
+---
+
+### 3.2 Plately.app Backend (AI & Intelligence Core)
+
+FastAPI microservice hosting specialized endpoints and AI orchestrators:
+
+* **Endpoint Routing:**
+  * `/api/v1/recipes/recommend`: 6-signal algorithmic scoring running against pantry items.
+  * `/api/v1/vision/ocr-receipt`: Multimodal OCR prompt pipeline with zero-hallucination constraints.
+  * `/api/v1/vision/detect-ingredients`: Vision-based ingredient classification.
+  * `/api/v1/vision/estimate-calories`: Visual portion estimation and macronutrient decomposition.
+  * `/api/v1/meal-prep/generate`: Batch cooking generator outputting multi-day meal plans (8,192 token window with resilient JSON repair fallback).
+  * `/api/v1/translations`: On-the-fly taxonomy and recipe translation supporting English, Korean, Uzbek (Latin & Cyrillic), and Russian.
+* **Security & Reliability:**
+  * PostgREST injection protection via query sanitization before `.ilike()` execution.
+  * Strict cryptographic token generation using Python `secrets.choice()`.
+  * Middleware enforcing HTTP Strict Transport Security (HSTS), nosniff, and anti-clickjacking headers.
+
+---
+
+### 3.3 Plately.workshop (B2B Merchant Portal)
+
+A high-performance Next.js 16 web application enabling restaurants and food merchants to manage incoming traffic, kitchen preparation, and delivery logistics.
+
+```mermaid
+flowchart TD
+    subgraph Portal["Plately Workshop"]
+        KDS["Kitchen Display System (/kds)"]
+        Menu["Menu & 86-ing Management (/menu)"]
+        Dispatch["Fleet & Courier Dispatch (/dispatch)"]
+        Analytics["Financial & Prep Analytics (/analytics)"]
+        QR["Dynamic Table QR Generator (/settings)"]
+    end
+
+    subgraph Security["PostgreSQL RLS & Claims"]
+        Hook["custom_access_token_hook"]
+        JWT["JWT (restaurant_id, branch_id, staff_role)"]
+        Cron["pg_cron (Stale auto-reject & MV refresh)"]
+    end
+
+    Portal --> Hook --> JWT --> Security
+```
+
+#### Core Capabilities:
+* **Multi-Tenant Branded Subdomains & Custom Domains:**
+  * Next.js Edge proxy (`src/proxy.ts`) with in-memory TTL caching resolving tenant slugs (<5ms).
+  * Automated DNS verification API (`/api/domains/verify`) with live CNAME and challenge TXT record checks.
+  * In-app DNS management in Workshop Settings with 1-click clipboard guidance.
+  * Multi-stage standalone Dockerfile with non-root security and `/api/health` probes.
+* **AI Website Studio & Interactive Floor Plan:**
+  * Multimodal Gemini command bar supporting voice recording, image menu uploads, and model selection.
+  * Interactive floor plan table designer with zone management (Window Booths, Main Dining, VIP Terrace).
+  * Public storefronts at `/store/[slug]` with Schema.org SEO rich snippets and live table reservation persistence.
+* **Realtime Kitchen Display System (KDS):**
+  * Displays live tickets organized by state: `pending`, `preparing`, `ready`, `dispatched`, `completed`, and `rejected`.
+  * Real-time zero-asset Web Audio synthesis alerts on incoming orders powered by Supabase Realtime WebSocket listeners.
+* **Menu Engineering & Modifier Matrix:**
+  * Multi-tier modifier groups (e.g., single-select sizes, multi-select toppings, required spice levels).
+  * Instant "86-ing" toggle that immediately syncs across consumer apps to mark items as "Sold Out" and disable diner ordering.
+* **Fleet & Driver Dispatch:**
+  * Coordinates in-house or contracted delivery fleets (Noor 3PL) with HMAC-SHA256 signature verification, idempotency tracking, and automatic order milestone synchronization.
+* **Multi-Tenant Security Architecture:**
+  * **Custom Auth Access Token Hook (`custom_access_token_hook`):** Injects `restaurant_id`, `branch_id`, and `staff_role` directly into the Supabase JWT `app_metadata`.
+  * **Row-Level Security (RLS):** Every database query strictly isolates tenant data by querying `auth.restaurant_id()`.
+  * **Automated Cron Jobs (`pg_cron`):**
+    * Auto-rejects unaccepted orders after expiration thresholds.
+    * Refreshes the `mv_merchant_analytics` materialized view every 5 minutes.
+    * Prunes stale webhook payloads older than 30 days.
+
+---
+
+### 3.4 Plately.web (Public Marketing & Showcase)
+
+Vite + React single-page application built with modern dark glassmorphic styling:
+* **Interactive Live Demos:** Provides prospective diners, merchants, and investors with realistic simulations of Cook Mode, Scan Mode, and the KDS.
+* **Conversion Funnels:** Early-access waitlist collection and merchant onboarding inquiries.
+* **Asset Optimization:** Standalone bundling with zero external runtime dependencies.
+
+---
+
+## 4. End-to-End Data & Order Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Diner as Diner (Plately.app)
+    participant API as FastAPI Backend
+    participant DB as Supabase (PostgreSQL)
+    participant KDS as Merchant KDS (Workshop)
+    actor Kitchen as Kitchen Staff
+    actor Courier as Delivery Fleet
+
+    Diner->>API: Scan grocery receipt (Gemini Vision)
+    API-->>Diner: Normalized ingredient list
+    Diner->>DB: Commit to Living Shelf
+    Note over Diner,DB: Shelf monitors expiry dates & suggests meals
+    
+    Diner->>DB: Place restaurant order / Cart checkout
+    DB->>KDS: Broadcast new order event (Supabase Realtime)
+    KDS-->>Kitchen: Audio chime & ticket appears in "Pending"
+    Kitchen->>KDS: Tap "Accept & Prepare"
+    KDS->>DB: Update order status to "preparing"
+    DB-->>Diner: Push notification: "Kitchen is preparing your meal"
+    
+    Kitchen->>KDS: Tap "Order Ready"
+    KDS->>DB: Update status to "ready"
+    DB->>Courier: Assign delivery job
+    Courier->>DB: Confirm pickup & transit
+    DB-->>Diner: Live delivery tracking active
+    Courier->>DB: Mark order "completed"
+    DB-->>Diner: Meal marked complete & XP awarded
+```
+
+---
+
+## 5. Security, Multi-Tenancy & Compliance Matrix
+
+| Surface | Protection Mechanism | Implementation Detail |
+| :--- | :--- | :--- |
+| **Merchant Data Isolation** | PostgreSQL Row-Level Security (RLS) | Enforced via `auth.restaurant_id()` extracted from custom JWT claims hook. |
+| **Role-Based Access Control** | Hierarchical Role Checks | `owner` > `admin` > `manager` > `chef` / `waiter` / `courier` validated via `auth.has_min_role()`. |
+| **AI Prompt Injection & Hallucination** | Schema Validation & Anti-Hallucination Guardrails | Pydantic response models, temperature tuning (0.1 for OCR), empty-state fallbacks. |
+| **Database Query Security** | SQL Injection Sanitization | User search strings sanitized through `sanitize_search_query()` before `.ilike()`. |
+| **Mobile Storage Compliance** | Android 14+ Photo Picker | Explicit stripping of `READ_EXTERNAL_STORAGE` and `READ_MEDIA_IMAGES` in `AndroidManifest.xml`. |
+| **Network & Transport** | Security Header Middleware | Strict-Transport-Security (`max-age=31536000`), `X-Frame-Options: DENY`, `nosniff`. |
+
+---
+
+## 6. Strategic Evolution Roadmap
+
+```mermaid
+timeline
+    title Plately Strategic Horizon
+    Version 1 : Living Shelf & Smart Pantry MVP : Multimodal Vision OCR : Hands-Free Cook Mode : Google Play Compliant Release
+    Version 2 : Social Recipe Feeds : Creator Studio & Monetization : Advanced Radar Nutrition : Community Meal Sharing
+    Version 3 : Plately Workshop B2B Portal : Multi-Tenant Mobile POS : In-App Table QR Ordering : Realtime Kitchen Display (KDS)
+    Version 4 : Shared Delivery Fleet Logistics : Dynamic Route Optimization : Self-Service Storefront Kiosks
+    Version 5 : Autonomous Kitchen Robotics : Ambient Smart Fridge IoT Hardware : Computer Vision Refrigerator Cameras
+```
+
+* **Version 1 (Current Core):** Full consumer mobile pantry, offline-first execution, AI scanning suite, and 62/62 verified backend regression tests.
+* **Version 2 (Social & Creator Economy):** Interactive cooking creator feeds, verified chef recipe subscriptions, and community flavor challenges.
+* **Version 3 (B2B SaaS & In-App Ordering - Deployed in Workshop):** Full commercial kitchen operating system, table QR codes, order management, and automated sales reporting.
+* **Version 4 (Vertical Delivery Fleet & Hardware):** Aggregated low-cost delivery routing for independent eateries and turnkey self-ordering kiosk terminals.
+* **Version 5 (Robotics & Smart Kitchen IoT):** Automated robotic cooking integrations and smart ambient sensors retrofitted to physical refrigerators.
+
+---
+
+## 7. Developer & Operations Quick-Reference
+
+### Starting Services Locally
+* **Backend API:**
+  ```powershell
+  cd Plately.app/backend
+  venv\Scripts\activate
+  uvicorn app.main:app --reload --port 8000
+  ```
+* **Frontend Mobile App:**
+  ```powershell
+  cd Plately.app/frontend
+  flutter run
+  ```
+* **B2B Workshop Portal:**
+  ```powershell
+  cd Plately.workshop
+  npm run dev
+  ```
+* **Marketing Web:**
+  ```powershell
+  cd Plately.web
+  npm run dev
+  ```
+
+### Verification & Automated Testing
+* **Backend Pytest Suite:** `python -m pytest tests/` in `Plately.app/backend` (62/62 passing).
+* **Mobile Static Analysis:** `flutter analyze --no-fatal-infos` in `Plately.app/frontend` (0 errors).
+* **Workshop Typecheck & Build:** `npx tsc --noEmit && npm run build` in `Plately.workshop` (Clean production output).
+* **Web Landing Build:** `npm run build` in `Plately.web` (Vite production build clean).
