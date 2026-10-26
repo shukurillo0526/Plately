@@ -1300,45 +1300,67 @@ class _RecipeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Hero image header
-            Container(
-              height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(
-                    recipe['image_url']?.toString().isNotEmpty == true
-                        ? recipe['image_url']
-                        : _cuisineImageUrl(cuisine),
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
-                    ],
-                    stops: [0.0, 0.6, 1.0],
-                  ),
-                ),
-                alignment: Alignment.bottomRight,
-                padding: EdgeInsets.all(10),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _tierColor.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text('${matchPct.toInt()}%',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700)),
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: SizedBox(
+                height: 160,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: recipe['image_url']?.toString().isNotEmpty == true
+                          ? recipe['image_url']
+                          : _cuisineImageUrl(cuisine),
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              _tierColor.withValues(alpha: 0.35),
+                              Theme.of(context).colorScheme.surface,
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.restaurant_rounded, size: 40, color: _tierColor.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                            Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+                          ],
+                          stops: const [0.0, 0.6, 1.0],
+                        ),
+                      ),
+                      alignment: Alignment.bottomRight,
+                      padding: const EdgeInsets.all(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _tierColor.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text('${matchPct.toInt()}%',
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
