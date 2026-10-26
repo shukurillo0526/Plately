@@ -29,6 +29,8 @@ import 'package:plately_app/features/profile/presentation/screens/creator_dashbo
 import 'package:plately_app/features/profile/presentation/screens/restaurant_dashboard_page.dart';
 import 'package:plately_app/features/order/presentation/screens/order_history_screen.dart';
 import 'package:plately_app/features/social/presentation/screens/squad_screen.dart';
+import 'package:plately_app/features/cook/presentation/screens/bulk_cooking_hub_screen.dart';
+import 'package:plately_app/features/profile/presentation/screens/kitchen_data_hub_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -917,6 +919,80 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 Text('Squads & Leaderboards', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 4),
                                 Text('Join or create cooking squads with friends and family', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Bulk Cooking & Meal Prep Hub ──
+                SlideInItem(
+                  delay: 346,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkCookingHubScreen())),
+                    child: _SectionCard(
+                      title: 'Bulk Cooking & Meal Prep',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.takeout_dining, color: Theme.of(context).colorScheme.primary, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Meal Prep Command Center', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('Batch cook multiple dishes, container stash & timers', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Kitchen Data, Storage & Privacy Hub ──
+                SlideInItem(
+                  delay: 348,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KitchenDataHubScreen())),
+                    child: _SectionCard(
+                      title: 'Kitchen Data & Storage Engine',
+                      trailing: Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.analytics_outlined, color: Color(0xFF4CAF50), size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Telemetry, Eco Stats & Backup', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('Zero-waste stats, cloud sync, cache purge & JSON export', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
                               ],
                             ),
                           ),

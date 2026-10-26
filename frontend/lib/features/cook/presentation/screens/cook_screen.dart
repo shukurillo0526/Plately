@@ -27,6 +27,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
 import 'package:plately_app/features/cook/presentation/widgets/meal_prep_config_panel.dart';
 import 'package:plately_app/features/cook/presentation/widgets/meal_prep_plan_sheet.dart';
+import 'package:plately_app/features/cook/presentation/screens/bulk_cooking_hub_screen.dart';
 import 'package:plately_app/core/widgets/voice_command_fab.dart';
 
 class CookScreen extends ConsumerStatefulWidget {
@@ -951,6 +952,13 @@ class _CookScreenState extends ConsumerState<CookScreen>
             tooltip: 'Search recipes',
           ),
           IconButton(
+            icon: const Icon(Icons.takeout_dining),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkCookingHubScreen()));
+            },
+            tooltip: 'Bulk Cooking & Meal Prep',
+          ),
+          IconButton(
             icon: Icon(Icons.play_circle_outline),
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const CookFeedsScreen()));
@@ -966,7 +974,9 @@ class _CookScreenState extends ConsumerState<CookScreen>
             icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
             tooltip: 'More actions',
             onSelected: (val) {
-              if (val == 'import') {
+              if (val == 'bulk_prep') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkCookingHubScreen()));
+              } else if (val == 'import') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const RecipeImportScreen()));
               } else if (val == 'my_recipes') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRecipesScreen()));
@@ -975,6 +985,16 @@ class _CookScreenState extends ConsumerState<CookScreen>
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'bulk_prep',
+                child: Row(
+                  children: [
+                    Icon(Icons.takeout_dining, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('Meal Prep Hub'),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'import',
                 child: Row(
