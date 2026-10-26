@@ -7,7 +7,8 @@ import 'package:plately_app/core/services/api_service.dart';
 ///
 /// Shows a pulsing animation while listening,
 /// displays recognized text in a bottom sheet,
-/// and routes the command to the appropriate handler.
+/// routes the command to the appropriate handler,
+/// and provides a text input fallback if microphone is unavailable.
 class VoiceCommandFab extends StatefulWidget {
   final String userId;
   final void Function(String message)? onAssistantReply;
@@ -35,6 +36,7 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
   bool _isProcessing = false;
   StreamSubscription? _textSub;
   StreamSubscription? _statusSub;
+  Timer? _safetyResetTimer;
 
   @override
   void initState() {
@@ -48,15 +50,20 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
     );
 
     _textSub = _voice.onText.listen((text) {
-      setState(() => _recognizedText = text);
+      if (mounted) {
+        setState(() => _recognizedText = text);
+      }
     });
 
     _statusSub = _voice.onStatus.listen((status) {
+      if (!mounted) return;
       if (status == VoiceStatus.done && _recognizedText.isNotEmpty) {
         _handleCommand(_recognizedText);
       }
       if (status == VoiceStatus.done || status == VoiceStatus.error) {
+        _safetyResetTimer?.cancel();
         _pulseController.stop();
+        _pulseController.reset();
         setState(() => _isListening = false);
       }
     });
@@ -64,6 +71,7 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
 
   @override
   void dispose() {
+    _safetyResetTimer?.cancel();
     _pulseController.dispose();
     _textSub?.cancel();
     _statusSub?.cancel();
@@ -72,15 +80,160 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
 
   Future<void> _toggleListening() async {
     if (_isListening) {
+      _safetyResetTimer?.cancel();
+      setState(() => _isListening = false);
+      _pulseController.stop();
+      _pulseController.reset();
       await _voice.stopListening();
     } else {
       setState(() {
         _recognizedText = '';
-        _isListening = true;
       });
-      _pulseController.repeat(reverse: true);
-      await _voice.startListening();
+
+      final started = await _voice.startListening();
+      if (!mounted) return;
+
+      if (started) {
+        setState(() => _isListening = true);
+        _pulseController.repeat(reverse: true);
+
+        // Safety fallback timer to prevent button from ever hanging
+        _safetyResetTimer?.cancel();
+        _safetyResetTimer = Timer(const Duration(seconds: 10), () {
+          if (mounted && _isListening) {
+            _pulseController.stop();
+            _pulseController.reset();
+            setState(() => _isListening = false);
+            _voice.stopListening();
+          }
+        });
+      } else {
+        // Voice recognition unavailable or permission denied — fallback to text dialog
+        setState(() => _isListening = false);
+        _pulseController.stop();
+        _pulseController.reset();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone unavailable. You can type directly to Plately AI!'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _showTextInputDialog();
+      }
     }
+  }
+
+  void _showTextInputDialog() {
+    if (!mounted) return;
+    final textController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+        ),
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2E),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.smart_toy, color: Color(0xFF4FC3F7), size: 22),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Plately AI Kitchen Assistant',
+                    style: TextStyle(
+                      color: Color(0xFF4FC3F7),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.54), size: 18),
+                    onPressed: () => Navigator.pop(sheetCtx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ask anything: "What can I cook?", "Add milk to shopping list", or "Set timer for 10 minutes".',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: textController,
+                      autofocus: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Type your kitchen question...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.3),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF4FC3F7)),
+                        ),
+                      ),
+                      onSubmitted: (val) {
+                        final trimmed = val.trim();
+                        if (trimmed.isNotEmpty) {
+                          Navigator.pop(sheetCtx);
+                          _handleCommand(trimmed);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFF4FC3F7),
+                      foregroundColor: Colors.black,
+                    ),
+                    icon: const Icon(Icons.arrow_upward, size: 20),
+                    onPressed: () {
+                      final trimmed = textController.text.trim();
+                      if (trimmed.isNotEmpty) {
+                        Navigator.pop(sheetCtx);
+                        _handleCommand(trimmed);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _handleCommand(String text) async {
@@ -98,37 +251,40 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
               {'role': 'user', 'content': text},
             ],
           );
-          final reply = result['data']?['content'] ?? 'I couldn\'t process that. Try again!';
+          final reply = result['data']?['content'] ?? 'I couldn\'t process that. Try asking again!';
           widget.onAssistantReply?.call(reply);
-          _showReply(reply);
+          _showReply(reply, queryText: text);
           break;
 
         case VoiceIntentType.addToShoppingList:
-          widget.onAddToShoppingList?.call(intent.parameter ?? text);
-          _showReply('Added "${intent.parameter}" to your shopping list! 🛒');
+          final param = intent.parameter ?? text;
+          widget.onAddToShoppingList?.call(param);
+          _showReply('Added "$param" to your shopping list! 🛒', queryText: text);
           break;
 
         case VoiceIntentType.setTimer:
-          _showReply('Timer set for ${intent.parameter}! ⏰');
+          _showReply('Timer set for ${intent.parameter}! ⏰', queryText: text);
           break;
       }
     } catch (e) {
-      _showReply('Sorry, something went wrong. Please try again.');
+      _showReply('Sorry, something went wrong. Please try again.', queryText: text);
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
-  void _showReply(String message) {
+  void _showReply(String message, {String? queryText}) {
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        margin: EdgeInsets.all(16),
-        padding: EdgeInsets.all(20),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Color(0xFF1E1E2E),
+          color: const Color(0xFF1E1E2E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
         ),
@@ -138,9 +294,9 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
           children: [
             Row(
               children: [
-                Icon(Icons.smart_toy, color: Color(0xFF4FC3F7), size: 20),
-                SizedBox(width: 8),
-                Text(
+                const Icon(Icons.smart_toy, color: Color(0xFF4FC3F7), size: 20),
+                const SizedBox(width: 8),
+                const Text(
                   'Plately AI',
                   style: TextStyle(
                     color: Color(0xFF4FC3F7),
@@ -148,24 +304,24 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
                     fontSize: 14,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 IconButton(
                   icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 18),
                   onPressed: () => Navigator.pop(ctx),
                 ),
               ],
             ),
-            SizedBox(height: 12),
-            if (_recognizedText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            if (queryText != null && queryText.isNotEmpty) ...[
               Text(
-                '"$_recognizedText"',
+                '"$queryText"',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
             ],
             Text(
               message,
@@ -188,8 +344,8 @@ class _VoiceCommandFabState extends State<VoiceCommandFab>
             heroTag: 'voice_fab',
             onPressed: _isProcessing ? null : _toggleListening,
             backgroundColor: _isListening
-                ? Color(0xFFEF5350)
-                : Color(0xFF4FC3F7),
+                ? const Color(0xFFEF5350)
+                : const Color(0xFF4FC3F7),
             elevation: _isListening ? 12 : 6,
             child: _isProcessing
                 ? SizedBox(

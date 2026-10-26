@@ -17,6 +17,7 @@ class VoiceCommandService {
   final SpeechToText _speech = SpeechToText();
   bool _isInitialized = false;
   bool _isListening = false;
+  Timer? _timeoutTimer;
 
   bool get isListening => _isListening;
   bool get isAvailable => _isInitialized;
@@ -38,13 +39,15 @@ class VoiceCommandService {
     try {
       _isInitialized = await _speech.initialize(
         onError: (error) {
-          debugPrint('[Voice] Error: ${error.errorMsg}');
+          debugPrint('[Voice] Speech error: ${error.errorMsg}');
+          _cancelTimer();
           _isListening = false;
           _statusController.add(VoiceStatus.error);
         },
         onStatus: (status) {
-          debugPrint('[Voice] Status: $status');
+          debugPrint('[Voice] Speech status: $status');
           if (status == 'done' || status == 'notListening') {
+            _cancelTimer();
             _isListening = false;
             _statusController.add(VoiceStatus.done);
           }
@@ -54,47 +57,83 @@ class VoiceCommandService {
       if (_isInitialized) {
         debugPrint('[Voice] Initialized successfully');
         _statusController.add(VoiceStatus.ready);
+      } else {
+        debugPrint('[Voice] Initialized returned false');
       }
       return _isInitialized;
     } catch (e) {
-      debugPrint('[Voice] Init failed: $e');
+      debugPrint('[Voice] Init exception: $e');
+      _isInitialized = false;
       return false;
     }
   }
 
-  /// Start listening for voice input.
-  /// Returns the final recognized text when the user stops speaking.
-  Future<void> startListening() async {
-    if (!_isInitialized) {
-      final ok = await initialize();
-      if (!ok) return;
-    }
-
-    if (_isListening) return;
-
-    _isListening = true;
-    _statusController.add(VoiceStatus.listening);
-
-    await _speech.listen(
-      onResult: (SpeechRecognitionResult result) {
-        _textController.add(result.recognizedWords);
-        if (result.finalResult) {
-          _isListening = false;
-          _statusController.add(VoiceStatus.done);
-        }
-      },
-      listenFor: const Duration(seconds: 15),
-      pauseFor: const Duration(seconds: 3),
-      localeId: 'en_US',
-    );
+  void _cancelTimer() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
   }
 
-  /// Stop listening immediately.
+  /// Start listening for voice input.
+  /// Returns `true` if listening started successfully, `false` otherwise.
+  Future<bool> startListening() async {
+    try {
+      if (!_isInitialized) {
+        final ok = await initialize();
+        if (!ok) {
+          _isListening = false;
+          _statusController.add(VoiceStatus.error);
+          return false;
+        }
+      }
+
+      if (_isListening) return true;
+
+      _isListening = true;
+      _statusController.add(VoiceStatus.listening);
+
+      // Safety timeout: automatically reset after 8 seconds of silence/no final result
+      _cancelTimer();
+      _timeoutTimer = Timer(const Duration(seconds: 8), () {
+        debugPrint('[Voice] Auto-stopping after silence timeout');
+        stopListening();
+      });
+
+      await _speech.listen(
+        onResult: (SpeechRecognitionResult result) {
+          _textController.add(result.recognizedWords);
+          if (result.finalResult) {
+            _cancelTimer();
+            _isListening = false;
+            _statusController.add(VoiceStatus.done);
+          }
+        },
+        listenFor: const Duration(seconds: 12),
+        pauseFor: const Duration(seconds: 3),
+        localeId: 'en_US',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[Voice] startListening failed: $e');
+      _cancelTimer();
+      _isListening = false;
+      _statusController.add(VoiceStatus.error);
+      return false;
+    }
+  }
+
+  /// Stop listening immediately and ensure state is reset.
   Future<void> stopListening() async {
-    if (!_isListening) return;
-    await _speech.stop();
-    _isListening = false;
-    _statusController.add(VoiceStatus.done);
+    _cancelTimer();
+    try {
+      if (_speech.isListening) {
+        await _speech.stop();
+      }
+    } catch (e) {
+      debugPrint('[Voice] stopListening exception: $e');
+    } finally {
+      _isListening = false;
+      _statusController.add(VoiceStatus.done);
+    }
   }
 
   /// Parse a voice command and return the intent.
@@ -141,7 +180,10 @@ class VoiceCommandService {
   }
 
   void dispose() {
-    _speech.stop();
+    _cancelTimer();
+    try {
+      _speech.stop();
+    } catch (_) {}
     _textController.close();
     _statusController.close();
   }

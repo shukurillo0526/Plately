@@ -1,4 +1,4 @@
-// Plately — Explore Screen
+﻿// Plately — Explore Screen
 // ===========================
 // Social discovery hub with two tabs:
 // 1. Reels — vertical video/tip feed
@@ -22,10 +22,6 @@ import 'package:plately_app/features/explore/presentation/screens/social_search_
 import 'package:plately_app/core/services/restaurant_service.dart';
 import 'package:plately_app/features/order/presentation/screens/restaurant_detail_page.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:plately_app/core/services/recipe_monetization_service.dart';
-import 'package:plately_app/features/cook/presentation/widgets/recipe_paywall_sheet.dart';
-import 'package:plately_app/core/widgets/recipe_share_card.dart';
 import 'package:plately_app/features/cook/presentation/screens/executive_recipe_studio_screen.dart';
 import 'package:plately_app/features/cook/presentation/screens/my_recipes_screen.dart';
 
@@ -41,7 +37,7 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -169,7 +165,6 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
                 tabs: const [
                   Tab(text: '🌟 For You'),
                   Tab(text: '🍽️ Community'),
-                  Tab(text: '💎 Executive'),
                 ],
               ),
             ),
@@ -181,7 +176,6 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
                 children: const [
                   _ReelsFeed(),
                   _CommunityFeed(),
-                  _ExecutiveRecipesFeed(),
                 ],
               ),
             ),
@@ -1081,7 +1075,46 @@ class _CommunityFeedState extends State<_CommunityFeed> {
                       children: [
                         const StoryRing(),
                         Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06), height: 1),
-                        SizedBox(height: 8),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ExecutiveRecipeStudioScreen()),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.workspace_premium, color: Theme.of(context).colorScheme.primary, size: 20),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Executive Recipes moved to Cook Mode',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Browse masterclasses next to your 5 tiers or open Studio',
+                                        style: TextStyle(fontSize: 10, color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, size: 18, color: Theme.of(context).colorScheme.primary),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     );
                   }
@@ -1229,468 +1262,6 @@ class _InfoChip extends StatelessWidget {
           SizedBox(width: 6),
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w600)),
         ],
-      ),
-    );
-  }
-}
-
-
-// ═════════════════════════════════════════════════════════════════════
-// 💎 EXECUTIVE RECIPES FEED
-// ═════════════════════════════════════════════════════════════════════
-
-class _ExecutiveRecipesFeed extends StatefulWidget {
-  const _ExecutiveRecipesFeed();
-
-  @override
-  State<_ExecutiveRecipesFeed> createState() => _ExecutiveRecipesFeedState();
-}
-
-class _ExecutiveRecipesFeedState extends State<_ExecutiveRecipesFeed> {
-  List<RecipeModel> _recipes = [];
-  bool _loading = true;
-  String _activeFilter = 'All';
-
-  final List<String> _filters = ['All', 'Uzbek', 'Italian', 'Masterclasses', 'Quick (<30m)'];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadExecutiveRecipes();
-  }
-
-  Future<void> _loadExecutiveRecipes() async {
-    setState(() => _loading = true);
-    try {
-      final res = await Supabase.instance.client
-          .from('recipes')
-          .select()
-          .or('is_community.eq.true,is_premium.eq.true')
-          .order('created_at', ascending: false)
-          .limit(40);
-
-      final list = (res as List).map((m) => RecipeModel.fromMap(m)).toList();
-      if (mounted) {
-        setState(() {
-          _recipes = list.isNotEmpty ? list : _demoExecutiveRecipes();
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _recipes = _demoExecutiveRecipes();
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  List<RecipeModel> _demoExecutiveRecipes() {
-    return [
-      RecipeModel(
-        id: 'exec-plov-001',
-        title: "Samarkand Wedding Plov (To'y Oshi)",
-        description: 'Golden laser rice, tender mutton shoulder, yellow carrots, barberries, and roasted whole garlic.',
-        cuisine: 'Uzbek',
-        difficulty: 3,
-        prepTime: 30,
-        cookTime: 90,
-        servings: 8,
-        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
-        isPremium: true,
-        priceCents: 199,
-        copyCount: 142,
-        caloriesPerServing: 680,
-      ),
-      RecipeModel(
-        id: 'exec-pasta-002',
-        title: 'Handmade Truffle Tagliolini',
-        description: 'Silky egg yolk dough tossed in cultured Normandy butter, aged Parmigiano Reggiano, and shaved black winter truffles.',
-        cuisine: 'Italian',
-        difficulty: 2,
-        prepTime: 25,
-        cookTime: 12,
-        servings: 2,
-        imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80',
-        isPremium: false,
-        priceCents: 0,
-        copyCount: 89,
-        caloriesPerServing: 490,
-      ),
-      RecipeModel(
-        id: 'exec-steak-003',
-        title: 'Kagoshima A5 Wagyu Ribeye & Charred Scallions',
-        description: 'Reverse-seared marbled Japanese wagyu with tare glaze, sea salt crystals, and smoked garlic scallion oil.',
-        cuisine: 'Japanese',
-        difficulty: 3,
-        prepTime: 15,
-        cookTime: 15,
-        servings: 2,
-        imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80',
-        isPremium: true,
-        priceCents: 299,
-        copyCount: 215,
-        caloriesPerServing: 590,
-      ),
-    ];
-  }
-
-  List<RecipeModel> get _filteredRecipes {
-    if (_activeFilter == 'All') return _recipes;
-    if (_activeFilter == 'Masterclasses') return _recipes.where((r) => r.isPremium).toList();
-    if (_activeFilter == 'Quick (<30m)') {
-      return _recipes.where((r) => ((r.prepTime ?? 0) + (r.cookTime ?? 0)) <= 30).toList();
-    }
-    return _recipes.where((r) => (r.cuisine ?? '').toLowerCase() == _activeFilter.toLowerCase()).toList();
-  }
-
-  void _onRecipeTap(RecipeModel recipe) async {
-    if (recipe.isPremium && !recipe.isOwn) {
-      final hasAccess = await RecipeMonetizationService.hasAccess(recipe.id);
-      if (!hasAccess && mounted) {
-        RecipePaywallSheet.show(context, recipe, onUnlocked: () {
-          _openDetail(recipe);
-        });
-        return;
-      }
-    }
-    _openDetail(recipe);
-  }
-
-  void _openDetail(RecipeModel recipe) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RecipeDetailScreen(
-          recipeId: recipe.id,
-          title: recipe.title,
-          description: recipe.description,
-          cuisine: recipe.cuisine,
-          difficulty: recipe.difficulty,
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          servings: recipe.servings,
-          tierColor: Theme.of(context).colorScheme.primary,
-          ownedIngredientIds: const {},
-          caloriesPerServing: recipe.caloriesPerServing,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final saffron = theme.colorScheme.primary;
-
-    if (_loading) {
-      return Center(child: CircularProgressIndicator(color: saffron));
-    }
-
-    final list = _filteredRecipes;
-
-    return Column(
-      children: [
-        // ── Filter Chips ──
-        Container(
-          height: 40,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _filters.length,
-            itemBuilder: (ctx, i) {
-              final f = _filters[i];
-              final isSel = f == _activeFilter;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(f),
-                  selected: isSel,
-                  onSelected: (val) => setState(() => _activeFilter = f),
-                  selectedColor: saffron.withValues(alpha: 0.2),
-                  checkmarkColor: saffron,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-                    color: isSel ? saffron : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                  backgroundColor: theme.colorScheme.surface,
-                  side: BorderSide(
-                    color: isSel ? saffron : Colors.white.withValues(alpha: 0.08),
-                  ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // ── Recipe List ──
-        Expanded(
-          child: RefreshIndicator(
-            color: saffron,
-            onRefresh: _loadExecutiveRecipes,
-            child: list.isEmpty
-                ? Center(
-                    child: Text(
-                      'No recipes in this category yet',
-                      style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                    itemCount: list.length,
-                    itemBuilder: (ctx, i) {
-                      final r = list[i];
-                      return _buildExecutiveCard(r, theme, saffron);
-                    },
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExecutiveCard(RecipeModel r, ThemeData theme, Color saffron) {
-    final totalTime = (r.prepTime ?? 0) + (r.cookTime ?? 0);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: r.isPremium
-              ? const Color(0xFFFFB300).withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.08),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _onRecipeTap(r),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero Photo Stack
-            Stack(
-              children: [
-                if (r.imageUrl != null && r.imageUrl!.isNotEmpty)
-                  CachedNetworkImage(
-                    imageUrl: r.imageUrl!,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorWidget: (context, url, error) => _fallbackHeader(saffron),
-                  )
-                else
-                  _fallbackHeader(saffron),
-
-                // Gradient
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.7),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Top Left: Cuisine & Difficulty
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Row(
-                    children: [
-                      if (r.cuisine != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black87,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            r.cuisine!.toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      if (r.isPremium) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFFF7861C), Color(0xFFFFB300)]),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.workspace_premium, size: 12, color: Colors.black87),
-                              SizedBox(width: 3),
-                              Text(
-                                'MASTERCLASS',
-                                style: TextStyle(color: Colors.black87, fontSize: 9, fontWeight: FontWeight.w900),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // Top Right: Share
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: const Icon(Icons.share, size: 16, color: Colors.white),
-                    ),
-                    onPressed: () {
-                      RecipeShareDialog.show(
-                        context,
-                        recipeId: r.id,
-                        title: r.title,
-                        imageUrl: r.imageUrl,
-                        cuisine: r.cuisine,
-                        prepTime: r.prepTime,
-                        cookTime: r.cookTime,
-                        calories: r.caloriesPerServing,
-                      );
-                    },
-                  ),
-                ),
-
-                // Bottom Left on image: Title
-                Positioned(
-                  bottom: 10,
-                  left: 12,
-                  right: 12,
-                  child: Text(
-                    r.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-
-            // Card Body
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (r.description != null && r.description!.isNotEmpty)
-                    Text(
-                      r.description!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-                        height: 1.35,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 12),
-                  // Meta Row
-                  Row(
-                    children: [
-                      if (totalTime > 0) ...[
-                        Icon(Icons.timer_outlined, size: 14, color: saffron),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${totalTime}m',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (r.caloriesPerServing != null) ...[
-                        const Icon(Icons.local_fire_department_outlined, size: 14, color: Colors.orange),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${r.caloriesPerServing} kcal',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (r.copyCount > 0) ...[
-                        Icon(Icons.people_outline, size: 14, color: Colors.blueAccent),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${r.copyCount} unlocked',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-                        ),
-                      ],
-                      const Spacer(),
-                      // Price Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: r.isPremium
-                              ? const Color(0xFFFFB300).withValues(alpha: 0.15)
-                              : const Color(0xFF4CAF50).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: r.isPremium
-                                ? const Color(0xFFFFB300).withValues(alpha: 0.4)
-                                : const Color(0xFF4CAF50).withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Text(
-                          r.isPremium ? '${(r.priceCents * 128).round()} UZS' : 'Free Recipe',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: r.isPremium ? const Color(0xFFFFB300) : const Color(0xFF4CAF50),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _fallbackHeader(Color saffron) {
-    return Container(
-      height: 160,
-      width: double.infinity,
-      color: saffron.withValues(alpha: 0.15),
-      child: Center(
-        child: Icon(Icons.restaurant_menu, color: saffron, size: 40),
       ),
     );
   }

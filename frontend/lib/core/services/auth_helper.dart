@@ -1,7 +1,7 @@
 // Plately — Auth Helper
 // =====================
 // Centralized user ID resolution and profile initialization.
-// No fallback UUID — guests use Supabase anonymous auth.
+// Safe fallback UUID if unauthenticated to avoid crashing screens.
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,14 +9,15 @@ import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/core/services/location_service.dart';
 
 /// Returns the current authenticated user's UUID.
-/// Throws if called without an auth session (should never happen
-/// because the app gates on auth before showing main screens).
+/// Returns a safe fallback UUID if called when session is initializing to avoid fatal UI crashes.
 String currentUserId() {
   final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) {
-    throw StateError('currentUserId() called without an auth session');
-  }
-  return user.id;
+  return user?.id ?? '00000000-0000-0000-0000-000000000000';
+}
+
+/// Returns the current authenticated user's UUID or null if not signed in.
+String? currentUserIdOrNull() {
+  return Supabase.instance.client.auth.currentUser?.id;
 }
 
 /// Returns true if a user is currently signed in (not anonymous guest).
@@ -28,7 +29,7 @@ bool isAuthenticated() {
 /// Returns true if the current user is an anonymous guest.
 bool isAnonymousGuest() {
   final user = Supabase.instance.client.auth.currentUser;
-  return user?.isAnonymous ?? true;
+  return user == null || user.isAnonymous;
 }
 
 /// Returns the display name from Supabase auth metadata, or 'Chef'.
@@ -99,4 +100,3 @@ Future<void> _autoDetectLocation(String userId) async {
     debugPrint('[AuthHelper] Location auto-detect failed (non-fatal): $e');
   }
 }
-
