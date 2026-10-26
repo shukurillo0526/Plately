@@ -546,61 +546,73 @@ class _MenuItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
+    final isAvailable = item.isAvailable;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isHighlighted
-            ? accent.withValues(alpha: 0.08)
-            : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
+    return Opacity(
+      opacity: isAvailable ? 1.0 : 0.65,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 8),
+        padding: EdgeInsets.all(14),
+        decoration: BoxDecoration(
           color: isHighlighted
-              ? accent
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-          width: isHighlighted ? 1.5 : 1,
+              ? accent.withValues(alpha: 0.08)
+              : Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isHighlighted
+                ? accent
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+            width: isHighlighted ? 1.5 : 1,
+          ),
+          boxShadow: isHighlighted ? [
+            BoxShadow(color: accent.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
+          ] : null,
         ),
-        boxShadow: isHighlighted ? [
-          BoxShadow(color: accent.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
-        ] : null,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(item.name,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 15, fontWeight: FontWeight.w600,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.name,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 15, fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    if (isHighlighted)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
+                      if (!isAvailable)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text('Sold Out', style: TextStyle(color: Colors.redAccent, fontSize: 9, fontWeight: FontWeight.w700)),
                         ),
-                        child: Text(AppLocalizations.of(context)?.auto_fromVideo ?? 'From video', style: TextStyle(color: accent, fontSize: 9, fontWeight: FontWeight.w700)),
-                      ),
-                    if (item.tags.contains('bestseller') && !isHighlighted)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
+                      if (isHighlighted && isAvailable)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(AppLocalizations.of(context)?.auto_fromVideo ?? 'From video', style: TextStyle(color: accent, fontSize: 9, fontWeight: FontWeight.w700)),
                         ),
-                        child: Text(AppLocalizations.of(context)?.auto_best ?? '🔥 Best', style: TextStyle(color: accent, fontSize: 9, fontWeight: FontWeight.w700)),
-                      ),
-                  ],
-                ),
+                      if (item.tags.contains('bestseller') && !isHighlighted && isAvailable)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(AppLocalizations.of(context)?.auto_best ?? '🔥 Best', style: TextStyle(color: accent, fontSize: 9, fontWeight: FontWeight.w700)),
+                        ),
+                    ],
+                  ),
                 if (item.description != null) ...[
                   SizedBox(height: 3),
                   Text(item.description!,
@@ -625,63 +637,81 @@ class _MenuItemCard extends StatelessWidget {
           ),
           if (hasDelivery && restaurant != null) ...[
             SizedBox(width: 10),
-            ListenableBuilder(
-              listenable: CartService(),
-              builder: (context, _) {
-                final cart = CartService();
-                final qty = cart.getQuantity(item.id);
-                if (qty > 0) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GestureDetector(
-                          onTap: () => cart.decrementItem(item.id),
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(Icons.remove, color: accent, size: 16),
+            if (!isAvailable)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Sold Out',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: CartService(),
+                builder: (context, _) {
+                  final cart = CartService();
+                  final qty = cart.getQuantity(item.id);
+                  if (qty > 0) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () => cart.decrementItem(item.id),
+                            child: Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.remove, color: accent, size: 16),
+                            ),
                           ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4),
-                          child: Text('$qty',
-                              style: TextStyle(
-                                  color: accent,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700)),
-                        ),
-                        GestureDetector(
-                          onTap: () => cart.addItem(item, restaurant!),
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(Icons.add, color: accent, size: 16),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Text('$qty',
+                                style: TextStyle(
+                                    color: accent,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700)),
                           ),
-                        ),
-                      ],
+                          GestureDetector(
+                            onTap: () => cart.addItem(item, restaurant!),
+                            child: Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.add, color: accent, size: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return GestureDetector(
+                    onTap: () => cart.addItem(item, restaurant!),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.add, color: accent, size: 18),
                     ),
                   );
-                }
-                return GestureDetector(
-                  onTap: () => cart.addItem(item, restaurant!),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.add, color: accent, size: 18),
-                  ),
-                );
-              },
-            ),
+                },
+              ),
           ],
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
