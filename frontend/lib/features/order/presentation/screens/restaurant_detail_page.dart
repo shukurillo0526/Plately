@@ -850,6 +850,7 @@ class _ReserveTab extends StatelessWidget {
               time.minute,
             );
 
+            bool success = true;
             try {
               final user = Supabase.instance.client.auth.currentUser;
               await Supabase.instance.client.from('reservations').insert({
@@ -862,12 +863,19 @@ class _ReserveTab extends StatelessWidget {
                 'status': 'pending',
                 'special_requests': 'Reserved via Plately Mobile App',
               });
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('[RestaurantDetailPage] Failed to reserve table: $e');
+              success = false;
+            }
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('🪑 Table reserved at ${restaurant.name}\n${date.day}/${date.month} at ${time.format(context)} for $guests guests'),
-                backgroundColor: accent,
+                content: Text(
+                  success
+                      ? '🪑 Table reserved at ${restaurant.name}\n${date.day}/${date.month} at ${time.format(context)} for $guests guests'
+                      : '⚠️ Could not save reservation. Please try again.',
+                ),
+                backgroundColor: success ? accent : Colors.redAccent,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 duration: const Duration(seconds: 3),
