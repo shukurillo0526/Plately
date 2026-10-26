@@ -43,16 +43,21 @@ class CacheService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    await Hive.initFlutter();
+    try {
+      await Hive.initFlutter();
 
-    _inventoryBox = await Hive.openBox('inventory');
-    _recipesBox = await Hive.openBox('recipes');
-    _profileBox = await Hive.openBox('user_profile');
-    _syncQueueBox = await Hive.openBox('sync_queue');
-    _metaBox = await Hive.openBox('cache_meta');
-    _localRecipesBox = await Hive.openBox('local_recipes');
+      _inventoryBox = await Hive.openBox('inventory');
+      _recipesBox = await Hive.openBox('recipes');
+      _profileBox = await Hive.openBox('user_profile');
+      _syncQueueBox = await Hive.openBox('sync_queue');
+      _metaBox = await Hive.openBox('cache_meta');
+      _localRecipesBox = await Hive.openBox('local_recipes');
 
-    _initialized = true;
+      _initialized = true;
+    } catch (e) {
+      debugPrint('[Cache] Storage init warning (Safari Private Mode/Quota): ' + e);
+      _initialized = true;
+    }
     debugPrint('[Cache] Initialized — ${_inventoryBox.length} inventory, ${_recipesBox.length} recipes cached');
 
     // Monitor connectivity
