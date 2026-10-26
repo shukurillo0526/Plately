@@ -329,13 +329,53 @@ class _OrderVideoCardState extends State<_OrderVideoCard> {
                 SizedBox(height: 8),
 
                 // Restaurant service badges + distance
-                if (r != null)
+                if (r != null) ...[
                   Wrap(spacing: 6, runSpacing: 4, children: [
                     if (r.hasDelivery) _badge('🛵 Delivery', accent),
                     if (r.hasReservation) _badge('🪑 Reserve', Colors.blue.shade400),
                     if (r.hasDineIn) _badge('📍 Dine-in', Colors.teal.shade400),
                     if (r.distMeters > 0) _badge('📏 ${r.distanceLabel}', Theme.of(context).colorScheme.onSurface),
                   ]),
+                  if (r.hasDelivery) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _navigate(context, r, RestaurantSection.menu),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF7861C), Color(0xFFFFB300)],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFF7861C).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shopping_bag, size: 14, color: Colors.black87),
+                            SizedBox(width: 6),
+                            Text(
+                              'Order from Menu',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.chevron_right, size: 16, color: Colors.black87),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
 
                 // Tags
                 if (r == null && v.tags.isNotEmpty) ...[

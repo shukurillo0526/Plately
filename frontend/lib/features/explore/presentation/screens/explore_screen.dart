@@ -22,6 +22,12 @@ import 'package:plately_app/features/explore/presentation/screens/social_search_
 import 'package:plately_app/core/services/restaurant_service.dart';
 import 'package:plately_app/features/order/presentation/screens/restaurant_detail_page.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:plately_app/core/services/recipe_monetization_service.dart';
+import 'package:plately_app/features/cook/presentation/widgets/recipe_paywall_sheet.dart';
+import 'package:plately_app/core/widgets/recipe_share_card.dart';
+import 'package:plately_app/features/cook/presentation/screens/executive_recipe_studio_screen.dart';
+import 'package:plately_app/features/cook/presentation/screens/my_recipes_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -35,7 +41,7 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -53,34 +59,85 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
           children: [
             // ── Header ──────────────────────────────────
             Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  Text('✨', style: TextStyle(fontSize: 24)),
-                  SizedBox(width: 10),
-                  Text(AppLocalizations.of(context)?.auto_explore ?? 'Explore',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w800)),
-                  Spacer(),
                   Container(
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF7861C), Color(0xFFFFB300)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: IconButton(
-                      icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-                      onPressed: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const SocialSearchPage())),
-                      tooltip: 'Search',
+                    child: const Center(
+                      child: Text('🍽️', style: TextStyle(fontSize: 18)),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Plately Social',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        'Kitchens, Cooks & Masterclasses',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Search button
                   Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.bookmark_outline, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                      icon: Icon(Icons.search, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                      onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const SocialSearchPage())),
+                      tooltip: 'Search Food & Chefs',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Chef Portfolio button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.menu_book, size: 20, color: Theme.of(context).colorScheme.primary),
+                      onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const MyRecipesScreen())),
+                      tooltip: "Chef's Portfolio",
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Bookmarks button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.bookmark_outline, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                       onPressed: () => _showBookmarks(context),
                       tooltip: 'Saved',
                     ),
@@ -91,25 +148,28 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
 
             // ── Tab Bar ─────────────────────────────────
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 indicator: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
                 ),
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
-                labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                 tabs: const [
-                  Tab(text: '🎬 Reels'),
+                  Tab(text: '🌟 For You'),
                   Tab(text: '🍽️ Community'),
+                  Tab(text: '💎 Executive'),
                 ],
               ),
             ),
@@ -121,6 +181,7 @@ class _ExploreScreenState extends State<ExploreScreen> with SingleTickerProvider
                 children: const [
                   _ReelsFeed(),
                   _CommunityFeed(),
+                  _ExecutiveRecipesFeed(),
                 ],
               ),
             ),
@@ -884,6 +945,87 @@ class _CommunityFeedState extends State<_CommunityFeed> {
     if (result == true) _loadPosts(); // Refresh after new post
   }
 
+  void _showCreationMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    final saffron = theme.colorScheme.primary;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + MediaQuery.of(ctx).padding.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              'Create & Share',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: saffron.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.add_a_photo, color: saffron, size: 22),
+              ),
+              title: const Text('Share Food Moment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              subtitle: const Text('Post dish photos, tag recipes, or share culinary thoughts.', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openCreatePost();
+              },
+            ),
+            const Divider(height: 12),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.workspace_premium, color: Color(0xFFFFB300), size: 22),
+              ),
+              title: const Text('Craft Executive Recipe', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              subtitle: const Text('Design steps, timers, and monetize masterclasses.', style: TextStyle(fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final res = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExecutiveRecipeStudioScreen()),
+                );
+                if (res == true) _loadPosts();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -958,8 +1100,9 @@ class _CommunityFeedState extends State<_CommunityFeed> {
           child: FloatingActionButton(
             heroTag: 'community_fab',
             backgroundColor: Theme.of(context).colorScheme.primary,
-            onPressed: _openCreatePost,
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onSurface),
+            foregroundColor: Colors.white,
+            onPressed: () => _showCreationMenu(context),
+            child: const Icon(Icons.add, size: 28),
           ),
         ),
       ],
@@ -1086,6 +1229,468 @@ class _InfoChip extends StatelessWidget {
           SizedBox(width: 6),
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+
+// ═════════════════════════════════════════════════════════════════════
+// 💎 EXECUTIVE RECIPES FEED
+// ═════════════════════════════════════════════════════════════════════
+
+class _ExecutiveRecipesFeed extends StatefulWidget {
+  const _ExecutiveRecipesFeed();
+
+  @override
+  State<_ExecutiveRecipesFeed> createState() => _ExecutiveRecipesFeedState();
+}
+
+class _ExecutiveRecipesFeedState extends State<_ExecutiveRecipesFeed> {
+  List<RecipeModel> _recipes = [];
+  bool _loading = true;
+  String _activeFilter = 'All';
+
+  final List<String> _filters = ['All', 'Uzbek', 'Italian', 'Masterclasses', 'Quick (<30m)'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExecutiveRecipes();
+  }
+
+  Future<void> _loadExecutiveRecipes() async {
+    setState(() => _loading = true);
+    try {
+      final res = await Supabase.instance.client
+          .from('recipes')
+          .select()
+          .or('is_community.eq.true,is_premium.eq.true')
+          .order('created_at', ascending: false)
+          .limit(40);
+
+      final list = (res as List).map((m) => RecipeModel.fromMap(m)).toList();
+      if (mounted) {
+        setState(() {
+          _recipes = list.isNotEmpty ? list : _demoExecutiveRecipes();
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _recipes = _demoExecutiveRecipes();
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<RecipeModel> _demoExecutiveRecipes() {
+    return [
+      RecipeModel(
+        id: 'exec-plov-001',
+        title: "Samarkand Wedding Plov (To'y Oshi)",
+        description: 'Golden laser rice, tender mutton shoulder, yellow carrots, barberries, and roasted whole garlic.',
+        cuisine: 'Uzbek',
+        difficulty: 3,
+        prepTime: 30,
+        cookTime: 90,
+        servings: 8,
+        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+        isPremium: true,
+        priceCents: 199,
+        copyCount: 142,
+        caloriesPerServing: 680,
+      ),
+      RecipeModel(
+        id: 'exec-pasta-002',
+        title: 'Handmade Truffle Tagliolini',
+        description: 'Silky egg yolk dough tossed in cultured Normandy butter, aged Parmigiano Reggiano, and shaved black winter truffles.',
+        cuisine: 'Italian',
+        difficulty: 2,
+        prepTime: 25,
+        cookTime: 12,
+        servings: 2,
+        imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80',
+        isPremium: false,
+        priceCents: 0,
+        copyCount: 89,
+        caloriesPerServing: 490,
+      ),
+      RecipeModel(
+        id: 'exec-steak-003',
+        title: 'Kagoshima A5 Wagyu Ribeye & Charred Scallions',
+        description: 'Reverse-seared marbled Japanese wagyu with tare glaze, sea salt crystals, and smoked garlic scallion oil.',
+        cuisine: 'Japanese',
+        difficulty: 3,
+        prepTime: 15,
+        cookTime: 15,
+        servings: 2,
+        imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80',
+        isPremium: true,
+        priceCents: 299,
+        copyCount: 215,
+        caloriesPerServing: 590,
+      ),
+    ];
+  }
+
+  List<RecipeModel> get _filteredRecipes {
+    if (_activeFilter == 'All') return _recipes;
+    if (_activeFilter == 'Masterclasses') return _recipes.where((r) => r.isPremium).toList();
+    if (_activeFilter == 'Quick (<30m)') {
+      return _recipes.where((r) => ((r.prepTime ?? 0) + (r.cookTime ?? 0)) <= 30).toList();
+    }
+    return _recipes.where((r) => (r.cuisine ?? '').toLowerCase() == _activeFilter.toLowerCase()).toList();
+  }
+
+  void _onRecipeTap(RecipeModel recipe) async {
+    if (recipe.isPremium && !recipe.isOwn) {
+      final hasAccess = await RecipeMonetizationService.hasAccess(recipe.id);
+      if (!hasAccess && mounted) {
+        RecipePaywallSheet.show(context, recipe, onUnlocked: () {
+          _openDetail(recipe);
+        });
+        return;
+      }
+    }
+    _openDetail(recipe);
+  }
+
+  void _openDetail(RecipeModel recipe) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecipeDetailScreen(
+          recipeId: recipe.id,
+          title: recipe.title,
+          description: recipe.description,
+          cuisine: recipe.cuisine,
+          difficulty: recipe.difficulty,
+          prepTime: recipe.prepTime,
+          cookTime: recipe.cookTime,
+          servings: recipe.servings,
+          tierColor: Theme.of(context).colorScheme.primary,
+          ownedIngredientIds: const {},
+          caloriesPerServing: recipe.caloriesPerServing,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final saffron = theme.colorScheme.primary;
+
+    if (_loading) {
+      return Center(child: CircularProgressIndicator(color: saffron));
+    }
+
+    final list = _filteredRecipes;
+
+    return Column(
+      children: [
+        // ── Filter Chips ──
+        Container(
+          height: 40,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _filters.length,
+            itemBuilder: (ctx, i) {
+              final f = _filters[i];
+              final isSel = f == _activeFilter;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(f),
+                  selected: isSel,
+                  onSelected: (val) => setState(() => _activeFilter = f),
+                  selectedColor: saffron.withValues(alpha: 0.2),
+                  checkmarkColor: saffron,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                    color: isSel ? saffron : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  backgroundColor: theme.colorScheme.surface,
+                  side: BorderSide(
+                    color: isSel ? saffron : Colors.white.withValues(alpha: 0.08),
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // ── Recipe List ──
+        Expanded(
+          child: RefreshIndicator(
+            color: saffron,
+            onRefresh: _loadExecutiveRecipes,
+            child: list.isEmpty
+                ? Center(
+                    child: Text(
+                      'No recipes in this category yet',
+                      style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                    itemCount: list.length,
+                    itemBuilder: (ctx, i) {
+                      final r = list[i];
+                      return _buildExecutiveCard(r, theme, saffron);
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExecutiveCard(RecipeModel r, ThemeData theme, Color saffron) {
+    final totalTime = (r.prepTime ?? 0) + (r.cookTime ?? 0);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: r.isPremium
+              ? const Color(0xFFFFB300).withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _onRecipeTap(r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hero Photo Stack
+            Stack(
+              children: [
+                if (r.imageUrl != null && r.imageUrl!.isNotEmpty)
+                  CachedNetworkImage(
+                    imageUrl: r.imageUrl!,
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorWidget: (context, url, error) => _fallbackHeader(saffron),
+                  )
+                else
+                  _fallbackHeader(saffron),
+
+                // Gradient
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.7),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Top Left: Cuisine & Difficulty
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Row(
+                    children: [
+                      if (r.cuisine != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            r.cuisine!.toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      if (r.isPremium) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(colors: [Color(0xFFF7861C), Color(0xFFFFB300)]),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.workspace_premium, size: 12, color: Colors.black87),
+                              SizedBox(width: 3),
+                              Text(
+                                'MASTERCLASS',
+                                style: TextStyle(color: Colors.black87, fontSize: 9, fontWeight: FontWeight.w900),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Top Right: Share
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Icon(Icons.share, size: 16, color: Colors.white),
+                    ),
+                    onPressed: () {
+                      RecipeShareDialog.show(
+                        context,
+                        recipeId: r.id,
+                        title: r.title,
+                        imageUrl: r.imageUrl,
+                        cuisine: r.cuisine,
+                        prepTime: r.prepTime,
+                        cookTime: r.cookTime,
+                        calories: r.caloriesPerServing,
+                      );
+                    },
+                  ),
+                ),
+
+                // Bottom Left on image: Title
+                Positioned(
+                  bottom: 10,
+                  left: 12,
+                  right: 12,
+                  child: Text(
+                    r.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            // Card Body
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (r.description != null && r.description!.isNotEmpty)
+                    Text(
+                      r.description!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                        height: 1.35,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 12),
+                  // Meta Row
+                  Row(
+                    children: [
+                      if (totalTime > 0) ...[
+                        Icon(Icons.timer_outlined, size: 14, color: saffron),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${totalTime}m',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (r.caloriesPerServing != null) ...[
+                        const Icon(Icons.local_fire_department_outlined, size: 14, color: Colors.orange),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${r.caloriesPerServing} kcal',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (r.copyCount > 0) ...[
+                        Icon(Icons.people_outline, size: 14, color: Colors.blueAccent),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${r.copyCount} unlocked',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+                        ),
+                      ],
+                      const Spacer(),
+                      // Price Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: r.isPremium
+                              ? const Color(0xFFFFB300).withValues(alpha: 0.15)
+                              : const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: r.isPremium
+                                ? const Color(0xFFFFB300).withValues(alpha: 0.4)
+                                : const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          r.isPremium ? '${(r.priceCents * 128).round()} UZS' : 'Free Recipe',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: r.isPremium ? const Color(0xFFFFB300) : const Color(0xFF4CAF50),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fallbackHeader(Color saffron) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      color: saffron.withValues(alpha: 0.15),
+      child: Center(
+        child: Icon(Icons.restaurant_menu, color: saffron, size: 40),
       ),
     );
   }

@@ -17,6 +17,7 @@ import 'package:plately_app/features/explore/presentation/screens/creator_page.d
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/services/restaurant_service.dart';
 import 'package:plately_app/features/order/presentation/screens/restaurant_detail_page.dart';
+import 'package:plately_app/features/cook/presentation/screens/recipe_detail_screen.dart';
 
 class CommunityPostCard extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -116,6 +117,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
     final postType = widget.post['post_type'] ?? 'photo';
     final createdAt = widget.post['created_at'] as String?;
     final restaurantId = widget.post['restaurant_id'] as String?;
+    final recipeId = widget.post['recipe_id'] as String?;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -462,6 +464,78 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
                         ),
                       ),
                       Icon(Icons.arrow_forward_ios, size: 12, color: Theme.of(context).colorScheme.primary),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ═══════════════════════════════════════════
+          //  RECIPE ATTACHMENT ACTION
+          // ═══════════════════════════════════════════
+          if (recipeId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RecipeDetailScreen(
+                        recipeId: recipeId,
+                        title: (widget.post['recipes'] is Map)
+                            ? (widget.post['recipes']['title'] ?? 'Featured Recipe')
+                            : 'Community Recipe',
+                        tierColor: const Color(0xFF10B981),
+                        ownedIngredientIds: const {},
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.menu_book_rounded, size: 16, color: Color(0xFF10B981)),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (widget.post['recipes'] is Map)
+                                  ? (widget.post['recipes']['title'] ?? 'Attached Smart Recipe')
+                                  : 'Attached Smart Recipe',
+                              style: const TextStyle(
+                                color: Color(0xFF10B981),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Tap to cook with timers & pantry check',
+                              style: TextStyle(color: Colors.white60, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF10B981)),
                     ],
                   ),
                 ),

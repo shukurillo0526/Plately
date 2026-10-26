@@ -17,6 +17,9 @@ import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:plately_app/core/services/tutorial_controller.dart';
+import 'package:plately_app/core/widgets/recipe_share_card.dart';
+import 'package:plately_app/features/cook/presentation/widgets/tip_chef_sheet.dart';
+import 'package:plately_app/features/cook/presentation/widgets/shoppable_ingredients_sheet.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   final String recipeId;
@@ -1128,7 +1131,52 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             actions: [
               IconButton(
                 icon: Container(
-                  padding: EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.volunteer_activism_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    size: 20,
+                  ),
+                ),
+                tooltip: 'Tip Chef',
+                onPressed: () => TipChefSheet.show(
+                  context,
+                  recipeId: widget.recipeId,
+                  recipeTitle: _displayTitle.isNotEmpty ? _displayTitle : widget.title,
+                ),
+              ),
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.share_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    size: 20,
+                  ),
+                ),
+                tooltip: 'Share Recipe',
+                onPressed: () => RecipeShareDialog.show(
+                  context,
+                  recipeId: widget.recipeId,
+                  title: _displayTitle.isNotEmpty ? _displayTitle : widget.title,
+                  imageUrl: _imageUrl,
+                  cuisine: widget.cuisine,
+                  prepTime: widget.prepTime,
+                  cookTime: widget.cookTime,
+                  calories: _dynamicCalories ?? widget.caloriesPerServing,
+                ),
+              ),
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
@@ -1432,6 +1480,23 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                       ),
                     ),
                     Spacer(),
+                    TextButton.icon(
+                      onPressed: () => ShoppableIngredientsSheet.show(
+                        context,
+                        recipeTitle: _displayTitle.isNotEmpty ? _displayTitle : widget.title,
+                        ingredients: _ingredients,
+                        ownedIngredientIds: widget.ownedIngredientIds,
+                      ),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 15),
+                      label: const Text('Pantry', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF4CAF50),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     TextButton.icon(
                       onPressed: _showAdjustPortionsDialog,
                       icon: Icon(Icons.auto_awesome, size: 16),
