@@ -57,15 +57,16 @@ void main() async {
 
   // ── Supabase Configuration ──
   // Pass via: --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
-  const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-
-  final supabaseUrl = envSupabaseUrl.isNotEmpty
-      ? envSupabaseUrl
-      : 'https://tquyodwsyppwbpvkaunn.supabase.co';
-  final supabaseAnonKey = envSupabaseAnonKey.isNotEmpty
-      ? envSupabaseAnonKey
-      : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU';
+  // In production builds, these MUST be provided via --dart-define flags.
+  // The hardcoded fallbacks below are for local development convenience only.
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://tquyodwsyppwbpvkaunn.supabase.co',
+  );
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdXlvZHdzeXBwd2JwdmthdW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NzEzOTAsImV4cCI6MjA4NzE0NzM5MH0.1o6RYfeL_7YlIeUkl4jFsCm2JCQ2mB2F9o5wLv30xWU',
+  );
 
   try {
     await Supabase.initialize(

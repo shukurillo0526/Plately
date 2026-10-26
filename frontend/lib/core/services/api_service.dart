@@ -12,8 +12,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiConfig {
-  static const String _productionUrl =
-      'https://merry-motivation-production-3529.up.railway.app';
+  /// Production backend URL. Override via --dart-define=API_URL=...
+  static const String _productionUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'https://merry-motivation-production-3529.up.railway.app',
+  );
 
   /// Set to true only when running local FastAPI server on port 8000.
   static const bool useLocalBackend = false;
