@@ -4,6 +4,7 @@
 // Accessible from the Profile/Manage tab.
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:plately_app/core/services/order_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
@@ -19,13 +20,47 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   List<UserOrder> _orders = [];
   bool _loading = true;
   String? _error;
-
-
+  RealtimeChannel? _orderSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadOrders();
+    _subscribeToOrderUpdates();
+  }
+
+  @override
+  void dispose() {
+    _orderSubscription?.unsubscribe();
+    super.dispose();
+  }
+
+  void _subscribeToOrderUpdates() {
+    try {
+      final userId = currentUserId();
+      if (userId.isEmpty) return;
+
+      _orderSubscription = Supabase.instance.client
+          .channel('user_orders_$userId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'orders',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              if (mounted) {
+                _loadOrders();
+              }
+            },
+          )
+          .subscribe();
+    } catch (e) {
+      debugPrint('[OrderHistory] Realtime subscription error: $e');
+    }
   }
 
   Future<void> _loadOrders() async {

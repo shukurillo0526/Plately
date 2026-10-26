@@ -658,29 +658,35 @@ class _LivingShelfScreenState extends ConsumerState<LivingShelfScreen>
           // --- Sort Row ---
           SliverToBoxAdapter(child: _buildSortRow(items.length)),
 
-          // --- Empty search result ---
+          // --- Empty shelf or search result ---
           if (items.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.only(top: 60),
+                padding: EdgeInsets.only(top: (_searchQuery.isNotEmpty || _selectedCategory != null) ? 60 : 40),
                 child: Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('🕵️', style: TextStyle(fontSize: 48)),
-                    SizedBox(height: 12),
-                    Text(AppLocalizations.of(context)?.noItemsMatch ?? 'No items match your filters',
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                            fontSize: 14)),
-                    SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _searchQuery = '';
-                        _searchCtrl.clear();
-                        _selectedCategory = null;
-                      }),
-                      child: Text(AppLocalizations.of(context)?.clearFilters ?? 'Clear filters'),
-                    ),
-                  ]),
+                  child: (_searchQuery.isNotEmpty || _selectedCategory != null)
+                      ? Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text('🕵️', style: TextStyle(fontSize: 48)),
+                          SizedBox(height: 12),
+                          Text(AppLocalizations.of(context)?.noItemsMatch ?? 'No items match your filters',
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                  fontSize: 14)),
+                          SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => setState(() {
+                              _searchQuery = '';
+                              _searchCtrl.clear();
+                              _selectedCategory = null;
+                            }),
+                            child: Text(AppLocalizations.of(context)?.clearFilters ?? 'Clear filters'),
+                          ),
+                        ])
+                      : EmptyStateIllustration(
+                          emoji: '🧺',
+                          title: 'Your pantry is empty',
+                          description: 'Scan grocery receipts or add ingredients to track freshness and unlock zero-waste recipes.',
+                        ),
                 ),
               ),
             ),

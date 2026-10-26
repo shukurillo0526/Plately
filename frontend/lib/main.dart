@@ -748,18 +748,38 @@ class _ModeSwitchBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Profile / Manage button
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            },
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              child: Icon(Icons.person, color: Theme.of(context).colorScheme.primary, size: 20),
+          // Profile / Manage button with enhanced touch feedback & tooltip
+          Tooltip(
+            message: 'Profile & Settings',
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                },
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+              ),
             ),
           ),
         ],

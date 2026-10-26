@@ -185,15 +185,28 @@ class _CookScreenState extends ConsumerState<CookScreen>
     try {
       final client = Supabase.instance.client;
 
-      // 1. Get user's inventory ingredient names for matching
+      // 1. Get user's inventory ingredient names & expiration dates for zero-waste matching
       final inventoryRows = await client
           .from('inventory_items')
-          .select('ingredient_id, ingredients(display_name_en)')
+          .select('ingredient_id, expiration_date, ingredients(display_name_en)')
           .eq('user_id', currentUserId());
 
       final ownedIds = (inventoryRows as List)
           .map((r) => r['ingredient_id'] as String)
           .toSet();
+
+      final now = DateTime.now();
+      final expiringIds = <String>{};
+      for (final row in inventoryRows) {
+        final expStr = row['expiration_date'] as String?;
+        if (expStr != null) {
+          final expDate = DateTime.tryParse(expStr);
+          if (expDate != null && expDate.difference(now).inDays <= 3) {
+            final id = row['ingredient_id'] as String?;
+            if (id != null) expiringIds.add(id);
+          }
+        }
+      }
 
       // 2. Try server-side 6-signal scoring first (fastest, most accurate)
       bool useServerScoring = false;
@@ -322,6 +335,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
           final t = translations[recipe['id']];
 
           int matchedCount = 0;
+          int expiringMatches = 0;
           final List<String> missing = [];
           for (final ri in riRows) {
             final ingId = ri['ingredient_id'] as String;
@@ -330,11 +344,15 @@ class _CookScreenState extends ConsumerState<CookScreen>
 
             if (ownedIds.contains(ingId)) {
               matchedCount++;
+              if (expiringIds.contains(ingId)) expiringMatches++;
             } else {
               missing.add(displayName);
             }
           }
-          final matchPct = totalRequired > 0 ? matchedCount / totalRequired : 0.0;
+          final baseMatch = totalRequired > 0 ? matchedCount / totalRequired : 0.0;
+          // Zero-waste priority boost for expiring ingredients (+5% per expiring item, max 1.0)
+          final zeroWasteBoost = expiringMatches > 0 ? (expiringMatches * 0.05) : 0.0;
+          final matchPct = (baseMatch + zeroWasteBoost).clamp(0.0, 1.0);
 
           scored.add({
             'id': recipe['id'],
@@ -350,6 +368,7 @@ class _CookScreenState extends ConsumerState<CookScreen>
             'matched': matchedCount,
             'total': totalRequired,
             'missing': missing,
+            'expiring_count': expiringMatches,
             'image_url': recipe['image_url'],
           });
         }
@@ -433,6 +452,16 @@ class _CookScreenState extends ConsumerState<CookScreen>
         } else {
           tiers['5']!.add(r);
         }
+      }
+
+      // Prioritize recipes with highest match and zero-waste expiring items inside each tier
+      for (final list in tiers.values) {
+        list.sort((a, b) {
+          final expA = (a['expiring_count'] as int? ?? 0);
+          final expB = (b['expiring_count'] as int? ?? 0);
+          if (expA != expB) return expB.compareTo(expA);
+          return ((b['match_pct'] as num).toDouble()).compareTo((a['match_pct'] as num).toDouble());
+        });
       }
 
       if (!mounted) return;
