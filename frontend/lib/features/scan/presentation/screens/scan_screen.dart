@@ -12,6 +12,7 @@ import 'package:plately_app/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:plately_app/core/services/analytics_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:plately_app/core/config/release_config.dart';
 import 'package:plately_app/core/services/api_service.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/utils/category_images.dart';
@@ -1924,6 +1925,30 @@ class _CalorieScanTabState extends State<_CalorieScanTab> {
           if (_result != null) ...[
             SizedBox(height: 20),
 
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: cs.onSurface.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: cs.onSurface.withValues(alpha: 0.6)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      ReleaseConfig.nutritionDisclaimer,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurface.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             // Plate name + serving weight info
             Container(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),

@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from app.core.auth import CurrentUser, OptionalUser, require_user_id
+from app.core.quota import quota_manager, QuotaAction
 from app.core.security import raise_internal_error, validate_image_upload, sanitize_search_query
 from app.db.supabase_client import get_supabase
 from app.services.ai_service import get_ai_service as get_ollama_service
@@ -30,6 +31,7 @@ async def analyze_image_calories(current: CurrentUser, file: UploadFile = File(.
     Estimates the total portion size, weight, calories, and macros for the entire meal shown in the photo.
     """
     image_bytes = await validate_image_upload(file)
+    quota_manager.consume(current.id, QuotaAction.SCAN)
 
     ollama = get_ollama_service()
 

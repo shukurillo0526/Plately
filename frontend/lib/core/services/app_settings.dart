@@ -6,6 +6,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:plately_app/core/config/release_config.dart';
 
 /// The two main modes of the app.
 enum AppMode { order, cook }
@@ -25,7 +26,7 @@ class AppSettings extends ChangeNotifier {
 
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
-  AppMode get appMode => _appMode;
+  AppMode get appMode => ReleaseConfig.enableOrderMode ? _appMode : AppMode.cook;
 
   /// Supported languages with display names and flags
   static const Map<String, Map<String, String>> supportedLanguages = {
@@ -109,6 +110,7 @@ class AppSettings extends ChangeNotifier {
 
   /// Switch between Order and Cook modes
   Future<void> setAppMode(AppMode mode) async {
+    if (!ReleaseConfig.enableOrderMode && mode == AppMode.order) return;
     if (_appMode == mode) return;
     _appMode = mode;
     final prefs = await SharedPreferences.getInstance();

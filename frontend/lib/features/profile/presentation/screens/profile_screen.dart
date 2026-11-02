@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:plately_app/core/constants/app_info.dart';
+import 'package:plately_app/core/config/release_config.dart';
 import 'package:plately_app/core/widgets/shimmer_loading.dart';
 import 'package:plately_app/core/widgets/slide_in_item.dart';
 import 'package:plately_app/features/gamification/domain/badges.dart' show levelFromXp, WasteBadge, computeEarnedBadges;
@@ -437,6 +438,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       SizedBox(height: 8),
                       // ── Social Stats Row ──
+                      if (ReleaseConfig.enableSocialFeeds)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -820,6 +822,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 12),
 
                 // ── Creator Studio Section ───────────────────────────────────
+                if (ReleaseConfig.enableCreatorMonetization)
                 SlideInItem(
                   delay: 330,
                   child: GestureDetector(
@@ -857,6 +860,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 12),
 
                 // ── Restaurant Dashboard Section ──────────────────────────
+                if (ReleaseConfig.enableOrderMode)
                 SlideInItem(
                   delay: 340,
                   child: GestureDetector(

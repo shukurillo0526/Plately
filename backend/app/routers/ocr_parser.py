@@ -18,6 +18,7 @@ import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 
 from app.core.auth import CurrentUser
+from app.core.quota import quota_manager, QuotaAction
 from app.core.security import validate_image_upload
 from app.services.ocr_service import process_gemini_receipt_json
 from app.services.ai_service import get_ai_service as get_ollama_service
@@ -51,6 +52,7 @@ async def scan_receipt(
     Single-stage pipeline: gemma3:12b reads receipt + structures JSON in one pass.
     """
     image_bytes = await validate_image_upload(file)
+    quota_manager.consume(current.id, QuotaAction.SCAN)
     language_name = LANG_MAP.get(lang.lower(), "English")
     
     # Construct prompts dynamically with target language

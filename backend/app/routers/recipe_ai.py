@@ -20,6 +20,7 @@ from app.services.youtube_intelligence import extract_recipe_from_youtube
 from app.services.static_substitutes import get_static_substitute
 from app.services.ai_cache import get_ai_cache
 from app.core.auth import CurrentUser, require_user_id
+from app.core.quota import quota_manager, QuotaAction
 from app.core.security import raise_internal_error
 from app.db.supabase_client import get_supabase
 from slowapi import Limiter
@@ -90,6 +91,7 @@ async def generate_recipe(request: Request, req: GenerateRecipeRequest, current:
     """
     ollama = get_ollama_service()
 
+    quota_manager.consume(current.id, QuotaAction.RECIPE_GEN)
     constraints = []
     if req.cuisine:
         constraints.append(f"Cuisine: {req.cuisine}")

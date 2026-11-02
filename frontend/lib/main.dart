@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:plately_app/core/services/location_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:plately_app/core/config/release_config.dart';
 import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:plately_app/core/widgets/dual_mode_nav_bar.dart';
@@ -520,7 +521,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMixin {
   final AppSettings _settings = AppSettings();
-  int _currentIndex = 0;
+  int _currentIndex = 2; // Default to Smart Pantry (Shelf) on launch
 
   // ── Cook mode screens ──────────────────────────────
   static const List<Widget> _cookScreens = [
@@ -740,14 +741,15 @@ class _ModeSwitchBar extends StatelessWidget {
           ),
           const Spacer(),
           // Mode toggle — constrained to fit narrow screens
-          ConstrainedBox(
+          if (ReleaseConfig.enableOrderMode)
+            ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 164),
             child: ModeSwitch(
               currentMode: currentMode,
               onModeChanged: onModeChanged,
             ),
           ),
-          const SizedBox(width: 12),
+          if (ReleaseConfig.enableOrderMode) const SizedBox(width: 12),
           // Profile / Manage button with enhanced touch feedback & tooltip
           Tooltip(
             message: 'Profile & Settings',
