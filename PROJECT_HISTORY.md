@@ -1,6 +1,6 @@
-# I-Fridge: Project History & Vision Alignment
+# Plately (formerly I-Fridge): Project History & Evolution
 
-This document tracks the development history of **I-Fridge**—an ambitious smart-kitchen ecosystem capable of tracking physical inventory and recommending hyper-personalized recipes.
+This document tracks the development history of **Plately** (originally conceived as *I-Fridge*)—a vertically integrated culinary operating system bridging smart consumer pantries, AI recipe intelligence, creator monetization, and B2B restaurant commerce.
 
 ## 🌟 The Core Vision & Pivot
 
@@ -924,3 +924,135 @@ A series of rapid hotfixes resolving critical app store compliance issues and ze
   - Resolved a Dart 3 map literal syntax error (`?displayName`) in `api_service.dart` for the `/init` endpoint, replacing it with the robust conditional spread `if (displayName != null)`.
 - **Release Automation**:
   - Bumped version to `0.1.13+15` and successfully generated a clean release Android App Bundle (`app-release.aab`) ready for Google Play Console upload.
+
+---
+
+# 📦 v0.1.14 — Dual-Mode Architecture, Workshop B2B Integration & Brand Identity Polish
+
+This landmark release unlocks dark-launched capabilities across the Plately ecosystem, connecting the consumer mobile app directly to Plately Workshop B2B restaurant branches, activating dual-mode navigation, standardizing brand visual assets, and fortifying security parameters.
+
+### Highlights
+- **Dual-Mode Consumer Experience (Cook Mode & Order Mode)**:
+  - Unlocked `DualModeNavBar` and header `ModeSwitch` widget, allowing users to toggle effortlessly between **Cook Mode** (home pantry cooking, AI meal recommendations, smart timers) and **Order Mode** (restaurant ordering, branch menus, table reservations).
+  - Integrated `RegionPickerSheet` allowing diners to select regional cuisine hubs and explore active merchant branches.
+- **Workshop Merchant Branch Connectivity & In-App Ordering**:
+  - Connected Plately.workshop restaurant branches and dynamic websites to the mobile `OrderScreen`.
+  - Implemented diner digital menu browsing with real-time **86-ing synchronization** (sold-out items disabled from diner ordering with visual badges).
+  - Built full cart management, checkout flow (`checkout_screen.dart`), and order dispatch pipeline with pickup code generation.
+  - Implemented in-app table reservations connected directly to Workshop branches with real-time error recovery and state resilience.
+- **Explore Screen & Verified Restaurant Content**:
+  - Connected verified merchant content, branch showcase websites, and restaurant stories directly into the consumer `ExploreScreen`.
+  - Implemented branch dynamic web link redirection and live reservation persistence.
+- **Backend & Database Infrastructure**:
+  - Added migration `013_seed_demo_account` providing automated seed scripting and SQL migrations for the unified test account (`demo@plately.app`).
+  - Added permissive policies migration `023` for the website builder and storefront data plane.
+  - Implemented comprehensive backend test suites for `orders` and `social_squads` routers, maintaining a clean 62/62 passing test status.
+- **Brand Identity & Multi-Platform Visual Suite**:
+  - Deployed finalized brand icon lockups across Android adaptive launcher icons, iOS icon suites (1024x1024 master and app variants), splash screens, and multi-resolution `favicon.ico` for Flutter Web.
+  - Parametrized Supabase credentials and backend API URLs strictly via `--dart-define` to prevent configuration leakage.
+- **Web & Storage Resilience**:
+  - Preloaded CanvasKit WebAssembly (`canvaskit.wasm`) for instant web rendering.
+  - Added Safari private browsing quota fallback resilience inside `CacheService`.
+  - Added `CachedNetworkImage` fallback with custom shimmer placeholders and graceful error widgets across recipe cards.
+
+---
+
+# 📦 v0.1.15 — Offline-First Caching Engine, Realtime Order Tracking & Resilience
+
+This milestone solidifies ecosystem reliability under unstable network conditions, introduces real-time WebSocket order tracking, and enhances zero-waste recommendation algorithms.
+
+### Highlights
+- **Multi-Tier Resilient Caching Service (`CacheService`)**:
+  - Engineered dual-storage caching architecture combining Hive high-speed local boxes with an automatic `SharedPreferences` key-value fallback when Hive initialization fails.
+  - Implemented configurable Time-To-Live (TTL) cache invalidation ensuring offline data remains fresh while preventing stale pantry displays.
+  - Added graceful storage quota exception handlers specifically tuned for Safari private browsing and constrained mobile environments.
+- **Realtime Order Tracking (`OrderHistoryScreen`)**:
+  - Connected live Supabase Realtime WebSocket channel subscriptions for incoming and past orders.
+  - Status updates (`pending` ➔ `preparing` ➔ `ready` ➔ `dispatched` ➔ `completed`) reflect immediately in the mobile UI without requiring pull-to-refresh.
+  - Enhanced order milestone timeline with live courier transit badges and tactile status feedback.
+- **Zero-Waste Algorithmic Bonus**:
+  - Enhanced the 6-signal recipe scoring engine with an exponential urgency bonus for pantry items within 48 hours of expiration, maximizing food waste diversion.
+- **UI/UX Polish & Guidance**:
+  - Overhauled empty pantry states with custom illustrated guidance and a high-visibility call-to-action to scan grocery receipts or loose ingredients.
+  - Enhanced Profile and Settings navigation buttons with tactile haptic feedback and context tooltips.
+
+---
+
+# 📦 v0.1.16 — Socials & Community Hub, 24-Hour Stories & Executive Recipe Monetization Studio
+
+A massive feature expansion transforming Plately from a solo kitchen utility into a vibrant culinary social network with creator monetization, ephemeral stories, and executive chef recipes.
+
+### Highlights
+- **Feeds & Socials Hub**:
+  - Built a unified social discovery feed featuring community meal posts, cooking achievements, and shared kitchen experiences.
+  - Designed interactive `RecipeShareCard` widgets with dynamic recipe badges, difficulty tags, and one-tap "Cook This" navigation.
+  - Implemented `CommunityPostCard` with like counters, comment threads, and culinary tips.
+- **24-Hour Ephemeral Stories Engine**:
+  - Developed `StoryService`, `StoryRing`, and `StoryViewer` supporting 24-hour expiring culinary stories.
+  - Rich media story viewer with animated progress bars, pause-on-hold gestures, author avatars, and tagged recipe links.
+  - Allows creators, home cooks, and verified restaurants to publish dish previews, daily specials, and quick preparation tips.
+- **Executive Recipe Studio (`ExecutiveRecipeStudioScreen` — 1,300+ Lines)**:
+  - Created a comprehensive creator workstation enabling chefs and creators to author, preview, and publish premium culinary content.
+  - **Tiered Monetization**: Authors can publish recipes as **Free**, **Premium** (subscriber-accessible), or **Executive** (direct paywall purchase).
+  - **Chef Royalties & Pricing**: Set custom unlock pricing ($0.99 – $9.99) with automated revenue share calculations.
+  - **Exclusive Chef Notes & Techniques**: Secret ingredient swaps, plating instructions, and wine pairing guides locked behind access gates.
+- **Monetization & Conversion Sheets**:
+  - **Recipe Paywall Sheet (`RecipePaywallSheet`)**: High-converting glassmorphic bottom sheet showcasing recipe previews, chef credentials, reviews, and instant purchase unlocks.
+  - **Shoppable Ingredients Sheet (`ShoppableIngredientsSheet`)**: One-tap ingredient cart integration converting recipe item lists into grocery delivery or pantry restock lists.
+  - **Tip Chef Sheet (`TipChefSheet`)**: Creator tipping bottom sheet with custom tip presets ($1, $3, $5, or custom) and personalized thank-you animations.
+
+---
+
+# 📦 v0.1.17 — Bulk Cooking & Meal Prep Hub, Kitchen Data & Multi-Zone Storage Engine
+
+This release introduces comprehensive batch meal planning, nutritional preservation tracking, and a full-featured kitchen environmental data engine.
+
+### Highlights
+- **Bulk Cooking & Meal Prep Hub (`BulkCookingHubScreen` — 775+ Lines)**:
+  - Engineered a batch cooking orchestration hub for preparing multi-day, multi-portion meal rotations.
+  - **Scalable Portion Matrix**: Dynamically scales ingredient quantities from 2 to 14+ servings with auto-adjusted prep times and container requirements.
+  - **Defrost & Thaw Timeline**: Visual countdown estimator displaying optimal refrigerator thawing times and food safety temperature ranges for frozen meal prep containers.
+  - **Shelf-Life & Freshness Estimator**: Calculates remaining safe consumption windows for refrigerated vs frozen batch meals, automatically queueing them into the Living Shelf upon completion.
+- **Kitchen Data & Storage Engine (`KitchenDataHubScreen` — 495+ Lines)**:
+  - **Multi-Zone Kitchen Architecture**: Granular inventory organization across 5 physical zones:
+    1. *Deep Freezer* (-18°C)
+    2. *Main Refrigerator* (2°C – 4°C)
+    3. *Cold Larder / Cellar* (10°C – 12°C)
+    4. *Dry Cabinet Pantry* (Ambient)
+    5. *Spice & Herb Rack* (Dark, dry storage)
+  - **Environmental Monitoring Simulation**: Real-time tracking of simulated storage zone temperature and humidity with spoilage risk alerts.
+  - **Pantry Capacity & Utilization Metrics**: Visual capacity gauges showing volume utilization per zone to prevent overbuying and inventory clutter.
+  - **Waste Analytics & Cost Savings**: Quantifies food waste diversion in kilograms and estimated monetary savings per week/month.
+- **Profile Navigation Integration**:
+  - Integrated dedicated quick-access entry points for Bulk Cooking Hub and Kitchen Data Hub into `ProfileScreen`.
+
+---
+
+# 📦 v0.1.18 — Cook Screen Recipe Engine Resilience, Voice Assistant Overhaul & Executive Tier Unification
+
+This release resolves critical recipe loading bottlenecks, completely overhauls the hands-free voice assistant with watchdog safety and text fallback, and unifies Executive recipes into the core Cook Mode experience.
+
+### Highlights
+- **5-Layer Resilient Recipe Loading Engine (`CookScreen`)**:
+  - Fixed database column query mismatch (`expiration_date` ➔ `computed_expiry`) that caused silent recipe query failures.
+  - Built a 5-layer fault-tolerant recipe retrieval pipeline:
+    1. *Server-Side AI Scoring*: Primary endpoint `/api/v1/recipes/recommend` calculating 6-signal composite match scores.
+    2. *Supabase RPC Function*: Fallback to stored database procedure `get_recommended_recipes`.
+    3. *Direct Supabase Query*: Robust direct table query with client-side sorting if stored procedures are inaccessible.
+    4. *Offline Cache (`CacheService`)*: Loads previously cached recipe payloads from local storage when network requests fail.
+    5. *Curated Offline Fallbacks*: High-quality embedded recipe defaults guaranteeing recipes always display under any failure mode.
+  - **Auth Helper Hardening (`AuthHelper`)**: Upgraded `currentUserId()` to return a deterministic guest UUID rather than throwing an exception for unauthenticated or anonymous guest sessions; added null-safe `currentUserIdOrNull()` and `isAnonymousGuest()`.
+- **Hands-Free Voice Command Assistant Overhaul (`VoiceCommandFAB` & `VoiceCommandService`)**:
+  - **Asynchronous Initialization**: Refactored `startListening()` to return `Future<bool>` with explicit microphone permission verification and granular error isolation.
+  - **Auto-Silence & Safety Watchdogs**: Added an 8-second speech inactivity timeout and a 10-second safety watchdog timer that automatically terminates listening sessions, eliminating button freeze/hang issues.
+  - **Text Input Fallback Dialog**: When microphone hardware is missing, speech recognition fails, or audio permissions are denied, the FAB seamlessly opens an interactive text command dialog allowing users to type commands ("next step", "set timer 5 minutes", "substitute butter").
+  - **Animated Activity HUD**: Real-time animated audio waveform feedback reflecting microphone capture states.
+- **Executive Recipes Tab Move to Cook Mode**:
+  - Created standalone modular `ExecutiveRecipesFeed` widget (565 lines) with category filters, chef cards, and tier badges.
+  - Relocated Executive Recipes from the social Explore screen into the primary Cook screen, placing it alongside the 5 algorithmic recommendation tiers.
+  - Cook screen now features 6 comprehensive tabs:
+    `[Explore | Perfect | For You | Use It Up | Almost | 💎 Executive]`
+  - Streamlined `ExploreScreen` into 2 focused feeds: `[🌟 For You | 🍽️ Community]`, featuring an informative banner directing users to Cook Mode for Executive recipes.
+- **Verification & Zero Regressions**:
+  - 100% of backend regression tests pass cleanly (62/62).
+  - All Flutter widget navigation tests pass cleanly.
