@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.plately.plately_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "28.2.13676358"
 
     compileOptions {
@@ -33,7 +33,7 @@ android {
     defaultConfig {
         applicationId = "com.plately.myapp"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
