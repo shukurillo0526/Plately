@@ -18,7 +18,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.plately.plately_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -62,18 +62,32 @@ android {
                 "proguard-rules.pro"
             )
             ndk {
-                debugSymbolLevel = "SYMBOL_TABLE"
+                debugSymbolLevel = "FULL"
             }
         }
     }
 
+    packaging {
+        jniLibs {
+            excludes += "lib/*/libdatastore_shared_counter.so"
+            excludes += "**/libdatastore_shared_counter.so"
+        }
+    }
 }
 
 flutter {
     source = "../.."
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.datastore:datastore-preferences:1.1.2")
+        force("androidx.datastore:datastore-preferences-core:1.1.2")
+        force("androidx.datastore:datastore-core:1.1.2")
+        force("androidx.datastore:datastore-core-android:1.1.2")
+    }
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
-

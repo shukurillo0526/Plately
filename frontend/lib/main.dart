@@ -5,6 +5,7 @@
 // The bottom navigation changes dynamically based on the active mode.
 
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:plately_app/core/services/location_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -49,6 +50,16 @@ import 'package:plately_app/core/services/analytics_service.dart';
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Modern edge-to-edge support for Android 15+ (API 35+)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
 
   // ── Global Error Handling ──
   FlutterError.onError = (details) {
