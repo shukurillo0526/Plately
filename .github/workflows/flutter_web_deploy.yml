@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - archive/full-ecosystem-20261102-1855
 
 permissions:
   contents: read

@@ -18,7 +18,7 @@ from app.routers import (
     ocr_parser, barcode_lookup, vision_detect, recipe_ai,
     embeddings, inventory, user_data, calorie_analysis,
     recommendations, health, chat, notifications, orders,
-    feedback, meal_prep, analytics, challenges, social, quota,
+    feedback, meal_prep, analytics, challenges, social,
 )
 from app.services.ai_service import get_ai_service as get_ollama_service
 from app.core.auth import CurrentUser
@@ -143,7 +143,6 @@ app.include_router(meal_prep.router)
 app.include_router(analytics.router)
 app.include_router(challenges.router)
 app.include_router(social.router)
-app.include_router(quota.router)
 
 # ── Root ─────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])

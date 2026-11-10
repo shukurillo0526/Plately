@@ -18,7 +18,6 @@ import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 
 from app.core.auth import CurrentUser
-from app.core.quota import quota_manager, QuotaAction
 from app.core.security import validate_image_upload
 from app.services.ai_service import get_ai_service as get_ollama_service
 from slowapi import Limiter
@@ -90,7 +89,6 @@ async def detect_ingredients(request: Request, current: CurrentUser, file: Uploa
     Single-stage pipeline: gemma3:12b (multimodal) → JSON directly.
     """
     image_bytes = await validate_image_upload(file)
-    quota_manager.consume(current.id, QuotaAction.SCAN)
     source = "mock"
     parsed_data = None
 

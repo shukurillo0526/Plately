@@ -12,7 +12,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:plately_app/core/services/auth_helper.dart';
 import 'package:plately_app/core/services/app_settings.dart';
 import 'package:plately_app/l10n/app_localizations.dart';
-import 'package:plately_app/core/config/release_config.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -445,35 +444,33 @@ class _AuthScreenState extends State<AuthScreen>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (ReleaseConfig.isDemoShowcase) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF98B25).withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFF98B25).withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.science_outlined, size: 14, color: Color(0xFFF98B25)),
-                            SizedBox(width: 6),
-                            Text(
-                              'PROJECT SHOWCASE & DEMO (PRE-LAUNCH)',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.4,
-                                color: Color(0xFFF98B25),
-                              ),
-                            ),
-                          ],
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF98B25).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFFF98B25).withValues(alpha: 0.35),
                         ),
                       ),
-                    ],
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.science_outlined, size: 14, color: Color(0xFFF98B25)),
+                          SizedBox(width: 6),
+                          Text(
+                            'PROJECT SHOWCASE & DEMO (PRE-LAUNCH)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                              color: Color(0xFFF98B25),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                     const SizedBox(height: 48),
 

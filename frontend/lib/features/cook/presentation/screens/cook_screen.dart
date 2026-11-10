@@ -13,7 +13,6 @@ import 'package:plately_app/core/theme/app_theme.dart';
 import 'package:plately_app/core/widgets/shimmer_loading.dart';
 import 'package:plately_app/core/widgets/slide_in_item.dart';
 import 'package:plately_app/core/services/api_service.dart';
-import 'package:plately_app/core/config/release_config.dart';
 import 'package:plately_app/core/utils/l10n_helper.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_detail_screen.dart';
 import 'package:plately_app/features/cook/presentation/screens/recipe_import_screen.dart';
@@ -1115,22 +1114,20 @@ class _CookScreenState extends ConsumerState<CookScreen>
             },
             tooltip: 'Bulk Cooking & Meal Prep',
           ),
-          if (ReleaseConfig.enableCreatorMonetization)
-            IconButton(
-              icon: const Icon(Icons.workspace_premium_outlined),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ExecutiveRecipeStudioScreen()));
-              },
-              tooltip: 'Executive Recipe Studio',
-            ),
-          if (ReleaseConfig.enableSocialFeeds)
-            IconButton(
-              icon: const Icon(Icons.play_circle_outline),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CookFeedsScreen()));
-              },
-              tooltip: 'Cooking Reels & Videos',
-            ),
+          IconButton(
+            icon: const Icon(Icons.workspace_premium_outlined),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ExecutiveRecipeStudioScreen()));
+            },
+            tooltip: 'Executive Recipe Studio',
+          ),
+          IconButton(
+            icon: const Icon(Icons.play_circle_outline),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const CookFeedsScreen()));
+            },
+            tooltip: 'Cooking Reels & Videos',
+          ),
           IconButton(
             icon: const Icon(Icons.auto_awesome),
             onPressed: () => _openAiGenerate(context),
@@ -1153,24 +1150,23 @@ class _CookScreenState extends ConsumerState<CookScreen>
               }
             },
             itemBuilder: (context) => [
-              if (ReleaseConfig.enableCreatorMonetization)
-                const PopupMenuItem(
-                  value: 'executive_studio',
-                  child: Row(
-                    children: [
-                      Icon(Icons.workspace_premium, size: 20),
-                      SizedBox(width: 12),
-                      Text('Executive Recipe Studio'),
-                    ],
-                  ),
+              PopupMenuItem(
+                value: 'executive_studio',
+                child: Row(
+                  children: [
+                    Icon(Icons.workspace_premium, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('Executive Recipe Studio'),
+                  ],
                 ),
-              const PopupMenuItem(
+              ),
+              PopupMenuItem(
                 value: 'bulk_prep',
                 child: Row(
                   children: [
-                    Icon(Icons.takeout_dining, size: 20),
-                    SizedBox(width: 12),
-                    Text('Meal Prep Hub'),
+                    Icon(Icons.takeout_dining, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('Meal Prep Hub'),
                   ],
                 ),
               ),
@@ -1184,13 +1180,13 @@ class _CookScreenState extends ConsumerState<CookScreen>
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'my_recipes',
                 child: Row(
                   children: [
-                    Icon(Icons.menu_book, size: 20),
-                    SizedBox(width: 12),
-                    Text('My Recipes'),
+                    Icon(Icons.menu_book, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('My Recipes'),
                   ],
                 ),
               ),
