@@ -734,66 +734,129 @@ class _ModeSwitchBar extends StatelessWidget {
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, topPadding + 6, 16, 6),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // App name
-          Text(
-            'Plately',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const Spacer(),
-          // Mode toggle — constrained to fit narrow screens
-          if (ReleaseConfig.enableOrderMode)
-            ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 164),
-            child: ModeSwitch(
-              currentMode: currentMode,
-              onModeChanged: onModeChanged,
-            ),
-          ),
-          if (ReleaseConfig.enableOrderMode) const SizedBox(width: 12),
-          // Profile / Manage button with enhanced touch feedback & tooltip
-          Tooltip(
-            message: 'Profile & Settings',
-            child: Material(
-              color: Colors.transparent,
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  );
-                },
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
-                      width: 1.2,
+          if (ReleaseConfig.isDemoShowcase)
+            Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF98B25).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFF98B25).withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.science_outlined, size: 12, color: Color(0xFFF98B25)),
+                  SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      'DEMO PROJECT SHOWCASE • Full Capabilities Preview (Pre-Launch)',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        color: Color(0xFFF98B25),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
+                ],
+              ),
+            ),
+          Row(
+            children: [
+              // App name with demo pill
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Plately',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (ReleaseConfig.isDemoShowcase) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF98B25).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'DEMO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFF98B25),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const Spacer(),
+              // Mode toggle — constrained to fit narrow screens
+              if (ReleaseConfig.enableOrderMode)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 164),
+                  child: ModeSwitch(
+                    currentMode: currentMode,
+                    onModeChanged: onModeChanged,
+                  ),
+                ),
+              if (ReleaseConfig.enableOrderMode) const SizedBox(width: 12),
+              // Profile / Manage button with enhanced touch feedback & tooltip
+              Tooltip(
+                message: 'Profile & Settings',
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
